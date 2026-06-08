@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>박용민 자료 검색</title>
+    <link rel="stylesheet" href="./styles.css?v=20260608-4" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="박용민 자료 검색 홈">
+        <span class="brand-mark">P</span>
+        <span>박용민 자료 검색</span>
+      </a>
+      <nav aria-label="주요 메뉴">
+        <a href="#search">검색</a>
+        <a href="#results">자료</a>
+        <a href="#strategy">운영</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">박용민 PDF 검색</p>
+          <h1 id="hero-title">필요한 간호 자료를 바로 찾아요.</h1>
+          <p class="hero-text">
+            짧게 훑고, 원본 PDF로 바로 이어집니다.
+          </p>
+          <form class="search-box" id="search" role="search">
+            <label for="query">자료 검색</label>
+            <div class="input-row">
+              <input id="query" type="search" value="" placeholder="자료 검색" autocomplete="off" />
+              <button type="submit" aria-label="검색">→</button>
+            </div>
+          </form>
+          <div class="quick-tags" aria-label="추천 검색어">
+            <button type="button" data-query="ECG">ECG</button>
+            <button type="button" data-query="신경계">신경계</button>
+            <button type="button" data-query="AST ALT">AST/ALT</button>
+            <button type="button" data-query="흉부">흉부</button>
+          </div>
+        </div>
+
+        <aside class="hero-panel" aria-label="자료 현황">
+          <div>
+            <span>Drive 폴더</span>
+            <strong>박용민 컨텐츠 정리본 PDF</strong>
+          </div>
+          <div>
+            <span>확인된 자료</span>
+            <strong id="resourceCount">13개</strong>
+          </div>
+          <div>
+            <span>자료 범위</span>
+            <strong>PDF 폴더 전용</strong>
+          </div>
+        </aside>
+      </section>
+
+      <section class="category-hub" aria-labelledby="category-title">
+        <div class="section-title">
+          <p class="eyebrow">Category</p>
+          <h2 id="category-title">무엇을 찾고 있어요?</h2>
+        </div>
+        <div class="category-grid" id="categoryGrid"></div>
+      </section>
+
+      <section class="nav-concepts" aria-labelledby="nav-concepts-title">
+        <div class="section-title">
+          <p class="eyebrow">Navigation concept</p>
+          <h2 id="nav-concepts-title">하단바 시안</h2>
+        </div>
+        <div class="concept-stack">
+          <article class="concept-card">
+            <strong>시안 A · 플로팅 칩</strong>
+            <p>검색 결과 위에 살짝 떠 있는 카테고리 칩. 지금 적용한 방향입니다.</p>
+            <div class="concept-preview concept-floating">
+              <span class="on">전체</span>
+              <span>심혈관</span>
+              <span>신경계</span>
+            </div>
+          </article>
+          <article class="concept-card">
+            <strong>시안 B · 앱 탭바</strong>
+            <p>아이콘 중심의 앱 하단 탭. 기능이 많아질 때 어울립니다.</p>
+            <div class="concept-preview concept-tabbar">
+              <span class="on">⌂<b>전체</b></span>
+              <span>♡<b>심혈관</b></span>
+              <span>⌕<b>검사</b></span>
+            </div>
+          </article>
+          <article class="concept-card">
+            <strong>시안 C · 미니 시트</strong>
+            <p>아래에서 올라온 작은 필터 시트. 분류가 더 많아지면 좋습니다.</p>
+            <div class="concept-preview concept-sheet">
+              <span>계통 분류</span>
+              <div>
+                <b>전체</b>
+                <b>신경계</b>
+                <b>검사수치</b>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="app-shell" aria-label="검색 결과와 자료 상세">
+        <aside class="filters">
+          <p class="eyebrow">Filter</p>
+          <h2>자료 유형</h2>
+          <div class="filter-list" id="filters"></div>
+          <div class="source-note">
+            <strong>원본 연결</strong>
+            <p>각 카드의 Drive 버튼은 박용민 PDF 폴더 안 원본 자료로 연결됩니다.</p>
+          </div>
+        </aside>
+
+        <section class="results-panel" id="results" aria-labelledby="results-title">
+          <div class="results-head">
+            <div>
+              <p class="eyebrow">Search results</p>
+              <h2 id="results-title">검색 결과</h2>
+            </div>
+            <p id="resultMeta"></p>
+          </div>
+          <div class="result-grid" id="resultGrid"></div>
+        </section>
+
+        <section class="detail-panel" aria-labelledby="detail-title">
+          <p class="eyebrow">Preview</p>
+          <h2 id="detail-title">자료 미리보기</h2>
+          <div id="detail"></div>
+        </section>
+      </section>
+
+      <section class="strategy" id="strategy" aria-labelledby="strategy-title">
+        <div>
+          <p class="eyebrow">Content strategy</p>
+          <h2 id="strategy-title">검색 사이트로 가져가면 좋은 이유</h2>
+        </div>
+        <div class="strategy-grid">
+          <article>
+            <span>01</span>
+            <h3>신뢰가 생김</h3>
+            <p>AI 요약은 입구로만 쓰고, 원본 PDF를 근거로 보여주면 자료의 권위가 살아납니다.</p>
+          </article>
+          <article>
+            <span>02</span>
+            <h3>자료가 쌓일수록 강해짐</h3>
+            <p>영상이 늘어날수록 검색 가능한 지식 베이스가 커져 재방문 이유가 생깁니다.</p>
+          </article>
+          <article>
+            <span>03</span>
+            <h3>콘텐츠 전환이 쉬움</h3>
+            <p>인스타 영상에서 “자세한 자료는 검색 사이트에서”로 자연스럽게 연결할 수 있습니다.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <div class="preview-modal" id="previewModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
+      <div class="modal-backdrop" data-close-modal></div>
+      <section class="modal-card">
+        <button class="modal-close" type="button" data-close-modal aria-label="미리보기 닫기">×</button>
+        <div id="modalContent"></div>
+      </section>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="./src/main.js?v=20260608-4"></script>
+  </body>
+</html>
