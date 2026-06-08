@@ -2321,3 +2321,43 @@ body.search-mode .category-hub,
 body.search-mode .strategy {
   display: none !important;
 }
+
+body.search-mode .save-button {
+  display: grid;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: #f2f4f6;
+  color: #8b95a1;
+  font-size: 19px;
+  font-weight: 900;
+}
+
+body.search-mode .card-top {
+  flex-direction: row !important;
+  align-items: flex-start !important;
+}
+
+body.search-mode .card-top > div {
+  min-width: 0;
+}
+
+body.search-mode .save-button.saved {
+  background: #e8f3ff;
+  color: #3182f6;
+}
+
+body.search-mode .empty-card {
+  cursor: default;
+}
+
+.modal-card .detail-actions {
+  grid-template-columns: 1fr 1fr !important;
+}
+
+.modal-card .detail-actions .detail-link {
+  grid-column: 1 / -1;
+}

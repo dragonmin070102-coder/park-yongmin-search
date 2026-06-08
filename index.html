@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>박용민 자료 검색</title>
-    <link rel="stylesheet" href="./styles.css?v=20260609-3" />
+    <link rel="stylesheet" href="./styles.css?v=20260609-4" />
   </head>
   <body>
     <header class="topbar">
@@ -65,31 +65,9 @@
         <div class="feed-section">
           <div class="feed-head">
             <h2>최근 본 자료</h2>
-            <button type="button" data-query="">더보기</button>
+            <button type="button" data-recent-all>더보기</button>
           </div>
-          <div class="feed-list">
-            <button type="button" data-query="GBS">
-              <span>
-                <strong>GBS (길랭바레 증후군)</strong>
-                <em>신경계 · 임상추론</em>
-              </span>
-              <i aria-hidden="true">›</i>
-            </button>
-            <button type="button" data-query="ACS ECG">
-              <span>
-                <strong>ACS와 ECG</strong>
-                <em>심혈관 · 감별정리</em>
-              </span>
-              <i aria-hidden="true">›</i>
-            </button>
-            <button type="button" data-query="심근허혈 심근경색">
-              <span>
-                <strong>심근허혈 vs 심근경색</strong>
-                <em>심혈관 · 개념이해</em>
-              </span>
-              <i aria-hidden="true">›</i>
-            </button>
-          </div>
+          <div class="feed-list" id="recentList"></div>
         </div>
 
         <div class="feed-section question-section">
@@ -194,6 +172,6 @@
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <nav class="bottom-tabs" id="bottomTabs" aria-label="앱 하단 메뉴"></nav>
-    <script type="module" src="./src/main.js?v=20260609-3"></script>
+    <script type="module" src="./src/main.js?v=20260609-4"></script>
   </body>
 </html>

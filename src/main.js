@@ -362,13 +362,19 @@ const toast = document.querySelector("#toast");
 const previewModal = document.querySelector("#previewModal");
 const modalContent = document.querySelector("#modalContent");
 const bottomTabs = document.querySelector("#bottomTabs");
+const recentList = document.querySelector("#recentList");
+const resultsTitle = document.querySelector("#results-title");
 
 let activeType = "전체";
 let activeIntent = "전체";
 let activeResource = resources[0];
 let activeTab = "home";
+let resultMode = "search";
+let savedIds = new Set(readStoredIds("pym.saved"));
+let recentIds = readStoredIds("pym.recent");
 
 resourceCount.textContent = `${resources.length}개`;
+renderHomeFeed();
 renderCategoryHub();
 renderFilters();
 renderBottomTabs();
@@ -381,6 +387,7 @@ categoryGrid.addEventListener("click", (event) => {
   if (!card) return;
 
   activeTab = "search";
+  resultMode = "search";
   setSearchMode();
   activeType = card.dataset.category;
   queryInput.value = "";
@@ -394,6 +401,7 @@ categoryGrid.addEventListener("click", (event) => {
 form.addEventListener("submit", (event) => {
   event.preventDefault();
   activeTab = "search";
+  resultMode = "search";
   setSearchMode();
   renderBottomTabs();
   renderResults();
@@ -402,20 +410,49 @@ form.addEventListener("submit", (event) => {
 
 queryInput.addEventListener("input", () => {
   activeTab = "search";
+  resultMode = "search";
   setSearchMode();
   renderBottomTabs();
   renderResults();
 });
 
-document.querySelectorAll("[data-query]").forEach((button) => {
-  button.addEventListener("click", () => {
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-query]");
+  if (!button) return;
+
     activeTab = "search";
+    resultMode = "search";
     queryInput.value = button.dataset.query;
     setSearchMode();
     renderBottomTabs();
     renderResults();
     document.querySelector("#results").scrollIntoView({ behavior: "smooth", block: "start" });
-  });
+});
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-recent-all]");
+  if (!button) return;
+
+  activeTab = "search";
+  resultMode = "recent";
+  setSearchMode();
+  renderBottomTabs();
+  renderResults();
+  document.querySelector("#results").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-open-home]");
+  if (!button) return;
+
+  const resource = resources.find((item) => item.id === button.dataset.openHome);
+  if (!resource) return;
+
+  activeResource = resource;
+  rememberRecent(resource.id);
+  renderHomeFeed();
+  renderDetail(resource);
+  openPreviewModal(resource);
 });
 
 document.querySelectorAll("[data-close-modal]").forEach((button) => {
@@ -527,15 +564,24 @@ function renderBottomTabs() {
       window.scrollTo({ top: 0, behavior: "smooth" });
     } },
     { id: "search", label: "검색", icon: searchIcon(), target: () => {
+      resultMode = "search";
       setSearchMode();
+      renderResults();
       document.querySelector("#search").scrollIntoView({ behavior: "smooth", block: "start" });
       window.setTimeout(() => queryInput.focus(), 280);
     } },
-    { id: "saved", label: "즐겨찾기", icon: starIcon(), target: () => showToast("즐겨찾기는 다음 단계에서 붙이면 좋아요") },
-    { id: "learning", label: "내 학습", icon: bookIcon(), target: () => {
+    { id: "saved", label: "즐겨찾기", icon: starIcon(), target: () => {
+      resultMode = "saved";
+      queryInput.value = "";
       setSearchMode();
+      renderResults();
       document.querySelector("#results").scrollIntoView({ behavior: "smooth", block: "start" });
-      showToast("지금은 전체 자료 흐름을 보여주고 있어요");
+    } },
+    { id: "learning", label: "내 학습", icon: bookIcon(), target: () => {
+      resultMode = "recent";
+      setSearchMode();
+      renderResults();
+      document.querySelector("#results").scrollIntoView({ behavior: "smooth", block: "start" });
     } },
     { id: "profile", label: "마이페이지", icon: userIcon(), target: () => showToast("로그인 기능과 함께 확장하면 좋아요") }
   ];
@@ -560,22 +606,83 @@ function renderBottomTabs() {
 function setHomeMode() {
   document.body.classList.remove("search-mode");
   activeTab = "home";
+  resultMode = "search";
   queryInput.value = "";
+  renderHomeFeed();
 }
 
 function setSearchMode() {
   document.body.classList.add("search-mode");
 }
 
+function renderHomeFeed() {
+  const fallbackIds = ["gbs", "acs-ecg", "mi"];
+  const ids = (recentIds.length ? recentIds : fallbackIds)
+    .map((id) => resources.find((resource) => resource.id === id))
+    .filter(Boolean)
+    .slice(0, 3);
+
+  recentList.innerHTML = ids.map((resource) => `
+    <button type="button" data-open-home="${escapeHtml(resource.id)}">
+      <span>
+        <strong>${escapeHtml(resource.displayTitle)}</strong>
+        <em>${escapeHtml(resource.system)} · ${escapeHtml(resource.intent)}</em>
+      </span>
+      <i aria-hidden="true">›</i>
+    </button>
+  `).join("");
+}
+
+function toggleSaved(id) {
+  if (savedIds.has(id)) {
+    savedIds.delete(id);
+    showToast("즐겨찾기에서 제거했어요");
+  } else {
+    savedIds.add(id);
+    showToast("즐겨찾기에 저장했어요");
+  }
+
+  writeStoredIds("pym.saved", Array.from(savedIds));
+}
+
+function rememberRecent(id) {
+  recentIds = [id, ...recentIds.filter((item) => item !== id)].slice(0, 5);
+  writeStoredIds("pym.recent", recentIds);
+  renderHomeFeed();
+}
+
+function readStoredIds(key) {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(key) || "[]");
+    return Array.isArray(parsed) ? parsed.filter((id) => resources.some((resource) => resource.id === id)) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeStoredIds(key, ids) {
+  localStorage.setItem(key, JSON.stringify(ids));
+}
+
 function renderResults() {
   const query = queryInput.value.trim();
   const matches = scoreResources(query)
-    .filter((item) => activeType === "전체" || item.resource.system === activeType)
-    .filter((item) => activeIntent === "전체" || item.resource.intent === activeIntent)
-    .filter((item) => query.length === 0 || item.score > 0);
+    .filter((item) => {
+      if (resultMode === "saved") return savedIds.has(item.resource.id);
+      if (resultMode === "recent") return recentIds.includes(item.resource.id);
+      return true;
+    })
+    .filter((item) => resultMode !== "search" || activeType === "전체" || item.resource.system === activeType)
+    .filter((item) => resultMode !== "search" || activeIntent === "전체" || item.resource.intent === activeIntent)
+    .filter((item) => resultMode !== "search" || query.length === 0 || item.score > 0);
 
-  const sorted = matches.sort((a, b) => b.score - a.score || a.resource.rank - b.resource.rank || a.resource.displayTitle.localeCompare(b.resource.displayTitle, "ko"));
-  resultMeta.textContent = `${sorted.length}개 자료`;
+  const sorted = matches.sort((a, b) => {
+    if (resultMode === "recent") return recentIds.indexOf(a.resource.id) - recentIds.indexOf(b.resource.id);
+    return b.score - a.score || a.resource.rank - b.resource.rank || a.resource.displayTitle.localeCompare(b.resource.displayTitle, "ko");
+  });
+
+  resultsTitle.textContent = resultMode === "saved" ? "즐겨찾기" : resultMode === "recent" ? "최근 본 자료" : "검색 결과";
+  resultMeta.textContent = resultMode === "saved" ? `${sorted.length}개 저장됨` : `${sorted.length}개 자료`;
 
   if (!sorted.some((item) => item.resource.id === activeResource.id)) {
     activeResource = sorted[0]?.resource || resources[0];
@@ -587,9 +694,19 @@ function renderResults() {
     element.addEventListener("click", (event) => {
       if (event.target.closest("a")) return;
       activeResource = resources.find((resource) => resource.id === element.dataset.open);
+      rememberRecent(activeResource.id);
       renderResults();
       renderDetail(activeResource);
       openPreviewModal(activeResource);
+    });
+  });
+
+  grid.querySelectorAll("[data-save]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      toggleSaved(button.dataset.save);
+      renderHomeFeed();
+      renderResults();
     });
   });
 
@@ -643,6 +760,7 @@ function scoreResources(query) {
 function cardTemplate(resource, score, hasQuery) {
   const selected = resource.id === activeResource.id ? "selected" : "";
   const scoreText = hasQuery && score > 0 ? "관련도 높음" : "추천";
+  const saved = savedIds.has(resource.id);
   return `
     <article class="resource-card ${selected}" data-open="${escapeHtml(resource.id)}">
       <div class="card-top">
@@ -654,7 +772,7 @@ function cardTemplate(resource, score, hasQuery) {
           <h3>${escapeHtml(resource.displayTitle)}</h3>
           <p>${escapeHtml(resource.summary)}</p>
         </div>
-        <div class="score">${escapeHtml(scoreText)}</div>
+        <button class="save-button ${saved ? "saved" : ""}" type="button" data-save="${escapeHtml(resource.id)}" aria-label="${saved ? "즐겨찾기 해제" : "즐겨찾기 추가"}">${saved ? "★" : "☆"}</button>
       </div>
       <div class="inline-source">
         <span>${escapeHtml(resource.stage)} · ${escapeHtml(resource.confidence)} · ${escapeHtml(resource.source)}</span>
@@ -665,6 +783,24 @@ function cardTemplate(resource, score, hasQuery) {
 }
 
 function emptyTemplate(query) {
+  if (resultMode === "saved") {
+    return `
+      <article class="resource-card empty-card">
+        <h3>아직 저장한 자료가 없어요</h3>
+        <p>검색 결과에서 별표를 누르면 여기에 모아볼 수 있어요.</p>
+      </article>
+    `;
+  }
+
+  if (resultMode === "recent") {
+    return `
+      <article class="resource-card empty-card">
+        <h3>아직 최근 본 자료가 없어요</h3>
+        <p>자료 미리보기를 열면 홈과 내 학습에 자동으로 쌓입니다.</p>
+      </article>
+    `;
+  }
+
   const hasActiveFilters = activeType !== "전체" || activeIntent !== "전체";
   const filterText = [
     activeType !== "전체" ? activeType : null,
@@ -695,9 +831,19 @@ function renderDetail(resource) {
       await copyResource(target);
     });
   });
+
+  detail.querySelectorAll("[data-detail-save]").forEach((button) => {
+    button.addEventListener("click", () => {
+      toggleSaved(button.dataset.detailSave);
+      renderDetail(resource);
+      renderHomeFeed();
+      renderResults();
+    });
+  });
 }
 
 function detailTemplate(resource) {
+  const saved = savedIds.has(resource.id);
   return `
     <div class="detail-body">
       <div class="badge-row">
@@ -737,6 +883,7 @@ function detailTemplate(resource) {
       </div>
       <div class="detail-actions">
         <button type="button" data-detail-copy="${escapeHtml(resource.id)}">요약과 링크 복사</button>
+        <button type="button" data-detail-save="${escapeHtml(resource.id)}">${saved ? "즐겨찾기 해제" : "즐겨찾기 저장"}</button>
         <a class="detail-link" href="${escapeHtml(resource.url)}" target="_blank" rel="noreferrer">원본 Drive 자료 열기</a>
       </div>
     </div>
@@ -761,6 +908,14 @@ function relatedTemplate(resource) {
 }
 
 function openPreviewModal(resource) {
+  rememberRecent(resource.id);
+  renderModalContent(resource);
+  previewModal.hidden = false;
+  document.body.classList.add("modal-open");
+  document.body.style.overflow = "hidden";
+}
+
+function renderModalContent(resource) {
   modalContent.innerHTML = detailTemplate(resource);
   modalContent.querySelectorAll("[data-detail-copy]").forEach((button) => {
     button.addEventListener("click", async () => {
@@ -768,9 +923,14 @@ function openPreviewModal(resource) {
       await copyResource(target);
     });
   });
-  previewModal.hidden = false;
-  document.body.classList.add("modal-open");
-  document.body.style.overflow = "hidden";
+  modalContent.querySelectorAll("[data-detail-save]").forEach((button) => {
+    button.addEventListener("click", () => {
+      toggleSaved(button.dataset.detailSave);
+      renderModalContent(resource);
+      renderHomeFeed();
+      renderResults();
+    });
+  });
 }
 
 function closePreviewModal() {
