@@ -1055,6 +1055,285 @@ input[type="search"] {
   display: none;
 }
 
+/* Final route-state overrides. Keep these last because earlier prototype blocks
+   contain older mobile layouts. */
+body:not(.search-mode) .category-hub,
+body:not(.search-mode) .app-shell,
+body:not(.search-mode) .strategy {
+  display: none !important;
+}
+
+body.search-mode .home-feed {
+  display: none !important;
+}
+
+body.search-mode .app-shell {
+  display: grid !important;
+  padding: 8px 0 108px !important;
+  background: #f7f8fa;
+}
+
+body.search-mode .filters {
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+  z-index: 1;
+  width: auto !important;
+  margin: 0 !important;
+  padding: 10px 0 6px !important;
+  border-radius: 0 !important;
+  background: #f7f8fa !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+body.search-mode .category-hub,
+body.search-mode .strategy {
+  display: none !important;
+}
+
+/* Final route-state overrides. Keep these last because earlier prototype blocks
+   contain older mobile layouts. */
+body:not(.search-mode) .category-hub,
+body:not(.search-mode) .app-shell,
+body:not(.search-mode) .strategy {
+  display: none !important;
+}
+
+body.search-mode .home-feed {
+  display: none !important;
+}
+
+body.search-mode .app-shell {
+  display: grid !important;
+}
+
+body.search-mode .category-hub,
+body.search-mode .strategy {
+  display: none !important;
+}
+
+/* Final route-state overrides. Keep these at the end because earlier prototype
+   blocks intentionally contain older mobile layouts. */
+body:not(.search-mode) .category-hub,
+body:not(.search-mode) .app-shell,
+body:not(.search-mode) .strategy {
+  display: none !important;
+}
+
+body.search-mode .home-feed {
+  display: none !important;
+}
+
+body.search-mode .app-shell {
+  display: grid !important;
+}
+
+body.search-mode .category-hub,
+body.search-mode .strategy {
+  display: none !important;
+}
+
+/* Home dashboard + focused search screen */
+.home-feed {
+  display: grid;
+  gap: 18px;
+  padding: 0 22px 110px;
+  background: #f7f8fa;
+}
+
+.feed-section {
+  padding-top: 2px;
+}
+
+.feed-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 38px;
+  margin-bottom: 6px;
+}
+
+.feed-head h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.feed-head button {
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #6b7684;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.feed-list {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid #edf0f3;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(25, 31, 40, 0.04);
+}
+
+.feed-list button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18px;
+  align-items: center;
+  min-height: 62px;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 0;
+  border-bottom: 1px solid #f2f4f6;
+  background: #ffffff;
+  color: #191f28;
+  text-align: left;
+}
+
+.feed-list button:last-child {
+  border-bottom: 0;
+}
+
+.feed-list span {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.feed-list strong {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feed-list em {
+  color: #8b95a1;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.feed-list i {
+  color: #b0b8c1;
+  font-size: 22px;
+  font-style: normal;
+  line-height: 1;
+  text-align: right;
+}
+
+.question-section .feed-list strong {
+  white-space: normal;
+}
+
+.category-hub,
+.app-shell,
+.strategy {
+  display: none;
+}
+
+body.search-mode .home-feed {
+  display: none;
+}
+
+body.search-mode .app-shell {
+  display: grid;
+}
+
+body.search-mode .hero {
+  padding-bottom: 10px;
+}
+
+body.search-mode .clinical-card,
+body.search-mode .home-shortcuts,
+body.search-mode .resource-pill {
+  display: none;
+}
+
+body.search-mode .quick-tags {
+  margin-bottom: 2px;
+}
+
+body.search-mode .filters {
+  margin-top: 0;
+}
+
+body.search-mode .resource-card {
+  gap: 9px;
+  padding: 15px 16px 13px;
+  border: 1px solid #edf0f3;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(25, 31, 40, 0.035);
+  cursor: pointer;
+}
+
+body.search-mode .resource-card h3 {
+  font-size: 18px;
+  line-height: 1.34;
+}
+
+body.search-mode .resource-card p {
+  margin-top: 5px;
+  font-size: 14px;
+  line-height: 1.48;
+  -webkit-line-clamp: 2;
+}
+
+body.search-mode .badge {
+  min-height: 23px;
+  padding: 0 8px;
+  border-radius: 8px;
+  font-size: 11px;
+}
+
+body.search-mode .score {
+  display: none;
+}
+
+body.search-mode .inline-source {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0;
+  background: transparent;
+  color: #8b95a1;
+}
+
+body.search-mode .inline-source span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.search-mode .inline-source a {
+  flex: 0 0 auto;
+  color: #3182f6;
+  font-size: 12px;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+body.search-mode .card-actions {
+  display: none;
+}
+
+body.search-mode .card-actions a,
+body.search-mode .card-actions button {
+  min-height: 38px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
 /* B concept: app-style bottom tab bar with category chips inside search results. */
 main {
   padding-bottom: 92px;
@@ -1981,4 +2260,25 @@ input[type="search"] {
 
 .filter-group + .filter-group {
   display: none;
+}
+
+/* Final route-state overrides. Keep these last because earlier prototype blocks
+   contain older mobile layouts. */
+body:not(.search-mode) .category-hub,
+body:not(.search-mode) .app-shell,
+body:not(.search-mode) .strategy {
+  display: none !important;
+}
+
+body.search-mode .home-feed {
+  display: none !important;
+}
+
+body.search-mode .app-shell {
+  display: grid !important;
+}
+
+body.search-mode .category-hub,
+body.search-mode .strategy {
+  display: none !important;
 }

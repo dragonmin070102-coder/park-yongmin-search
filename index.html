@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>박용민 자료 검색</title>
-    <link rel="stylesheet" href="./styles.css?v=20260609-1" />
+    <link rel="stylesheet" href="./styles.css?v=20260609-2" />
   </head>
   <body>
     <header class="topbar">
@@ -58,6 +58,67 @@
             <button type="button" data-query="KHSIM"><span class="shortcut-icon sim">▶</span><strong>KHSIM 체험하기</strong></button>
           </div>
           <p class="resource-pill"><span id="resourceCount">13개</span> PDF 자료 연결 중</p>
+        </div>
+      </section>
+
+      <section class="home-feed" aria-label="홈 학습 피드">
+        <div class="feed-section">
+          <div class="feed-head">
+            <h2>최근 본 자료</h2>
+            <button type="button" data-query="">더보기</button>
+          </div>
+          <div class="feed-list">
+            <button type="button" data-query="GBS">
+              <span>
+                <strong>GBS (길랭바레 증후군)</strong>
+                <em>신경계 · 임상추론</em>
+              </span>
+              <i aria-hidden="true">›</i>
+            </button>
+            <button type="button" data-query="ACS ECG">
+              <span>
+                <strong>ACS와 ECG</strong>
+                <em>심혈관 · 감별정리</em>
+              </span>
+              <i aria-hidden="true">›</i>
+            </button>
+            <button type="button" data-query="심근허혈 심근경색">
+              <span>
+                <strong>심근허혈 vs 심근경색</strong>
+                <em>심혈관 · 개념이해</em>
+              </span>
+              <i aria-hidden="true">›</i>
+            </button>
+          </div>
+        </div>
+
+        <div class="feed-section question-section">
+          <div class="feed-head">
+            <h2>많이 묻는 질문</h2>
+          </div>
+          <div class="feed-list">
+            <button type="button" data-query="GBS 호흡근 ICU">
+              <span>
+                <strong>SpO2 99%인데 ICU 보고가 필요한 이유는?</strong>
+                <em>GBS · 호흡근 약화</em>
+              </span>
+              <i aria-hidden="true">›</i>
+            </button>
+            <button type="button" data-query="AST ALT 차이">
+              <span>
+                <strong>AST/ALT 차이가 뭐예요?</strong>
+                <em>검사수치 · 간수치</em>
+              </span>
+              <i aria-hidden="true">›</i>
+            </button>
+            <button type="button" data-query="ST elevation 심근경색">
+              <span>
+                <strong>ST elevation은 왜 위험한가요?</strong>
+                <em>ECG · ACS</em>
+              </span>
+              <i aria-hidden="true">›</i>
+            </button>
+          </div>
         </div>
       </section>
 
@@ -133,6 +194,6 @@
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <nav class="bottom-tabs" id="bottomTabs" aria-label="앱 하단 메뉴"></nav>
-    <script type="module" src="./src/main.js?v=20260609-1"></script>
+    <script type="module" src="./src/main.js?v=20260609-2"></script>
   </body>
 </html>

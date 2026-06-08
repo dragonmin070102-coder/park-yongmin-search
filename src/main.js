@@ -374,12 +374,14 @@ renderFilters();
 renderBottomTabs();
 renderResults();
 renderDetail(activeResource);
+setHomeMode();
 
 categoryGrid.addEventListener("click", (event) => {
   const card = event.target.closest("[data-category]");
   if (!card) return;
 
   activeTab = "search";
+  setSearchMode();
   activeType = card.dataset.category;
   queryInput.value = "";
   renderCategoryHub();
@@ -392,6 +394,7 @@ categoryGrid.addEventListener("click", (event) => {
 form.addEventListener("submit", (event) => {
   event.preventDefault();
   activeTab = "search";
+  setSearchMode();
   renderBottomTabs();
   renderResults();
   document.querySelector("#results").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -399,6 +402,7 @@ form.addEventListener("submit", (event) => {
 
 queryInput.addEventListener("input", () => {
   activeTab = "search";
+  setSearchMode();
   renderBottomTabs();
   renderResults();
 });
@@ -407,6 +411,7 @@ document.querySelectorAll("[data-query]").forEach((button) => {
   button.addEventListener("click", () => {
     activeTab = "search";
     queryInput.value = button.dataset.query;
+    setSearchMode();
     renderBottomTabs();
     renderResults();
     document.querySelector("#results").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -434,6 +439,7 @@ function renderFilters() {
   filters.querySelectorAll("[data-type]").forEach((button) => {
     button.addEventListener("click", () => {
       activeTab = "search";
+      setSearchMode();
       activeType = button.dataset.type;
       if (activeType === "전체") {
         queryInput.value = "";
@@ -448,6 +454,7 @@ function renderFilters() {
   filters.querySelectorAll("[data-intent]").forEach((button) => {
     button.addEventListener("click", () => {
       activeTab = "search";
+      setSearchMode();
       activeIntent = button.dataset.intent;
       if (activeIntent === "전체") {
         queryInput.value = "";
@@ -515,13 +522,18 @@ function filterGroupTemplate(title, key, values, activeValue) {
 
 function renderBottomTabs() {
   const tabs = [
-    { id: "home", label: "홈", icon: homeIcon(), target: () => window.scrollTo({ top: 0, behavior: "smooth" }) },
+    { id: "home", label: "홈", icon: homeIcon(), target: () => {
+      setHomeMode();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } },
     { id: "search", label: "검색", icon: searchIcon(), target: () => {
+      setSearchMode();
       document.querySelector("#search").scrollIntoView({ behavior: "smooth", block: "start" });
       window.setTimeout(() => queryInput.focus(), 280);
     } },
     { id: "saved", label: "즐겨찾기", icon: starIcon(), target: () => showToast("즐겨찾기는 다음 단계에서 붙이면 좋아요") },
     { id: "learning", label: "내 학습", icon: bookIcon(), target: () => {
+      setSearchMode();
       document.querySelector("#results").scrollIntoView({ behavior: "smooth", block: "start" });
       showToast("지금은 전체 자료 흐름을 보여주고 있어요");
     } },
@@ -545,6 +557,16 @@ function renderBottomTabs() {
   });
 }
 
+function setHomeMode() {
+  document.body.classList.remove("search-mode");
+  activeTab = "home";
+  queryInput.value = "";
+}
+
+function setSearchMode() {
+  document.body.classList.add("search-mode");
+}
+
 function renderResults() {
   const query = queryInput.value.trim();
   const matches = scoreResources(query)
@@ -561,9 +583,10 @@ function renderResults() {
 
   grid.innerHTML = sorted.length ? sorted.map(({ resource, score }) => cardTemplate(resource, score, query.length > 0)).join("") : emptyTemplate(query);
 
-  grid.querySelectorAll("[data-open]").forEach((button) => {
-    button.addEventListener("click", () => {
-      activeResource = resources.find((resource) => resource.id === button.dataset.open);
+  grid.querySelectorAll("[data-open]").forEach((element) => {
+    element.addEventListener("click", (event) => {
+      if (event.target.closest("a")) return;
+      activeResource = resources.find((resource) => resource.id === element.dataset.open);
       renderResults();
       renderDetail(activeResource);
       openPreviewModal(activeResource);
@@ -621,7 +644,7 @@ function cardTemplate(resource, score, hasQuery) {
   const selected = resource.id === activeResource.id ? "selected" : "";
   const scoreText = hasQuery && score > 0 ? "관련도 높음" : "추천";
   return `
-    <article class="resource-card ${selected}">
+    <article class="resource-card ${selected}" data-open="${escapeHtml(resource.id)}">
       <div class="card-top">
         <div>
           <div class="badge-row">
@@ -635,10 +658,7 @@ function cardTemplate(resource, score, hasQuery) {
       </div>
       <div class="inline-source">
         <span>${escapeHtml(resource.stage)} · ${escapeHtml(resource.confidence)} · ${escapeHtml(resource.source)}</span>
-      </div>
-      <div class="card-actions">
-        <button type="button" data-open="${escapeHtml(resource.id)}">미리보기</button>
-        <a href="${escapeHtml(resource.url)}" target="_blank" rel="noreferrer">원본 열기</a>
+        <a href="${escapeHtml(resource.url)}" target="_blank" rel="noreferrer">원본 PDF</a>
       </div>
     </article>
   `;
