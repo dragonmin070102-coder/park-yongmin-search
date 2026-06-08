@@ -1094,6 +1094,45 @@ body.search-mode .strategy {
   display: none !important;
 }
 
+body.modal-open .bottom-tabs {
+  display: none !important;
+}
+
+.preview-modal {
+  z-index: 90 !important;
+}
+
+.modal-card {
+  padding-bottom: calc(22px + env(safe-area-inset-bottom)) !important;
+}
+
+.modal-card .detail-body {
+  padding-bottom: 84px;
+}
+
+.modal-card .detail-actions {
+  position: sticky;
+  right: 0;
+  bottom: calc(-22px - env(safe-area-inset-bottom));
+  left: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 0.9fr 1fr;
+  gap: 8px;
+  margin: 4px -22px calc(-22px - env(safe-area-inset-bottom));
+  padding: 12px 22px calc(14px + env(safe-area-inset-bottom));
+  border-top: 1px solid #edf0f3;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+}
+
+.modal-card .detail-actions button,
+.modal-card .detail-actions a {
+  min-height: 48px;
+  padding: 0 10px;
+  font-size: 14px;
+}
+
 /* Final route-state overrides. Keep these last because earlier prototype blocks
    contain older mobile layouts. */
 body:not(.search-mode) .category-hub,

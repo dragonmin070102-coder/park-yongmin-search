@@ -769,11 +769,13 @@ function openPreviewModal(resource) {
     });
   });
   previewModal.hidden = false;
+  document.body.classList.add("modal-open");
   document.body.style.overflow = "hidden";
 }
 
 function closePreviewModal() {
   previewModal.hidden = true;
+  document.body.classList.remove("modal-open");
   document.body.style.overflow = "";
 }
 
