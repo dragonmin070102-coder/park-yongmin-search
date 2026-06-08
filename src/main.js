@@ -361,14 +361,17 @@ const resourceCount = document.querySelector("#resourceCount");
 const toast = document.querySelector("#toast");
 const previewModal = document.querySelector("#previewModal");
 const modalContent = document.querySelector("#modalContent");
+const bottomTabs = document.querySelector("#bottomTabs");
 
 let activeType = "전체";
 let activeIntent = "전체";
 let activeResource = resources[0];
+let activeTab = "home";
 
 resourceCount.textContent = `${resources.length}개`;
 renderCategoryHub();
 renderFilters();
+renderBottomTabs();
 renderResults();
 renderDetail(activeResource);
 
@@ -376,25 +379,35 @@ categoryGrid.addEventListener("click", (event) => {
   const card = event.target.closest("[data-category]");
   if (!card) return;
 
+  activeTab = "search";
   activeType = card.dataset.category;
   queryInput.value = "";
   renderCategoryHub();
   renderFilters();
+  renderBottomTabs();
   renderResults();
   document.querySelector("#results").scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
+  activeTab = "search";
+  renderBottomTabs();
   renderResults();
   document.querySelector("#results").scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
-queryInput.addEventListener("input", () => renderResults());
+queryInput.addEventListener("input", () => {
+  activeTab = "search";
+  renderBottomTabs();
+  renderResults();
+});
 
 document.querySelectorAll("[data-query]").forEach((button) => {
   button.addEventListener("click", () => {
+    activeTab = "search";
     queryInput.value = button.dataset.query;
+    renderBottomTabs();
     renderResults();
     document.querySelector("#results").scrollIntoView({ behavior: "smooth", block: "start" });
   });
@@ -420,23 +433,27 @@ function renderFilters() {
 
   filters.querySelectorAll("[data-type]").forEach((button) => {
     button.addEventListener("click", () => {
+      activeTab = "search";
       activeType = button.dataset.type;
       if (activeType === "전체") {
         queryInput.value = "";
       }
       renderCategoryHub();
       renderFilters();
+      renderBottomTabs();
       renderResults();
     });
   });
 
   filters.querySelectorAll("[data-intent]").forEach((button) => {
     button.addEventListener("click", () => {
+      activeTab = "search";
       activeIntent = button.dataset.intent;
       if (activeIntent === "전체") {
         queryInput.value = "";
       }
       renderFilters();
+      renderBottomTabs();
       renderResults();
     });
   });
@@ -468,17 +485,64 @@ function renderCategoryHub() {
 }
 
 function filterGroupTemplate(title, key, values, activeValue) {
+  const iconMap = {
+    "전체": "all",
+    "심혈관": "heart",
+    "신경계": "brain",
+    "검사수치": "lab",
+    "호흡기": "lung",
+    "수술간호": "care"
+  };
+
   return `
     <div class="filter-group">
       <h3>${escapeHtml(title)}</h3>
       <div class="filter-list">
         ${values.map((value) => {
           const count = value === "전체" ? resources.length : resources.filter((resource) => resource[key === "type" ? "system" : "intent"] === value).length;
-          return `<button type="button" class="${value === activeValue ? "active" : ""}" data-${key}="${escapeHtml(value)}">${escapeHtml(value)} <span>${count}</span></button>`;
+          return `
+            <button type="button" class="${value === activeValue ? "active" : ""}" data-${key}="${escapeHtml(value)}">
+              <i class="filter-icon ${escapeHtml(iconMap[value] || "all")}" aria-hidden="true"></i>
+              <span>${escapeHtml(value)}</span>
+              <em>${count}</em>
+            </button>
+          `;
         }).join("")}
       </div>
     </div>
   `;
+}
+
+function renderBottomTabs() {
+  const tabs = [
+    { id: "home", label: "홈", icon: homeIcon(), target: () => window.scrollTo({ top: 0, behavior: "smooth" }) },
+    { id: "search", label: "검색", icon: searchIcon(), target: () => {
+      document.querySelector("#search").scrollIntoView({ behavior: "smooth", block: "start" });
+      window.setTimeout(() => queryInput.focus(), 280);
+    } },
+    { id: "saved", label: "즐겨찾기", icon: starIcon(), target: () => showToast("즐겨찾기는 다음 단계에서 붙이면 좋아요") },
+    { id: "learning", label: "내 학습", icon: bookIcon(), target: () => {
+      document.querySelector("#results").scrollIntoView({ behavior: "smooth", block: "start" });
+      showToast("지금은 전체 자료 흐름을 보여주고 있어요");
+    } },
+    { id: "profile", label: "마이페이지", icon: userIcon(), target: () => showToast("로그인 기능과 함께 확장하면 좋아요") }
+  ];
+
+  bottomTabs.innerHTML = tabs.map((tab) => `
+    <button class="bottom-tab ${tab.id === activeTab ? "active" : ""}" type="button" data-tab="${escapeHtml(tab.id)}" aria-label="${escapeHtml(tab.label)}">
+      ${tab.icon}
+      <span>${escapeHtml(tab.label)}</span>
+    </button>
+  `).join("");
+
+  bottomTabs.querySelectorAll("[data-tab]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const tab = tabs.find((item) => item.id === button.dataset.tab);
+      activeTab = tab.id;
+      renderBottomTabs();
+      tab.target();
+    });
+  });
 }
 
 function renderResults() {
@@ -768,6 +832,26 @@ function showToast(message) {
   toast.classList.add("show");
   clearTimeout(showToast.timer);
   showToast.timer = setTimeout(() => toast.classList.remove("show"), 1800);
+}
+
+function homeIcon() {
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1v-9.5Z"/></svg>`;
+}
+
+function searchIcon() {
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.8 18.1a7.3 7.3 0 1 1 0-14.6 7.3 7.3 0 0 1 0 14.6Zm5.2-2.1 4.5 4.5"/></svg>`;
+}
+
+function starIcon() {
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.8 2.5 5.1 5.7.8-4.1 4 1 5.7-5.1-2.7-5.1 2.7 1-5.7-4.1-4 5.7-.8L12 3.8Z"/></svg>`;
+}
+
+function bookIcon() {
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h5.2c1 0 1.8.8 1.8 1.8v13.2c0-.9-.8-1.6-1.8-1.6H5V4.5Zm14 0h-5.2c-1 0-1.8.8-1.8 1.8v13.2c0-.9.8-1.6 1.8-1.6H19V4.5Z"/></svg>`;
+}
+
+function userIcon() {
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12.2a4.2 4.2 0 1 0 0-8.4 4.2 4.2 0 0 0 0 8.4Zm-7 8.3c.8-4.1 3.2-6.2 7-6.2s6.2 2.1 7 6.2"/></svg>`;
 }
 
 function escapeHtml(value) {

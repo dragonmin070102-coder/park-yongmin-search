@@ -17,6 +17,7 @@ Open `http://127.0.0.1:5279`.
 - `index.html`
 - `styles.css`
 - `src/main.js`
+- `assets/nurse-guide.png`
 
 GitHub Pages 기준:
 
