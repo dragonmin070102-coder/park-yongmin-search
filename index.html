@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>박용민 자료 검색</title>
-    <link rel="stylesheet" href="./styles.css?v=20260609-5" />
+    <link rel="stylesheet" href="./styles.css?v=20260609-6" />
   </head>
   <body>
     <header class="topbar">
@@ -89,6 +89,22 @@
       </section>
 
       <section class="app-shell" aria-label="검색 결과와 자료 상세">
+        <section class="search-screen-head" aria-label="검색 화면 헤더">
+          <div class="search-nav-row">
+            <button class="search-back" type="button" data-search-back aria-label="홈으로 돌아가기">‹</button>
+            <div class="search-query-pill">
+              <input id="screenQuery" type="search" placeholder="자료 검색" autocomplete="off" />
+              <button type="button" data-clear-screen-query aria-label="검색어 지우기">×</button>
+            </div>
+            <button class="filter-action" type="button" data-filter-focus aria-label="분류 필터 보기"></button>
+          </div>
+          <div class="sort-tabs" id="sortTabs" aria-label="검색 결과 정렬">
+            <button type="button" class="active" data-sort="relevance">정확도순</button>
+            <button type="button" data-sort="recent">최신순</button>
+            <button type="button" data-sort="popular">인기순</button>
+          </div>
+        </section>
+
         <aside class="filters">
           <p class="eyebrow">Filter</p>
           <h2>자료 분류</h2>
@@ -152,6 +168,6 @@
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <nav class="bottom-tabs" id="bottomTabs" aria-label="앱 하단 메뉴"></nav>
-    <script type="module" src="./src/main.js?v=20260609-5"></script>
+    <script type="module" src="./src/main.js?v=20260609-6"></script>
   </body>
 </html>

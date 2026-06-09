@@ -365,12 +365,15 @@ const bottomTabs = document.querySelector("#bottomTabs");
 const recentList = document.querySelector("#recentList");
 const questionList = document.querySelector("#questionList");
 const resultsTitle = document.querySelector("#results-title");
+const screenQueryInput = document.querySelector("#screenQuery");
+const sortTabs = document.querySelector("#sortTabs");
 
 let activeType = "전체";
 let activeIntent = "전체";
 let activeResource = resources[0];
 let activeTab = "home";
 let resultMode = "search";
+let activeSort = "relevance";
 let savedIds = new Set(readStoredIds("pym.saved"));
 let recentIds = readStoredIds("pym.recent");
 
@@ -429,6 +432,58 @@ categoryGrid.addEventListener("click", (event) => {
   renderBottomTabs();
   renderResults();
   document.querySelector("#results").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+screenQueryInput.addEventListener("input", () => {
+  activeTab = "search";
+  resultMode = "search";
+  queryInput.value = screenQueryInput.value;
+  setSearchMode();
+  renderBottomTabs();
+  renderResults();
+});
+
+screenQueryInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    document.querySelector("#results").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+});
+
+sortTabs.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-sort]");
+  if (!button) return;
+
+  activeSort = button.dataset.sort;
+  renderSortTabs();
+  renderResults();
+});
+
+document.addEventListener("click", (event) => {
+  const back = event.target.closest("[data-search-back]");
+  if (!back) return;
+
+  setHomeMode();
+  renderBottomTabs();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+document.addEventListener("click", (event) => {
+  const clear = event.target.closest("[data-clear-screen-query]");
+  if (!clear) return;
+
+  queryInput.value = "";
+  screenQueryInput.value = "";
+  resultMode = "search";
+  renderResults();
+  screenQueryInput.focus();
+});
+
+document.addEventListener("click", (event) => {
+  const filter = event.target.closest("[data-filter-focus]");
+  if (!filter) return;
+
+  document.querySelector(".filters")?.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 form.addEventListener("submit", (event) => {
@@ -663,11 +718,20 @@ function setHomeMode() {
   activeTab = "home";
   resultMode = "search";
   queryInput.value = "";
+  screenQueryInput.value = "";
   renderHomeFeed();
 }
 
 function setSearchMode() {
   document.body.classList.add("search-mode");
+  screenQueryInput.value = queryInput.value;
+  renderSortTabs();
+}
+
+function renderSortTabs() {
+  sortTabs.querySelectorAll("[data-sort]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.sort === activeSort);
+  });
 }
 
 function renderHomeFeed() {
@@ -740,6 +804,7 @@ function writeStoredIds(key, ids) {
 
 function renderResults() {
   const query = queryInput.value.trim();
+  screenQueryInput.value = queryInput.value;
   const matches = scoreResources(query)
     .filter((item) => {
       if (resultMode === "saved") return savedIds.has(item.resource.id);
@@ -752,6 +817,8 @@ function renderResults() {
 
   const sorted = matches.sort((a, b) => {
     if (resultMode === "recent") return recentIds.indexOf(a.resource.id) - recentIds.indexOf(b.resource.id);
+    if (activeSort === "recent") return b.resource.rank - a.resource.rank || b.score - a.score;
+    if (activeSort === "popular") return a.resource.rank - b.resource.rank || b.score - a.score;
     return b.score - a.score || a.resource.rank - b.resource.rank || a.resource.displayTitle.localeCompare(b.resource.displayTitle, "ko");
   });
 

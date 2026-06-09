@@ -2429,3 +2429,137 @@ body.search-mode .empty-card {
   font-style: normal;
   font-weight: 800;
 }
+
+.search-screen-head {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  display: grid;
+  gap: 10px;
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid rgba(229, 232, 235, 0.86);
+  background: rgba(247, 248, 250, 0.96);
+  backdrop-filter: blur(16px);
+}
+
+.search-nav-row {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 36px;
+  align-items: center;
+  gap: 8px;
+}
+
+.search-back,
+.filter-action,
+.search-query-pill button {
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #4e5968;
+  font-weight: 900;
+}
+
+.search-back,
+.filter-action {
+  width: 36px;
+  height: 36px;
+  font-size: 28px;
+}
+
+.filter-action {
+  position: relative;
+  font-size: 0;
+}
+
+.filter-action::before {
+  content: "";
+  width: 17px;
+  height: 13px;
+  border-top: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+}
+
+.filter-action::after {
+  content: "";
+  position: absolute;
+  width: 11px;
+  height: 2px;
+  border-radius: 99px;
+  background: currentColor;
+}
+
+.search-query-pill {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 30px;
+  align-items: center;
+  min-height: 42px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px #edf0f3;
+}
+
+.search-query-pill input {
+  min-height: 42px;
+  padding: 0 12px;
+  border: 0;
+  background: transparent;
+  color: #191f28;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.search-query-pill input::-webkit-search-cancel-button,
+.search-query-pill input::-webkit-search-decoration {
+  display: none;
+}
+
+.search-query-pill button {
+  width: 30px;
+  height: 30px;
+  color: #8b95a1;
+  font-size: 17px;
+}
+
+.sort-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 4px;
+  border: 1px solid #e5e8eb;
+  border-radius: 8px;
+  background: #f2f4f6;
+}
+
+.sort-tabs button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #4e5968;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.sort-tabs button.active {
+  background: #ffffff;
+  color: #1b64da;
+  box-shadow: 0 3px 10px rgba(25, 31, 40, 0.08);
+}
+
+body.search-mode .hero {
+  display: none !important;
+}
+
+body.search-mode .topbar {
+  display: none !important;
+}
+
+body.search-mode .app-shell {
+  padding-top: 0 !important;
+}
+
+body.search-mode .results-head {
+  padding-top: 16px !important;
+}
