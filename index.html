@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>박용민 자료 검색</title>
-    <link rel="stylesheet" href="./styles.css?v=20260609-4" />
+    <link rel="stylesheet" href="./styles.css?v=20260609-5" />
   </head>
   <body>
     <header class="topbar">
@@ -72,31 +72,11 @@
 
         <div class="feed-section question-section">
           <div class="feed-head">
-            <h2>많이 묻는 질문</h2>
+            <h2>커뮤니티 질문</h2>
+            <button type="button" data-question-submit>질문 제보</button>
           </div>
-          <div class="feed-list">
-            <button type="button" data-query="GBS 호흡근 ICU">
-              <span>
-                <strong>SpO2 99%인데 ICU 보고가 필요한 이유는?</strong>
-                <em>GBS · 호흡근 약화</em>
-              </span>
-              <i aria-hidden="true">›</i>
-            </button>
-            <button type="button" data-query="AST ALT 차이">
-              <span>
-                <strong>AST/ALT 차이가 뭐예요?</strong>
-                <em>검사수치 · 간수치</em>
-              </span>
-              <i aria-hidden="true">›</i>
-            </button>
-            <button type="button" data-query="ST elevation 심근경색">
-              <span>
-                <strong>ST elevation은 왜 위험한가요?</strong>
-                <em>ECG · ACS</em>
-              </span>
-              <i aria-hidden="true">›</i>
-            </button>
-          </div>
+          <p class="feed-caption">학생들이 자주 헷갈리는 질문을 박용민 PDF와 바로 연결해요.</p>
+          <div class="question-list" id="questionList"></div>
         </div>
       </section>
 
@@ -172,6 +152,6 @@
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <nav class="bottom-tabs" id="bottomTabs" aria-label="앱 하단 메뉴"></nav>
-    <script type="module" src="./src/main.js?v=20260609-4"></script>
+    <script type="module" src="./src/main.js?v=20260609-5"></script>
   </body>
 </html>

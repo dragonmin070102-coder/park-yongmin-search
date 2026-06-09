@@ -2361,3 +2361,71 @@ body.search-mode .empty-card {
 .modal-card .detail-actions .detail-link {
   grid-column: 1 / -1;
 }
+
+.feed-caption {
+  margin: -2px 0 10px;
+  color: #8b95a1;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.question-list {
+  display: grid;
+  gap: 10px;
+}
+
+.question-card button {
+  display: grid;
+  width: 100%;
+  gap: 8px;
+  padding: 15px;
+  border: 1px solid #edf0f3;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #191f28;
+  text-align: left;
+  box-shadow: 0 6px 18px rgba(25, 31, 40, 0.04);
+}
+
+.question-kicker {
+  color: #3182f6;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.question-card strong {
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.4;
+}
+
+.question-answer {
+  color: #4e5968;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.question-source {
+  color: #8b95a1;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.question-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.question-tags em {
+  min-height: 24px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: #f2f4f6;
+  color: #6b7684;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}

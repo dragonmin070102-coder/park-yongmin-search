@@ -363,6 +363,7 @@ const previewModal = document.querySelector("#previewModal");
 const modalContent = document.querySelector("#modalContent");
 const bottomTabs = document.querySelector("#bottomTabs");
 const recentList = document.querySelector("#recentList");
+const questionList = document.querySelector("#questionList");
 const resultsTitle = document.querySelector("#results-title");
 
 let activeType = "전체";
@@ -373,8 +374,40 @@ let resultMode = "search";
 let savedIds = new Set(readStoredIds("pym.saved"));
 let recentIds = readStoredIds("pym.recent");
 
+const communityQuestions = [
+  {
+    id: "gbs-icu",
+    resourceId: "gbs",
+    question: "SpO2 99%인데 ICU 보고가 필요한 이유는?",
+    answer: "GBS는 산소포화도보다 호흡근 약화, VC/NIF 감소를 먼저 놓치면 위험해요.",
+    tags: ["GBS", "호흡근 약화", "ICU 보고"]
+  },
+  {
+    id: "ast-alt",
+    resourceId: "ast-alt-ratio",
+    question: "AST/ALT 차이가 뭐예요?",
+    answer: "둘 다 간수치지만 어느 효소가 더 우세한지에 따라 해석 방향이 달라져요.",
+    tags: ["검사수치", "간수치", "케이스"]
+  },
+  {
+    id: "st-elevation",
+    resourceId: "acs-ecg",
+    question: "ST elevation은 왜 위험한가요?",
+    answer: "완전 폐색 가능성이 커서 STEMI 판단과 빠른 처치 흐름으로 이어져요.",
+    tags: ["ECG", "ACS", "심근경색"]
+  },
+  {
+    id: "mg-gbs",
+    resourceId: "mg",
+    question: "GBS랑 MG는 어떻게 구분해요?",
+    answer: "둘 다 근력저하가 보이지만 진행 양상, 피로도, 호흡근 침범 포인트가 달라요.",
+    tags: ["신경계", "감별", "임상추론"]
+  }
+];
+
 resourceCount.textContent = `${resources.length}개`;
 renderHomeFeed();
+renderQuestionHub();
 renderCategoryHub();
 renderFilters();
 renderBottomTabs();
@@ -453,6 +486,28 @@ document.addEventListener("click", (event) => {
   renderHomeFeed();
   renderDetail(resource);
   openPreviewModal(resource);
+});
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-question-open]");
+  if (!button) return;
+
+  const question = communityQuestions.find((item) => item.id === button.dataset.questionOpen);
+  const resource = resources.find((item) => item.id === question?.resourceId);
+  if (!resource) return;
+
+  activeResource = resource;
+  activeTab = "home";
+  rememberRecent(resource.id);
+  renderDetail(resource);
+  openPreviewModal(resource);
+});
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-question-submit]");
+  if (!button) return;
+
+  showToast("질문 제보는 다음 단계에서 폼으로 연결할게요");
 });
 
 document.querySelectorAll("[data-close-modal]").forEach((button) => {
@@ -631,6 +686,25 @@ function renderHomeFeed() {
       <i aria-hidden="true">›</i>
     </button>
   `).join("");
+}
+
+function renderQuestionHub() {
+  questionList.innerHTML = communityQuestions.map((question) => {
+    const resource = resources.find((item) => item.id === question.resourceId);
+    return `
+      <article class="question-card">
+        <button type="button" data-question-open="${escapeHtml(question.id)}">
+          <span class="question-kicker">커뮤니티 Q</span>
+          <strong>${escapeHtml(question.question)}</strong>
+          <span class="question-answer">${escapeHtml(question.answer)}</span>
+          <span class="question-source">관련 PDF · ${escapeHtml(resource?.displayTitle || "박용민 자료")}</span>
+          <span class="question-tags">
+            ${question.tags.map((tag) => `<em>${escapeHtml(tag)}</em>`).join("")}
+          </span>
+        </button>
+      </article>
+    `;
+  }).join("");
 }
 
 function toggleSaved(id) {
