@@ -1035,21 +1035,25 @@ function detailTemplate(resource) {
 function visualTemplate(resource, size = "thumb") {
   const visual = visualMeta(resource);
   const sizeClass = size === "hero" ? "visual-hero" : "thumb";
+  const imageClass = visual.image ? "has-image" : "";
+  const visualContent = visual.image
+    ? `<img src="${escapeHtml(visual.image)}" alt="" loading="lazy" />`
+    : `<span>${escapeHtml(visual.icon)}</span><i></i>`;
+
   return `
-    <div class="resource-visual ${escapeHtml(sizeClass)} ${escapeHtml(visual.key)}" aria-hidden="true">
-      <span>${visual.icon}</span>
-      <i></i>
+    <div class="resource-visual ${escapeHtml(sizeClass)} ${escapeHtml(visual.key)} ${imageClass}" aria-hidden="true">
+      ${visualContent}
     </div>
   `;
 }
 
 function visualMeta(resource) {
   const map = {
-    "심혈관": { key: "cardio", icon: "ECG" },
-    "신경계": { key: "neuro", icon: "N" },
-    "검사수치": { key: "lab", icon: "Lab" },
-    "호흡기": { key: "resp", icon: "XR" },
-    "수술간호": { key: "surgery", icon: "+" }
+    "심혈관": { key: "cardio", icon: "ECG", image: "./assets/thumb-cardio.png" },
+    "신경계": { key: "neuro", icon: "N", image: "./assets/thumb-neuro.png" },
+    "검사수치": { key: "lab", icon: "Lab", image: "./assets/thumb-lab.png" },
+    "호흡기": { key: "resp", icon: "XR", image: "./assets/thumb-resp.png" },
+    "수술간호": { key: "surgery", icon: "+", image: "./assets/thumb-surgery.png" }
   };
 
   return map[resource.system] || { key: "default", icon: "PDF" };

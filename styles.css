@@ -2396,6 +2396,23 @@ body.search-mode .empty-card {
   transform: rotate(-12deg);
 }
 
+.resource-visual.has-image {
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(229, 232, 235, 0.8);
+}
+
+.resource-visual.has-image::before,
+.resource-visual.has-image i {
+  display: none;
+}
+
+.resource-visual img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
 .resource-visual span {
   position: relative;
   z-index: 1;
@@ -2427,7 +2444,7 @@ body.search-mode .empty-card {
 }
 
 .resource-visual.visual-hero {
-  min-height: 132px;
+  height: 148px;
   margin-bottom: 2px;
 }
 
