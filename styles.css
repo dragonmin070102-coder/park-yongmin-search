@@ -2878,6 +2878,33 @@ body.admin-mode .bottom-tabs {
   font-weight: 750;
 }
 
+.admin-resource-guide {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-resource-guide article {
+  display: grid;
+  gap: 4px;
+  padding: 11px;
+  border-radius: 8px;
+  background: #f7f8fa;
+}
+
+.admin-resource-guide strong {
+  color: #191f28;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.admin-resource-guide span {
+  color: #6b7684;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.45;
+  word-break: break-all;
+}
+
 .admin-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
