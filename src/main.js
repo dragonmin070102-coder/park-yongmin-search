@@ -1346,7 +1346,11 @@ function sendRemoteAnalytics(event) {
 
   postSupabaseEvents([event])
     .then(() => markSupabaseSent([event.id]))
-    .catch(() => {});
+    .catch((error) => {
+      if (error.status === 409) {
+        markSupabaseSent([event.id]);
+      }
+    });
 }
 
 async function flushRemoteAnalytics() {
@@ -1367,10 +1371,29 @@ async function flushRemoteAnalytics() {
     markSupabaseSent(pending.map((event) => event.id));
     showToast(`${pending.length}개 이벤트를 Supabase로 보냈어요`);
   } catch {
-    showToast("Supabase 전송이 막혔어요. 설정과 RLS를 확인해 주세요");
+    const synced = await flushRemoteAnalyticsOneByOne(pending);
+    showToast(`${synced}개 이벤트를 Supabase로 보냈어요`);
   } finally {
     renderAnalyticsAdmin();
   }
+}
+
+async function flushRemoteAnalyticsOneByOne(events) {
+  let synced = 0;
+
+  for (const event of events) {
+    try {
+      await postSupabaseEvents([event]);
+      markSupabaseSent([event.id]);
+      synced += 1;
+    } catch (error) {
+      if (error.status === 409) {
+        markSupabaseSent([event.id]);
+      }
+    }
+  }
+
+  return synced;
 }
 
 async function postSupabaseEvents(events) {
@@ -1388,7 +1411,9 @@ async function postSupabaseEvents(events) {
   });
 
   if (!response.ok) {
-    throw new Error(`Supabase insert failed: ${response.status}`);
+    const error = new Error(`Supabase insert failed: ${response.status}`);
+    error.status = response.status;
+    throw error;
   }
 }
 
