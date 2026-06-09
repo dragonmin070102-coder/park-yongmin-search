@@ -900,10 +900,10 @@ function scoreResources(query) {
 
 function cardTemplate(resource, score, hasQuery) {
   const selected = resource.id === activeResource.id ? "selected" : "";
-  const scoreText = hasQuery && score > 0 ? "관련도 높음" : "추천";
   const saved = savedIds.has(resource.id);
   return `
     <article class="resource-card ${selected}" data-open="${escapeHtml(resource.id)}">
+      ${visualTemplate(resource, "thumb")}
       <div class="card-top">
         <div>
           <div class="badge-row">
@@ -987,6 +987,7 @@ function detailTemplate(resource) {
   const saved = savedIds.has(resource.id);
   return `
     <div class="detail-body">
+      ${visualTemplate(resource, "hero")}
       <div class="badge-row">
         <span class="badge hot">${escapeHtml(resource.type)}</span>
         <span class="badge">${escapeHtml(resource.intent)}</span>
@@ -1029,6 +1030,29 @@ function detailTemplate(resource) {
       </div>
     </div>
   `;
+}
+
+function visualTemplate(resource, size = "thumb") {
+  const visual = visualMeta(resource);
+  const sizeClass = size === "hero" ? "visual-hero" : "thumb";
+  return `
+    <div class="resource-visual ${escapeHtml(sizeClass)} ${escapeHtml(visual.key)}" aria-hidden="true">
+      <span>${visual.icon}</span>
+      <i></i>
+    </div>
+  `;
+}
+
+function visualMeta(resource) {
+  const map = {
+    "심혈관": { key: "cardio", icon: "ECG" },
+    "신경계": { key: "neuro", icon: "N" },
+    "검사수치": { key: "lab", icon: "Lab" },
+    "호흡기": { key: "resp", icon: "XR" },
+    "수술간호": { key: "surgery", icon: "+" }
+  };
+
+  return map[resource.system] || { key: "default", icon: "PDF" };
 }
 
 function relatedTemplate(resource) {

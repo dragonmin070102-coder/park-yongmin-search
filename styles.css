@@ -2336,6 +2336,21 @@ body.search-mode .save-button {
   font-weight: 900;
 }
 
+body.search-mode .resource-card {
+  grid-template-columns: 66px minmax(0, 1fr);
+  align-items: start;
+  column-gap: 12px;
+}
+
+body.search-mode .resource-card .resource-visual.thumb {
+  grid-row: 1 / span 2;
+}
+
+body.search-mode .resource-card .card-top,
+body.search-mode .resource-card .inline-source {
+  grid-column: 2;
+}
+
 body.search-mode .card-top {
   flex-direction: row !important;
   align-items: flex-start !important;
@@ -2360,6 +2375,94 @@ body.search-mode .empty-card {
 
 .modal-card .detail-actions .detail-link {
   grid-column: 1 / -1;
+}
+
+.resource-visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 8px;
+  isolation: isolate;
+}
+
+.resource-visual::before {
+  content: "";
+  position: absolute;
+  inset: auto -18% -35% 18%;
+  height: 72%;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.44);
+  transform: rotate(-12deg);
+}
+
+.resource-visual span {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #191f28;
+  font-size: 12px;
+  font-weight: 900;
+  box-shadow: 0 6px 16px rgba(25, 31, 40, 0.08);
+}
+
+.resource-visual i {
+  position: absolute;
+  right: 9px;
+  bottom: 8px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.resource-visual.thumb {
+  width: 66px;
+  height: 66px;
+}
+
+.resource-visual.visual-hero {
+  min-height: 132px;
+  margin-bottom: 2px;
+}
+
+.resource-visual.visual-hero span {
+  min-width: 58px;
+  height: 58px;
+  font-size: 16px;
+}
+
+.resource-visual.visual-hero i {
+  right: 20px;
+  bottom: 18px;
+  width: 34px;
+  height: 34px;
+}
+
+.resource-visual.cardio {
+  background: linear-gradient(135deg, #ffe8e4, #fff5f5);
+}
+
+.resource-visual.neuro {
+  background: linear-gradient(135deg, #efe7ff, #f7f2ff);
+}
+
+.resource-visual.lab {
+  background: linear-gradient(135deg, #e7f8ee, #f0fff7);
+}
+
+.resource-visual.resp {
+  background: linear-gradient(135deg, #e5f9ff, #f2fcff);
+}
+
+.resource-visual.surgery,
+.resource-visual.default {
+  background: linear-gradient(135deg, #edf2ff, #f8f9fa);
 }
 
 .feed-caption {
