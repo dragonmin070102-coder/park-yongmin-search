@@ -367,6 +367,8 @@ const questionList = document.querySelector("#questionList");
 const resultsTitle = document.querySelector("#results-title");
 const screenQueryInput = document.querySelector("#screenQuery");
 const sortTabs = document.querySelector("#sortTabs");
+const analyticsAdmin = document.querySelector("#analyticsAdmin");
+const analyticsContent = document.querySelector("#analyticsContent");
 
 let activeType = "전체";
 let activeIntent = "전체";
@@ -376,6 +378,10 @@ let resultMode = "search";
 let activeSort = "relevance";
 let savedIds = new Set(readStoredIds("pym.saved"));
 let recentIds = readStoredIds("pym.recent");
+let lastSearchSignature = "";
+
+const analyticsUserId = getOrCreateAnalyticsUserId();
+const analyticsSessionId = createSessionId();
 
 const communityQuestions = [
   {
@@ -417,6 +423,12 @@ renderBottomTabs();
 renderResults();
 renderDetail(activeResource);
 setHomeMode();
+trackEvent("page_view", {
+  path: window.location.pathname,
+  hash: window.location.hash || "#home",
+  resourceCount: resources.length
+});
+syncAdminRoute();
 
 categoryGrid.addEventListener("click", (event) => {
   const card = event.target.closest("[data-category]");
@@ -426,6 +438,7 @@ categoryGrid.addEventListener("click", (event) => {
   resultMode = "search";
   setSearchMode();
   activeType = card.dataset.category;
+  trackEvent("category_select", { category: activeType });
   queryInput.value = "";
   renderCategoryHub();
   renderFilters();
@@ -455,6 +468,7 @@ sortTabs.addEventListener("click", (event) => {
   if (!button) return;
 
   activeSort = button.dataset.sort;
+  trackEvent("sort_change", { sort: activeSort });
   renderSortTabs();
   renderResults();
 });
@@ -463,6 +477,7 @@ document.addEventListener("click", (event) => {
   const back = event.target.closest("[data-search-back]");
   if (!back) return;
 
+  trackEvent("search_back");
   setHomeMode();
   renderBottomTabs();
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -475,6 +490,7 @@ document.addEventListener("click", (event) => {
   queryInput.value = "";
   screenQueryInput.value = "";
   resultMode = "search";
+  trackEvent("search_clear");
   renderResults();
   screenQueryInput.focus();
 });
@@ -483,6 +499,7 @@ document.addEventListener("click", (event) => {
   const filter = event.target.closest("[data-filter-focus]");
   if (!filter) return;
 
+  trackEvent("filter_focus");
   document.querySelector(".filters")?.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
@@ -508,13 +525,14 @@ document.addEventListener("click", (event) => {
   const button = event.target.closest("[data-query]");
   if (!button) return;
 
-    activeTab = "search";
-    resultMode = "search";
-    queryInput.value = button.dataset.query;
-    setSearchMode();
-    renderBottomTabs();
-    renderResults();
-    document.querySelector("#results").scrollIntoView({ behavior: "smooth", block: "start" });
+  activeTab = "search";
+  resultMode = "search";
+  queryInput.value = button.dataset.query;
+  trackEvent("quick_query", { query: button.dataset.query });
+  setSearchMode();
+  renderBottomTabs();
+  renderResults();
+  document.querySelector("#results").scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 document.addEventListener("click", (event) => {
@@ -523,6 +541,7 @@ document.addEventListener("click", (event) => {
 
   activeTab = "search";
   resultMode = "recent";
+  trackEvent("recent_all_open");
   setSearchMode();
   renderBottomTabs();
   renderResults();
@@ -538,6 +557,7 @@ document.addEventListener("click", (event) => {
 
   activeResource = resource;
   rememberRecent(resource.id);
+  trackEvent("home_resource_open", resourcePayload(resource));
   renderHomeFeed();
   renderDetail(resource);
   openPreviewModal(resource);
@@ -554,6 +574,11 @@ document.addEventListener("click", (event) => {
   activeResource = resource;
   activeTab = "home";
   rememberRecent(resource.id);
+  trackEvent("community_question_open", {
+    questionId: question.id,
+    resourceId: resource.id,
+    resourceTitle: resource.displayTitle
+  });
   renderDetail(resource);
   openPreviewModal(resource);
 });
@@ -562,8 +587,44 @@ document.addEventListener("click", (event) => {
   const button = event.target.closest("[data-question-submit]");
   if (!button) return;
 
+  trackEvent("community_question_submit_click");
   showToast("질문 제보는 다음 단계에서 폼으로 연결할게요");
 });
+
+document.addEventListener("click", (event) => {
+  const link = event.target.closest("[data-drive]");
+  if (!link) return;
+
+  const resource = resources.find((item) => item.id === link.dataset.drive);
+  trackEvent("drive_open", resource ? resourcePayload(resource) : { resourceId: link.dataset.drive });
+});
+
+document.addEventListener("click", (event) => {
+  const close = event.target.closest("[data-admin-close]");
+  if (!close) return;
+
+  window.location.hash = "";
+  syncAdminRoute();
+});
+
+document.addEventListener("click", (event) => {
+  const exportButton = event.target.closest("[data-admin-export]");
+  if (!exportButton) return;
+
+  exportAnalytics();
+});
+
+document.addEventListener("click", (event) => {
+  const resetButton = event.target.closest("[data-admin-reset]");
+  if (!resetButton) return;
+
+  if (!window.confirm("이 기기에 저장된 분석 데이터를 지울까요?")) return;
+  localStorage.removeItem("pym.analyticsEvents");
+  trackEvent("analytics_reset");
+  renderAnalyticsAdmin();
+});
+
+window.addEventListener("hashchange", syncAdminRoute);
 
 document.querySelectorAll("[data-close-modal]").forEach((button) => {
   button.addEventListener("click", closePreviewModal);
@@ -591,6 +652,7 @@ function renderFilters() {
       if (activeType === "전체") {
         queryInput.value = "";
       }
+      trackEvent("filter_select", { filter: "system", value: activeType });
       renderCategoryHub();
       renderFilters();
       renderBottomTabs();
@@ -606,6 +668,7 @@ function renderFilters() {
       if (activeIntent === "전체") {
         queryInput.value = "";
       }
+      trackEvent("filter_select", { filter: "intent", value: activeIntent });
       renderFilters();
       renderBottomTabs();
       renderResults();
@@ -707,6 +770,7 @@ function renderBottomTabs() {
     button.addEventListener("click", () => {
       const tab = tabs.find((item) => item.id === button.dataset.tab);
       activeTab = tab.id;
+      trackEvent("tab_change", { tab: activeTab });
       renderBottomTabs();
       tab.target();
     });
@@ -772,6 +836,7 @@ function renderQuestionHub() {
 }
 
 function toggleSaved(id) {
+  const willSave = !savedIds.has(id);
   if (savedIds.has(id)) {
     savedIds.delete(id);
     showToast("즐겨찾기에서 제거했어요");
@@ -781,6 +846,8 @@ function toggleSaved(id) {
   }
 
   writeStoredIds("pym.saved", Array.from(savedIds));
+  const resource = resources.find((item) => item.id === id);
+  trackEvent(willSave ? "save_resource" : "unsave_resource", resource ? resourcePayload(resource) : { resourceId: id });
 }
 
 function rememberRecent(id) {
@@ -824,6 +891,7 @@ function renderResults() {
 
   resultsTitle.textContent = resultMode === "saved" ? "즐겨찾기" : resultMode === "recent" ? "최근 본 자료" : "검색 결과";
   resultMeta.textContent = resultMode === "saved" ? `${sorted.length}개 저장됨` : `${sorted.length}개 자료`;
+  queueSearchAnalytics(query, sorted.length);
 
   if (!sorted.some((item) => item.resource.id === activeResource.id)) {
     activeResource = sorted[0]?.resource || resources[0];
@@ -917,7 +985,7 @@ function cardTemplate(resource, score, hasQuery) {
       </div>
       <div class="inline-source">
         <span>${escapeHtml(resource.stage)} · ${escapeHtml(resource.confidence)} · ${escapeHtml(resource.source)}</span>
-        <a href="${escapeHtml(resource.url)}" target="_blank" rel="noreferrer">원본 PDF</a>
+        <a href="${escapeHtml(resource.url)}" target="_blank" rel="noreferrer" data-drive="${escapeHtml(resource.id)}">원본 PDF</a>
       </div>
     </article>
   `;
@@ -1026,7 +1094,7 @@ function detailTemplate(resource) {
       <div class="detail-actions">
         <button type="button" data-detail-copy="${escapeHtml(resource.id)}">요약과 링크 복사</button>
         <button type="button" data-detail-save="${escapeHtml(resource.id)}">${saved ? "즐겨찾기 해제" : "즐겨찾기 저장"}</button>
-        <a class="detail-link" href="${escapeHtml(resource.url)}" target="_blank" rel="noreferrer">원본 Drive 자료 열기</a>
+        <a class="detail-link" href="${escapeHtml(resource.url)}" target="_blank" rel="noreferrer" data-drive="${escapeHtml(resource.id)}">원본 Drive 자료 열기</a>
       </div>
     </div>
   `;
@@ -1069,7 +1137,7 @@ function relatedTemplate(resource) {
   }
 
   return related.map((item) => `
-    <a class="related-card" href="${escapeHtml(item.url)}" target="_blank" rel="noreferrer">
+    <a class="related-card" href="${escapeHtml(item.url)}" target="_blank" rel="noreferrer" data-drive="${escapeHtml(item.id)}">
       <strong>${escapeHtml(item.displayTitle)}</strong>
       <span>${escapeHtml(item.intent)} · ${escapeHtml(item.system)}</span>
     </a>
@@ -1078,6 +1146,7 @@ function relatedTemplate(resource) {
 
 function openPreviewModal(resource) {
   rememberRecent(resource.id);
+  trackEvent("resource_open", resourcePayload(resource));
   renderModalContent(resource);
   previewModal.hidden = false;
   document.body.classList.add("modal-open");
@@ -1109,6 +1178,7 @@ function closePreviewModal() {
 }
 
 async function copyResource(resource) {
+  trackEvent("copy_summary", resourcePayload(resource));
   const text = [
     `${resource.displayTitle}`,
     "",
@@ -1176,6 +1246,237 @@ function showCopyFallback(text) {
   host.querySelector(".detail-body")?.append(wrapper);
   textarea.focus();
   textarea.select();
+}
+
+function trackEvent(name, properties = {}) {
+  const event = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    name,
+    properties,
+    userId: analyticsUserId,
+    sessionId: analyticsSessionId,
+    path: window.location.pathname,
+    hash: window.location.hash || "",
+    referrer: document.referrer || "",
+    userAgent: navigator.userAgent,
+    viewport: `${window.innerWidth}x${window.innerHeight}`,
+    createdAt: new Date().toISOString()
+  };
+
+  const events = readAnalyticsEvents();
+  events.push(event);
+  localStorage.setItem("pym.analyticsEvents", JSON.stringify(events.slice(-1000)));
+  sendRemoteAnalytics(event);
+
+  if (!analyticsAdmin.hidden) {
+    renderAnalyticsAdmin();
+  }
+}
+
+function queueSearchAnalytics(query, resultCount) {
+  if (resultMode !== "search" || !document.body.classList.contains("search-mode")) return;
+
+  const normalized = query.trim();
+  const signature = [
+    normalized || "(empty)",
+    resultCount,
+    activeType,
+    activeIntent,
+    activeSort
+  ].join("|");
+
+  if (signature === lastSearchSignature) return;
+  lastSearchSignature = signature;
+
+  window.clearTimeout(queueSearchAnalytics.timer);
+  queueSearchAnalytics.timer = window.setTimeout(() => {
+    trackEvent(resultCount === 0 && normalized ? "search_no_result" : "search", {
+      query: normalized,
+      resultCount,
+      system: activeType,
+      intent: activeIntent,
+      sort: activeSort
+    });
+  }, 450);
+}
+
+function readAnalyticsEvents() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem("pym.analyticsEvents") || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function sendRemoteAnalytics(event) {
+  const endpoint = window.PYM_ANALYTICS_ENDPOINT || localStorage.getItem("pym.analyticsEndpoint");
+  if (!endpoint) return;
+
+  const body = JSON.stringify(event);
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon(endpoint, new Blob([body], { type: "application/json" }));
+    return;
+  }
+
+  fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body,
+    keepalive: true
+  }).catch(() => {});
+}
+
+function getOrCreateAnalyticsUserId() {
+  const key = "pym.analyticsUserId";
+  const existing = localStorage.getItem(key);
+  if (existing) return existing;
+
+  const id = `anon_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  localStorage.setItem(key, id);
+  return id;
+}
+
+function createSessionId() {
+  return `session_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function resourcePayload(resource) {
+  return {
+    resourceId: resource.id,
+    resourceTitle: resource.displayTitle,
+    system: resource.system,
+    intent: resource.intent,
+    stage: resource.stage,
+    source: resource.source
+  };
+}
+
+function syncAdminRoute() {
+  const isAdmin = window.location.hash === "#admin";
+  analyticsAdmin.hidden = !isAdmin;
+  document.body.classList.toggle("admin-mode", isAdmin);
+
+  if (isAdmin) {
+    renderAnalyticsAdmin();
+    trackEvent("admin_view");
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }
+}
+
+function renderAnalyticsAdmin() {
+  const events = readAnalyticsEvents();
+  const users = new Set(events.map((event) => event.userId));
+  const sessions = new Set(events.map((event) => event.sessionId));
+  const resourceOpens = events.filter((event) => event.name === "resource_open");
+  const driveOpens = events.filter((event) => event.name === "drive_open");
+  const searches = events.filter((event) => event.name === "search" || event.name === "search_no_result");
+  const noResults = events.filter((event) => event.name === "search_no_result");
+
+  analyticsContent.innerHTML = `
+    <div class="admin-summary">
+      ${adminMetricTemplate("이벤트", events.length)}
+      ${adminMetricTemplate("익명 사용자", users.size)}
+      ${adminMetricTemplate("세션", sessions.size)}
+      ${adminMetricTemplate("원본 열기", driveOpens.length)}
+    </div>
+    <section class="admin-card">
+      <div class="admin-card-head">
+        <h2>인기 자료</h2>
+        <span>${resourceOpens.length}회 열람</span>
+      </div>
+      ${adminRankList(countBy(resourceOpens, (event) => event.properties.resourceTitle || event.properties.resourceId), "아직 자료 열람 데이터가 없어요")}
+    </section>
+    <section class="admin-card">
+      <div class="admin-card-head">
+        <h2>인기 검색어</h2>
+        <span>${searches.length}회 검색</span>
+      </div>
+      ${adminRankList(countBy(searches.filter((event) => event.properties.query), (event) => event.properties.query), "아직 검색 데이터가 없어요")}
+    </section>
+    <section class="admin-card">
+      <div class="admin-card-head">
+        <h2>결과 없는 검색어</h2>
+        <span>${noResults.length}회</span>
+      </div>
+      ${adminRankList(countBy(noResults, (event) => event.properties.query), "결과 없는 검색어가 아직 없어요")}
+    </section>
+    <section class="admin-card">
+      <div class="admin-card-head">
+        <h2>최근 이벤트</h2>
+        <span>최근 12개</span>
+      </div>
+      <div class="admin-event-list">
+        ${events.slice(-12).reverse().map(adminEventTemplate).join("") || `<p class="admin-empty">아직 이벤트가 없어요.</p>`}
+      </div>
+    </section>
+    <div class="admin-actions">
+      <button type="button" data-admin-export>JSON 내보내기</button>
+      <button type="button" data-admin-reset>이 기기 데이터 초기화</button>
+    </div>
+    <p class="admin-note">현재는 이 기기 브라우저에 익명 데이터가 저장됩니다. Supabase 연결 후에는 같은 이벤트를 서버 DB로 보낼 수 있어요.</p>
+  `;
+}
+
+function adminMetricTemplate(label, value) {
+  return `
+    <article>
+      <strong>${escapeHtml(value)}</strong>
+      <span>${escapeHtml(label)}</span>
+    </article>
+  `;
+}
+
+function countBy(events, getKey) {
+  return events.reduce((acc, event) => {
+    const key = getKey(event);
+    if (!key) return acc;
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+}
+
+function adminRankList(counts, emptyText) {
+  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  if (!entries.length) return `<p class="admin-empty">${escapeHtml(emptyText)}</p>`;
+
+  return `
+    <ol class="admin-rank-list">
+      ${entries.map(([label, count]) => `
+        <li>
+          <span>${escapeHtml(label)}</span>
+          <strong>${count}</strong>
+        </li>
+      `).join("")}
+    </ol>
+  `;
+}
+
+function adminEventTemplate(event) {
+  const date = new Date(event.createdAt);
+  const detail = event.properties.resourceTitle || event.properties.query || event.properties.tab || event.properties.category || "";
+  return `
+    <article>
+      <strong>${escapeHtml(event.name)}</strong>
+      <span>${escapeHtml(detail || "상세 없음")}</span>
+      <time>${escapeHtml(date.toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }))}</time>
+    </article>
+  `;
+}
+
+function exportAnalytics() {
+  const events = readAnalyticsEvents();
+  const data = JSON.stringify({ exportedAt: new Date().toISOString(), events }, null, 2);
+  const blob = new Blob([data], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `park-yongmin-analytics-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  trackEvent("analytics_export", { eventCount: events.length });
 }
 
 function showToast(message) {

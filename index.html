@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>박용민 자료 검색</title>
-    <link rel="stylesheet" href="./styles.css?v=20260609-8" />
+    <link rel="stylesheet" href="./styles.css?v=20260609-9" />
   </head>
   <body>
     <header class="topbar">
@@ -158,6 +158,17 @@
       </section>
     </main>
 
+    <section class="analytics-admin" id="analyticsAdmin" aria-labelledby="analytics-title" hidden>
+      <div class="admin-top">
+        <button type="button" data-admin-close aria-label="홈으로 돌아가기">‹</button>
+        <div>
+          <p class="eyebrow">Analytics</p>
+          <h1 id="analytics-title">사용자 데이터</h1>
+        </div>
+      </div>
+      <div id="analyticsContent"></div>
+    </section>
+
     <div class="preview-modal" id="previewModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
       <div class="modal-backdrop" data-close-modal></div>
       <section class="modal-card">
@@ -168,6 +179,6 @@
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <nav class="bottom-tabs" id="bottomTabs" aria-label="앱 하단 메뉴"></nav>
-    <script type="module" src="./src/main.js?v=20260609-8"></script>
+    <script type="module" src="./src/main.js?v=20260609-9"></script>
   </body>
 </html>
