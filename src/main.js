@@ -382,6 +382,7 @@ let lastSearchSignature = "";
 
 const analyticsUserId = getOrCreateAnalyticsUserId();
 const analyticsSessionId = createSessionId();
+const supabaseConfig = getSupabaseConfig();
 
 const communityQuestions = [
   {
@@ -428,6 +429,7 @@ trackEvent("page_view", {
   hash: window.location.hash || "#home",
   resourceCount: resources.length
 });
+flushRemoteAnalytics();
 syncAdminRoute();
 
 categoryGrid.addEventListener("click", (event) => {
@@ -622,6 +624,36 @@ document.addEventListener("click", (event) => {
   localStorage.removeItem("pym.analyticsEvents");
   trackEvent("analytics_reset");
   renderAnalyticsAdmin();
+});
+
+document.addEventListener("submit", (event) => {
+  const form = event.target.closest("[data-supabase-form]");
+  if (!form) return;
+
+  event.preventDefault();
+  const formData = new FormData(form);
+  const url = String(formData.get("supabaseUrl") || "").trim().replace(/\/$/, "");
+  const key = String(formData.get("supabaseAnonKey") || "").trim();
+
+  if (!url || !key) {
+    showToast("Supabase URL과 anon key를 모두 넣어주세요");
+    return;
+  }
+
+  localStorage.setItem("pym.supabaseUrl", url);
+  localStorage.setItem("pym.supabaseAnonKey", key);
+  Object.assign(supabaseConfig, { url, anonKey: key, enabled: true });
+  trackEvent("supabase_config_save");
+  flushRemoteAnalytics();
+  renderAnalyticsAdmin();
+  showToast("Supabase 연결 정보를 저장했어요");
+});
+
+document.addEventListener("click", (event) => {
+  const testButton = event.target.closest("[data-supabase-test]");
+  if (!testButton) return;
+
+  testSupabaseConnection();
 });
 
 window.addEventListener("hashchange", syncAdminRoute);
@@ -1310,21 +1342,127 @@ function readAnalyticsEvents() {
 }
 
 function sendRemoteAnalytics(event) {
-  const endpoint = window.PYM_ANALYTICS_ENDPOINT || localStorage.getItem("pym.analyticsEndpoint");
-  if (!endpoint) return;
+  if (!supabaseConfig.enabled) return;
 
-  const body = JSON.stringify(event);
-  if (navigator.sendBeacon) {
-    navigator.sendBeacon(endpoint, new Blob([body], { type: "application/json" }));
+  postSupabaseEvents([event])
+    .then(() => markSupabaseSent([event.id]))
+    .catch(() => {});
+}
+
+async function flushRemoteAnalytics() {
+  if (!supabaseConfig.enabled) return;
+
+  const sentIds = readSupabaseSentIds();
+  const pending = readAnalyticsEvents()
+    .filter((event) => !sentIds.has(event.id))
+    .slice(-80);
+
+  if (!pending.length) {
+    renderAnalyticsAdmin();
     return;
   }
 
-  fetch(endpoint, {
+  try {
+    await postSupabaseEvents(pending);
+    markSupabaseSent(pending.map((event) => event.id));
+    showToast(`${pending.length}개 이벤트를 Supabase로 보냈어요`);
+  } catch {
+    showToast("Supabase 전송이 막혔어요. 설정과 RLS를 확인해 주세요");
+  } finally {
+    renderAnalyticsAdmin();
+  }
+}
+
+async function postSupabaseEvents(events) {
+  const payload = events.map(toSupabaseEvent);
+  const response = await fetch(`${supabaseConfig.url}/rest/v1/analytics_events`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body,
-    keepalive: true
-  }).catch(() => {});
+    headers: {
+      apikey: supabaseConfig.anonKey,
+      Authorization: `Bearer ${supabaseConfig.anonKey}`,
+      "Content-Type": "application/json",
+      Prefer: "return=minimal"
+    },
+    body: JSON.stringify(payload),
+    keepalive: payload.length === 1
+  });
+
+  if (!response.ok) {
+    throw new Error(`Supabase insert failed: ${response.status}`);
+  }
+}
+
+function toSupabaseEvent(event) {
+  return {
+    event_id: event.id,
+    event_name: event.name,
+    anonymous_user_id: event.userId,
+    session_id: event.sessionId,
+    path: event.path,
+    hash: event.hash,
+    referrer: event.referrer,
+    user_agent: event.userAgent,
+    viewport: event.viewport,
+    properties: event.properties,
+    created_at: event.createdAt
+  };
+}
+
+function getSupabaseConfig() {
+  const url = String(window.PYM_SUPABASE_URL || localStorage.getItem("pym.supabaseUrl") || "").trim().replace(/\/$/, "");
+  const anonKey = String(window.PYM_SUPABASE_ANON_KEY || localStorage.getItem("pym.supabaseAnonKey") || "").trim();
+
+  return {
+    url,
+    anonKey,
+    enabled: Boolean(url && anonKey)
+  };
+}
+
+function readSupabaseSentIds() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem("pym.supabaseSentIds") || "[]");
+    return new Set(Array.isArray(parsed) ? parsed : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function markSupabaseSent(ids) {
+  const sentIds = readSupabaseSentIds();
+  ids.forEach((id) => sentIds.add(id));
+  localStorage.setItem("pym.supabaseSentIds", JSON.stringify(Array.from(sentIds).slice(-1200)));
+}
+
+async function testSupabaseConnection() {
+  if (!supabaseConfig.enabled) {
+    showToast("먼저 Supabase 연결 정보를 저장해 주세요");
+    return;
+  }
+
+  const event = {
+    id: `test_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    name: "supabase_test",
+    properties: { source: "admin" },
+    userId: analyticsUserId,
+    sessionId: analyticsSessionId,
+    path: window.location.pathname,
+    hash: window.location.hash || "",
+    referrer: document.referrer || "",
+    userAgent: navigator.userAgent,
+    viewport: `${window.innerWidth}x${window.innerHeight}`,
+    createdAt: new Date().toISOString()
+  };
+
+  try {
+    await postSupabaseEvents([event]);
+    markSupabaseSent([event.id]);
+    trackEvent("supabase_test_success");
+    showToast("Supabase 테스트 전송 성공");
+  } catch {
+    trackEvent("supabase_test_failed");
+    showToast("Supabase 테스트 실패. SQL/RLS/키를 확인해 주세요");
+  }
 }
 
 function getOrCreateAnalyticsUserId() {
@@ -1372,6 +1510,8 @@ function renderAnalyticsAdmin() {
   const driveOpens = events.filter((event) => event.name === "drive_open");
   const searches = events.filter((event) => event.name === "search" || event.name === "search_no_result");
   const noResults = events.filter((event) => event.name === "search_no_result");
+  const sentCount = readSupabaseSentIds().size;
+  const pendingCount = Math.max(events.length - sentCount, 0);
 
   analyticsContent.innerHTML = `
     <div class="admin-summary">
@@ -1410,11 +1550,32 @@ function renderAnalyticsAdmin() {
         ${events.slice(-12).reverse().map(adminEventTemplate).join("") || `<p class="admin-empty">아직 이벤트가 없어요.</p>`}
       </div>
     </section>
+    <section class="admin-card">
+      <div class="admin-card-head">
+        <h2>Supabase 연결</h2>
+        <span>${supabaseConfig.enabled ? `연결 준비 · 대기 ${pendingCount}개` : "미연결"}</span>
+      </div>
+      <form class="supabase-form" data-supabase-form>
+        <label>
+          <span>Project URL</span>
+          <input name="supabaseUrl" type="url" placeholder="https://xxxxx.supabase.co" value="${escapeHtml(supabaseConfig.url)}" autocomplete="off" />
+        </label>
+        <label>
+          <span>Anon public key</span>
+          <input name="supabaseAnonKey" type="password" placeholder="eyJhbGci..." value="${escapeHtml(supabaseConfig.anonKey)}" autocomplete="off" />
+        </label>
+        <div class="supabase-actions">
+          <button type="submit">저장하고 동기화</button>
+          <button type="button" data-supabase-test>테스트 전송</button>
+        </div>
+      </form>
+      <p class="admin-empty">Supabase SQL Editor에서 supabase/analytics_events.sql을 먼저 실행한 뒤 URL과 anon key를 넣으면 됩니다. 현재 전송 완료 ${sentCount}개.</p>
+    </section>
     <div class="admin-actions">
       <button type="button" data-admin-export>JSON 내보내기</button>
       <button type="button" data-admin-reset>이 기기 데이터 초기화</button>
     </div>
-    <p class="admin-note">현재는 이 기기 브라우저에 익명 데이터가 저장됩니다. Supabase 연결 후에는 같은 이벤트를 서버 DB로 보낼 수 있어요.</p>
+    <p class="admin-note">앱 방문자는 개인정보 없이 익명 ID로 기록됩니다. Supabase에는 insert만 열고 select는 닫아두는 구성이 안전합니다.</p>
   `;
 }
 
