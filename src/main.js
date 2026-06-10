@@ -1,4 +1,4 @@
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260609-13";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260610-1";
 
 let resources = normalizeResourceData(await loadResourceData());
 

@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-09T07:05:26.224Z",
+  "updatedAt": "2026-06-10T07:43:23.200Z",
   "resources": [
     {
       "id": "acs-ecg",
@@ -571,6 +571,68 @@
         "간수치"
       ],
       "rank": 12
+    },
+    {
+      "id": "siadh",
+      "title": "SIADH clinical reasoning",
+      "displayTitle": "SIADH 임상추론",
+      "type": "검사수치",
+      "format": "PDF",
+      "source": "박용민 임상추론 PDF",
+      "url": "https://drive.google.com/file/d/14E7UgDyYbJ6oTIbslcwLhhbku2SYn8qy/view?usp=drivesdk",
+      "tags": [
+        "SIADH",
+        "항이뇨호르몬 부적절분비 증후군",
+        "Syndrome of Inappropriate Antidiuretic Hormone secretion",
+        "저나트륨혈증",
+        "hyponatremia",
+        "ADH",
+        "소세포폐암",
+        "SCLC",
+        "혈장 삼투압",
+        "요 삼투압",
+        "농축뇨",
+        "수분제한",
+        "I/O",
+        "LOC",
+        "검사수치",
+        "임상추론",
+        "심화"
+      ],
+      "summary": "ADH 과다분비로 수분 재흡수가 증가해 부종 없는 희석성 저나트륨혈증이 나타나는 SIADH 임상추론 자료입니다.",
+      "points": [
+        "소세포폐암 환자에서 부종 없이 체중이 늘고 Na가 낮아지며 소변이 농축되는 패턴을 SIADH로 연결합니다.",
+        "혈장 삼투압은 낮은데 요 삼투압은 높은 부조화가 핵심 단서이며, SIADH와 DI 감별에 유용합니다.",
+        "간호 우선순위는 의식수준 확인, 매일 체중, 정확한 I/O이며 Na < 120, 의식변화, 발작, 과교정은 즉시 보고해야 합니다."
+      ],
+      "useCase": "저나트륨혈증 감별, SIADH/DI 비교, 소세포폐암 환자 전해질 이상, 실습 중 LOC·I/O 사정 포인트 확인",
+      "confidence": "본문 확인",
+      "system": "검사수치",
+      "intent": "임상추론",
+      "stage": "심화",
+      "evidence": "Drive에 새로 업로드된 SIADH_임상추론_박용민 PDF에서 ADH 과다분비, 희석성 저나트륨혈증, 부종 없는 체중 증가, 혈장/요 삼투압 부조화, 간호 사정과 보고 기준을 확인했습니다.",
+      "related": [
+        "iicp",
+        "pneumothorax-cxr",
+        "ast-alt-ratio"
+      ],
+      "keywords": [
+        "SIADH",
+        "저나트륨혈증",
+        "hyponatremia",
+        "ADH",
+        "SCLC",
+        "소세포폐암",
+        "혈장 삼투압",
+        "요 삼투압",
+        "농축뇨",
+        "수분제한",
+        "LOC",
+        "I/O",
+        "삼투성 탈수초증후군",
+        "ODS"
+      ],
+      "rank": 13
     }
   ]
 }
