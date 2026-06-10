@@ -1,4 +1,4 @@
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260610-1";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260610-6";
 
 let resources = normalizeResourceData(await loadResourceData());
 
@@ -57,6 +57,8 @@ const screenQueryInput = document.querySelector("#screenQuery");
 const sortTabs = document.querySelector("#sortTabs");
 const analyticsAdmin = document.querySelector("#analyticsAdmin");
 const analyticsContent = document.querySelector("#analyticsContent");
+const homeNoticeCarousel = document.querySelector("#homeNoticeCarousel");
+const trendScreen = document.querySelector("#trendScreen");
 
 let activeType = "전체";
 let activeIntent = "전체";
@@ -67,6 +69,8 @@ let activeSort = "relevance";
 let savedIds = new Set(readStoredIds("pym.saved"));
 let recentIds = readStoredIds("pym.recent");
 let lastSearchSignature = "";
+let activeNoticeIndex = 0;
+let noticeTimer = null;
 
 const analyticsUserId = getOrCreateAnalyticsUserId();
 const analyticsSessionId = createSessionId();
@@ -103,9 +107,91 @@ const communityQuestions = [
   }
 ];
 
+const trendArticles = [
+  {
+    id: "nurse-ai-tools",
+    category: "헬스케어경제",
+    source: "Axios",
+    date: "2026.05.12",
+    hook: "간호사는 왜 AI를 덜 쓰고 있을까?",
+    title: "간호 AI보다 먼저 필요한 건 간호사용 도구",
+    summary: "최근 조사에서 간호사는 의사보다 AI 활용률이 낮았고, 간호 업무에 맞춘 도구 부족이 주요 원인으로 언급됐어요.",
+    image: "./assets/trend-ai-tools.png",
+    tags: ["AI", "간호업무", "디지털전환"],
+    sourceUrl: "https://www.axios.com/2026/05/12/nurse-ai-adoption-lags-doctors-survey",
+    relatedIds: ["siadh", "gbs", "acs-ecg"],
+    keyPoints: [
+      "간호사는 의사보다 AI 도구를 자주 쓰는 비율이 낮게 나타났어요.",
+      "핵심 문제는 AI 자체보다 간호 업무 흐름에 맞는 도구가 부족하다는 점이에요.",
+      "현장 적용은 간호사의 의견을 반영해야 실제 환자 케어 시간을 늘릴 수 있어요."
+    ],
+    why: "간호사는 환자 관찰, 기록, 보고, 교육을 동시에 수행하기 때문에 도구가 현장 언어와 업무 순서에 맞아야 해요.",
+    nursePrep: "새로운 도구를 무작정 거부하기보다 반복 기록, 자료 검색, 환자교육처럼 시간을 줄일 수 있는 업무를 구분해두면 좋아요.",
+    studentPrep: "디지털 헬스케어와 간호정보학의 기본 개념을 익히고, 케이스 스터디에서 어떤 정보가 실제 판단에 필요한지 정리해보세요.",
+    comments: [
+      { name: "익명 간호사_3478", time: "1시간 전", text: "기록 업무가 너무 많아서 정작 환자 케어 시간이 줄어드는 게 가장 큰 문제 같아요.", likes: 8 },
+      { name: "익명 학생_2046", time: "3시간 전", text: "간호학생인데요, 추천하신 AI 도구 관련 자료나 입문 강의가 있다면 공유 부탁드려요!", likes: 5 },
+      { name: "익명 간호사_1129", time: "5시간 전", text: "현장에서 사용할 수 있는 간단하고 직관적인 도구가 나왔으면 좋겠어요.", likes: 6 }
+    ]
+  },
+  {
+    id: "safe-staffing",
+    category: "간호신문",
+    source: "The Guardian",
+    date: "2026.05.18",
+    hook: "간호 인력 부족은 왜 환자 안전 문제가 될까?",
+    title: "근무환경 개선이 간호 인력 유지의 핵심",
+    summary: "간호 인력 부족은 단순한 근무 피로 문제가 아니라 낙상, 감염, 보고 지연 같은 환자 안전 문제와 연결돼요.",
+    image: "./assets/trend-patient-safety.png",
+    tags: ["근무환경", "인력관리", "환자안전"],
+    sourceUrl: "https://www.theguardian.com/society/2026/may/18/nhs-nurses-believe-lack-of-staff-putting-patients-at-risk-survey-finds",
+    relatedIds: ["iicp", "pneumothorax-cxr", "gbs"],
+    keyPoints: [
+      "간호사들은 인력 부족이 안전한 케어를 어렵게 만든다고 보고했어요.",
+      "고령 환자와 복합질환 환자가 늘수록 관찰과 보고의 부담이 커져요.",
+      "자료 검색과 우선순위 판단 도구는 바쁜 현장에서 놓치는 부분을 줄이는 데 도움이 될 수 있어요."
+    ],
+    why: "인력이 부족하면 관찰 간격이 길어지고, 작은 이상징후가 늦게 발견될 수 있어요.",
+    nursePrep: "낙상 고위험, 호흡곤란, 의식변화처럼 즉시 보고해야 하는 기준을 병동별로 다시 확인해두세요.",
+    studentPrep: "실습 중에는 환자 수보다 우선순위 판단을 먼저 연습하고, 보고 기준을 질환별로 묶어 공부해보세요.",
+    comments: [
+      { name: "익명 간호사_2210", time: "2시간 전", text: "인력 부족할수록 보고 기준이 머릿속에 바로 있어야 버티는 것 같아요.", likes: 11 },
+      { name: "익명 학생_9012", time: "4시간 전", text: "실습 때 선생님들이 왜 I/O랑 의식수준을 계속 보라고 하는지 이해됐어요.", likes: 7 }
+    ]
+  },
+  {
+    id: "cancer-workforce",
+    category: "대한간호협회",
+    source: "The Guardian",
+    date: "2026.05.31",
+    hook: "암 환자가 늘면 간호사는 무엇을 준비해야 할까?",
+    title: "간호사 교육의 미래, 실습과 시뮬레이션 강화",
+    summary: "암 환자 증가와 진료 인력 부족 전망은 항암, 감염, 전해질 이상, 응급징후 학습의 중요성을 키우고 있어요.",
+    image: "./assets/trend-cancer-lab.png",
+    tags: ["교육", "시뮬레이션", "핵심역량"],
+    sourceUrl: "https://www.theguardian.com/society/2026/may/31/world-cancer-workforce-crisis-100m-staff-shortfall-report",
+    relatedIds: ["siadh", "ast-alt-ratio", "alt"],
+    keyPoints: [
+      "암 진료 수요가 증가하면서 간호 인력과 진단 인력 부족이 주요 이슈로 언급됐어요.",
+      "항암치료 중 전해질 이상, 감염, 응급징후를 빠르게 연결하는 역량이 중요해져요.",
+      "시뮬레이션과 케이스 기반 학습은 학생이 현장 판단을 연습하는 좋은 방법이에요."
+    ],
+    why: "암 환자는 치료 과정에서 여러 합병증과 검사 이상이 함께 나타날 수 있어 간호사의 조기 발견 능력이 중요해요.",
+    nursePrep: "항암 환자의 발열, 의식변화, 전해질 이상, I/O 변화처럼 바로 보고할 포인트를 체크리스트화하세요.",
+    studentPrep: "소세포폐암과 SIADH처럼 질환-검사-간호중재가 연결되는 케이스를 우선 연습해보세요.",
+    comments: [
+      { name: "익명 학생_5581", time: "30분 전", text: "SIADH랑 암 환자 케이스가 이렇게 연결되는 줄 몰랐어요.", likes: 4 },
+      { name: "익명 간호사_7730", time: "6시간 전", text: "항암 병동은 전해질이랑 감염 사정이 진짜 중요합니다.", likes: 10 }
+    ]
+  }
+];
+
 resourceCount.textContent = `${resources.length}개`;
+renderHomeNoticeCarousel();
+startNoticeRotation();
 renderHomeFeed();
 renderQuestionHub();
+renderTrendScreen();
 renderCategoryHub();
 renderFilters();
 renderBottomTabs();
@@ -223,6 +309,64 @@ document.addEventListener("click", (event) => {
   renderBottomTabs();
   renderResults();
   document.querySelector("#results").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+document.addEventListener("click", (event) => {
+  const dot = event.target.closest("[data-notice-dot]");
+  if (!dot) return;
+
+  activeNoticeIndex = Number(dot.dataset.noticeDot) || 0;
+  trackEvent("home_notice_change", { index: activeNoticeIndex });
+  renderHomeNoticeCarousel();
+  startNoticeRotation();
+});
+
+document.addEventListener("click", (event) => {
+  const source = event.target.closest("[data-notice-source]");
+  if (!source) return;
+
+  const article = trendArticles.find((item) => item.id === source.dataset.articleOpen);
+  if (article) {
+    event.preventDefault();
+    openTrendArticle(article);
+  }
+
+  trackEvent("home_notice_source_open", {
+    label: source.dataset.noticeSource,
+    url: source.getAttribute("href")
+  });
+});
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-trend-open]");
+  if (!button) return;
+
+  const article = trendArticles.find((item) => item.id === button.dataset.trendOpen);
+  if (!article) return;
+  openTrendArticle(article);
+});
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-trend-comments]");
+  if (!button) return;
+
+  const article = trendArticles.find((item) => item.id === button.dataset.trendComments);
+  if (!article) return;
+  openTrendComments(article);
+});
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-comment-submit]");
+  if (!button) return;
+
+  submitTrendComment(button.dataset.commentSubmit);
+});
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-comment-like]");
+  if (!button) return;
+
+  likeTrendComment(button.dataset.commentLike, button.dataset.articleId);
 });
 
 document.addEventListener("click", (event) => {
@@ -470,11 +614,9 @@ function renderBottomTabs() {
       renderResults();
       document.querySelector("#results").scrollIntoView({ behavior: "smooth", block: "start" });
     } },
-    { id: "learning", label: "내 학습", icon: bookIcon(), target: () => {
-      resultMode = "recent";
-      setSearchMode();
-      renderResults();
-      document.querySelector("#results").scrollIntoView({ behavior: "smooth", block: "start" });
+    { id: "trend", label: "동향", icon: bookIcon(), target: () => {
+      setTrendMode();
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } },
     { id: "profile", label: "마이페이지", icon: userIcon(), target: () => showToast("로그인 기능과 함께 확장하면 좋아요") }
   ];
@@ -499,17 +641,29 @@ function renderBottomTabs() {
 
 function setHomeMode() {
   document.body.classList.remove("search-mode");
+  document.body.classList.remove("trend-mode");
   activeTab = "home";
   resultMode = "search";
   queryInput.value = "";
   screenQueryInput.value = "";
+  renderHomeNoticeCarousel();
   renderHomeFeed();
 }
 
 function setSearchMode() {
   document.body.classList.add("search-mode");
+  document.body.classList.remove("trend-mode");
   screenQueryInput.value = queryInput.value;
   renderSortTabs();
+}
+
+function setTrendMode() {
+  document.body.classList.remove("search-mode");
+  document.body.classList.add("trend-mode");
+  activeTab = "trend";
+  renderTrendScreen();
+  renderBottomTabs();
+  trackEvent("trend_view");
 }
 
 function renderSortTabs() {
@@ -534,6 +688,408 @@ function renderHomeFeed() {
       <i aria-hidden="true">›</i>
     </button>
   `).join("");
+}
+
+function renderHomeNoticeCarousel() {
+  if (!homeNoticeCarousel) return;
+
+  const notices = getHomeNotices();
+  activeNoticeIndex = activeNoticeIndex % notices.length;
+  const notice = notices[activeNoticeIndex];
+
+  homeNoticeCarousel.className = `clinical-card notice-${escapeHtml(notice.tone)}`;
+  homeNoticeCarousel.innerHTML = `
+    <div class="clinical-copy">
+      <p>
+        <span>${escapeHtml(notice.label)}</span>
+        <strong>${escapeHtml(notice.badge)}</strong>
+      </p>
+      <h2>${escapeHtml(notice.title)}</h2>
+      <span class="notice-description">${escapeHtml(notice.description)}</span>
+      <div class="notice-actions">
+        <button type="button" data-query="${escapeHtml(notice.query)}">${escapeHtml(notice.action)}</button>
+        <a href="${escapeHtml(notice.sourceUrl)}" target="_blank" rel="noreferrer" data-notice-source="${escapeHtml(notice.label)}" ${notice.articleId ? `data-article-open="${escapeHtml(notice.articleId)}"` : ""}>${escapeHtml(notice.sourceLabel)}</a>
+      </div>
+    </div>
+    <img src="${escapeHtml(notice.image)}" alt="" loading="eager" />
+    <div class="notice-dots" aria-label="공지 선택">
+      ${notices.map((item, index) => `
+        <button type="button" class="${index === activeNoticeIndex ? "active" : ""}" data-notice-dot="${index}" aria-label="${escapeHtml(item.label)} 보기"></button>
+      `).join("")}
+    </div>
+  `;
+}
+
+function getHomeNotices() {
+  const latest = resources.slice().sort((a, b) => b.rank - a.rank)[0] || resources[0];
+  const recommended = resources.find((resource) => resource.id === "gbs") || resources[0];
+  const trend = resources.find((resource) => resource.id === "siadh") || latest;
+  const trendArticle = trendArticles[0];
+
+  return [
+    {
+      label: "새 자료 업데이트",
+      badge: "NEW",
+      title: `${latest.displayTitle} 자료가 추가됐어요`,
+      description: latest.summary,
+      query: latest.keywords?.[0] || latest.displayTitle,
+      action: "새 자료 보기",
+      sourceLabel: "원본 PDF",
+      sourceUrl: latest.url,
+      image: visualMeta(latest).image || "./assets/thumb-lab.png",
+      tone: "update"
+    },
+    {
+      label: "오늘의 추천 자료",
+      badge: "추천",
+      title: "SpO2가 괜찮아도 보고가 필요한 순간",
+      description: recommended.summary,
+      query: "GBS",
+      action: "답 보기",
+      sourceLabel: "관련 PDF",
+      sourceUrl: recommended.url,
+      image: "./assets/nurse-guide.png",
+      tone: "recommend"
+    },
+    {
+      label: "최근 간호 동향",
+      badge: "TREND",
+      title: "간호 AI보다 먼저 필요한 건 간호사용 도구",
+      description: "최근 조사에서 간호사는 의사보다 AI 활용률이 낮았고, 간호 업무에 맞춘 도구 부족이 이유로 언급됐어요.",
+      query: "임상추론",
+      action: "관련 자료 보기",
+      sourceLabel: "요약 보기",
+      sourceUrl: trendArticle.sourceUrl,
+      articleId: trendArticle.id,
+      image: visualMeta(trend).image || "./assets/thumb-lab.png",
+      tone: "trend"
+    }
+  ];
+}
+
+function renderTrendScreen() {
+  if (!trendScreen) return;
+
+  trendScreen.innerHTML = `
+    <div class="trend-top">
+      <div>
+        <h1>최근 간호 동향</h1>
+        <p>뉴스를 간호사·간호학생 관점으로 짧게 번역해요.</p>
+      </div>
+      <button type="button" aria-label="동향 알림">⌕</button>
+    </div>
+    <section class="trend-feature">
+      <p class="eyebrow">이번 주 핵심 이슈</p>
+      <div class="trend-list">
+        ${trendArticles.map((article, index) => trendCardTemplate(article, index)).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function trendCardTemplate(article, index) {
+  return `
+    <article class="trend-card">
+      <img class="trend-card-image" src="${escapeHtml(article.image)}" alt="" loading="lazy" />
+      <div class="trend-card-meta">
+        <span>${escapeHtml(article.category)}</span>
+        <em>${escapeHtml(article.date)}</em>
+        <strong>${String(index + 1).padStart(2, "0")}</strong>
+      </div>
+      <h2>${escapeHtml(article.hook)}</h2>
+      <p>${escapeHtml(article.summary)}</p>
+      <div class="trend-tags">
+        ${article.tags.map((tag) => `<span>#${escapeHtml(tag)}</span>`).join("")}
+      </div>
+      <button type="button" data-trend-open="${escapeHtml(article.id)}">요약 보기</button>
+    </article>
+  `;
+}
+
+function openTrendArticle(article) {
+  trackEvent("trend_article_open", { articleId: article.id, title: article.title, source: article.source });
+  modalContent.innerHTML = trendDetailTemplate(article);
+  previewModal.hidden = false;
+  document.body.classList.add("modal-open");
+  document.body.style.overflow = "hidden";
+}
+
+function trendDetailTemplate(article) {
+  return `
+    <div class="trend-detail">
+      <div class="trend-detail-top">
+        <img class="trend-detail-image" src="${escapeHtml(article.image)}" alt="" loading="lazy" />
+        <p>${escapeHtml(article.category)} · ${escapeHtml(article.source)} · ${escapeHtml(article.date)}</p>
+        <h2 id="modalTitle">${escapeHtml(article.hook)}</h2>
+      </div>
+      <section class="trend-summary-box">
+        <h3>핵심 요약</h3>
+        <ul>
+          ${article.keyPoints.map((point) => `<li>${escapeHtml(point)}</li>`).join("")}
+        </ul>
+      </section>
+      ${trendInsightTemplate("왜 중요한가", article.why)}
+      ${trendInsightTemplate("간호사라면 준비할 것", article.nursePrep)}
+      ${trendInsightTemplate("간호학생이라면 공부할 것", article.studentPrep)}
+      <section class="trend-related">
+        <h3>연결되는 박용민 PDF</h3>
+        <div>
+          ${article.relatedIds.map((id) => trendRelatedResourceTemplate(id)).join("")}
+        </div>
+      </section>
+      <div class="trend-detail-actions">
+        <a href="${escapeHtml(article.sourceUrl)}" target="_blank" rel="noreferrer">원문 기사 열기</a>
+        <button type="button" data-trend-comments="${escapeHtml(article.id)}">댓글 보기 (${article.comments.length})</button>
+      </div>
+    </div>
+  `;
+}
+
+function trendInsightTemplate(title, text) {
+  return `
+    <section class="trend-insight">
+      <h3>${escapeHtml(title)}</h3>
+      <p>${escapeHtml(text)}</p>
+    </section>
+  `;
+}
+
+function trendRelatedResourceTemplate(id) {
+  const resource = resources.find((item) => item.id === id);
+  if (!resource) return "";
+
+  return `
+    <a class="trend-related-card" href="${escapeHtml(resource.url)}" target="_blank" rel="noreferrer" data-drive="${escapeHtml(resource.id)}">
+      ${visualTemplate(resource, "thumb")}
+      <span>
+        <strong>${escapeHtml(resource.displayTitle)}</strong>
+        <em>${escapeHtml(resource.system)} · ${escapeHtml(resource.intent)}</em>
+      </span>
+      <i aria-hidden="true">›</i>
+    </a>
+  `;
+}
+
+function openTrendComments(article) {
+  trackEvent("trend_comments_open", { articleId: article.id, title: article.title });
+  renderTrendComments(article, { loading: true });
+  loadTrendComments(article)
+    .then((comments) => renderTrendComments(article, { comments }))
+    .catch(() => {
+      renderTrendComments(article, { error: "댓글 서버 연결 전이라 예시 댓글을 보여주고 있어요." });
+    });
+}
+
+function renderTrendComments(article, options = {}) {
+  modalContent.innerHTML = trendCommentsTemplate(article, options);
+}
+
+function trendCommentsTemplate(article, options = {}) {
+  const comments = options.comments || article.comments;
+  const titleCount = options.comments ? comments.length : article.comments.length;
+
+  return `
+    <div class="trend-comments">
+      <h2 id="modalTitle">댓글 (${titleCount})</h2>
+      <div class="comment-guide">서로의 의견을 존중하며, 유익한 간호 커뮤니티를 만들어주세요.</div>
+      ${options.loading ? `<div class="comment-status">댓글을 불러오는 중이에요.</div>` : ""}
+      ${options.error ? `<div class="comment-status">${escapeHtml(options.error)}</div>` : ""}
+      <div class="comment-list">
+        ${comments.map((comment) => `
+          <article class="comment-card">
+            <div>
+              <strong>${escapeHtml(comment.name)}</strong>
+              <span>${escapeHtml(comment.time)}</span>
+            </div>
+            <p>${escapeHtml(comment.text)}</p>
+            <button type="button" ${comment.id ? `data-comment-like="${escapeHtml(String(comment.id))}" data-article-id="${escapeHtml(article.id)}"` : ""}>좋아요 ${comment.likes}</button>
+          </article>
+        `).join("")}
+      </div>
+      <div class="comment-input">
+        <textarea maxlength="300" placeholder="의견이나 질문을 남겨주세요." aria-label="댓글 입력"></textarea>
+        <button type="button" data-comment-submit="${escapeHtml(article.id)}">등록</button>
+      </div>
+    </div>
+  `;
+}
+
+async function loadTrendComments(article) {
+  if (!supabaseConfig.enabled) {
+    throw new Error("Supabase is not configured");
+  }
+
+  const query = new URLSearchParams({
+    select: "id,article_id,nickname,body,likes,created_at",
+    article_id: `eq.${article.id}`,
+    hidden: "eq.false",
+    order: "created_at.desc",
+    limit: "50"
+  });
+  const rows = await supabaseRequest(`trend_comments?${query.toString()}`);
+
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.nickname,
+    time: relativeTime(row.created_at),
+    text: row.body,
+    likes: row.likes || 0
+  }));
+}
+
+async function submitTrendComment(articleId) {
+  const article = trendArticles.find((item) => item.id === articleId);
+  if (!article) return;
+
+  const textarea = modalContent.querySelector(".comment-input textarea");
+  const button = modalContent.querySelector(`[data-comment-submit="${CSS.escape(articleId)}"]`);
+  const body = String(textarea?.value || "").trim();
+
+  if (!body) {
+    showToast("댓글 내용을 입력해 주세요");
+    textarea?.focus();
+    return;
+  }
+
+  if (body.length > 300) {
+    showToast("댓글은 300자 안으로 남겨주세요");
+    return;
+  }
+
+  if (isBlockedComment(body)) {
+    showToast("개인정보, 광고 링크, 비방 표현은 남길 수 없어요");
+    return;
+  }
+
+  if (!supabaseConfig.enabled) {
+    showToast("Supabase 댓글 테이블 연결 후 실제 저장돼요");
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "등록 중";
+
+  try {
+    await supabaseRequest("trend_comments", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({
+        article_id: article.id,
+        anonymous_user_id: analyticsUserId,
+        nickname: getCommentNickname(),
+        body
+      })
+    });
+    trackEvent("trend_comment_submit", { articleId: article.id, bodyLength: body.length });
+    textarea.value = "";
+    showToast("댓글을 등록했어요");
+    const comments = await loadTrendComments(article);
+    renderTrendComments(article, { comments });
+  } catch {
+    showToast("댓글 저장 실패. Supabase SQL/RLS를 확인해 주세요");
+    renderTrendComments(article, { error: "댓글 저장이 막혔어요. Supabase 댓글 SQL 실행이 필요할 수 있어요." });
+  }
+}
+
+async function likeTrendComment(commentId, articleId) {
+  if (!commentId || !articleId || !supabaseConfig.enabled) return;
+
+  const likedKey = "pym.likedTrendComments";
+  const liked = new Set(readJsonArray(likedKey));
+  if (liked.has(commentId)) {
+    showToast("이미 좋아요를 눌렀어요");
+    return;
+  }
+
+  const article = trendArticles.find((item) => item.id === articleId);
+  if (!article) return;
+
+  try {
+    const rows = await supabaseRequest(`trend_comments?select=likes&id=eq.${encodeURIComponent(commentId)}&limit=1`);
+    const currentLikes = Number(rows[0]?.likes || 0);
+    await supabaseRequest(`trend_comments?id=eq.${encodeURIComponent(commentId)}`, {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ likes: currentLikes + 1 })
+    });
+    liked.add(commentId);
+    localStorage.setItem(likedKey, JSON.stringify(Array.from(liked).slice(-300)));
+    trackEvent("trend_comment_like", { articleId, commentId });
+    const comments = await loadTrendComments(article);
+    renderTrendComments(article, { comments });
+  } catch {
+    showToast("좋아요 반영에 실패했어요");
+  }
+}
+
+async function supabaseRequest(path, options = {}) {
+  const response = await fetch(`${supabaseConfig.url}/rest/v1/${path}`, {
+    method: options.method || "GET",
+    headers: {
+      apikey: supabaseConfig.anonKey,
+      Authorization: `Bearer ${supabaseConfig.anonKey}`,
+      "Content-Type": "application/json",
+      ...(options.headers || {})
+    },
+    body: options.body
+  });
+
+  if (!response.ok) {
+    const error = new Error(`Supabase request failed: ${response.status}`);
+    error.status = response.status;
+    throw error;
+  }
+
+  if (response.status === 204 || response.headers.get("content-length") === "0") {
+    return [];
+  }
+
+  return response.json();
+}
+
+function getCommentNickname() {
+  const key = "pym.commentNickname";
+  const existing = localStorage.getItem(key);
+  if (existing) return existing;
+
+  const roles = ["간호사", "학생", "실습생", "신규간호사"];
+  const role = roles[Math.floor(Math.random() * roles.length)];
+  const suffix = Math.floor(1000 + Math.random() * 9000);
+  const nickname = `익명 ${role}_${suffix}`;
+  localStorage.setItem(key, nickname);
+  return nickname;
+}
+
+function isBlockedComment(text) {
+  const normalized = text.toLowerCase();
+  const blocked = ["http://", "https://", "카톡", "오픈채팅", "광고", "시발", "씨발", "병신", "꺼져"];
+  return blocked.some((word) => normalized.includes(word));
+}
+
+function relativeTime(value) {
+  const date = new Date(value);
+  const diff = Date.now() - date.getTime();
+  if (!Number.isFinite(diff)) return "";
+
+  const minutes = Math.max(0, Math.floor(diff / 60000));
+  if (minutes < 1) return "방금 전";
+  if (minutes < 60) return `${minutes}분 전`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}시간 전`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}일 전`;
+  return date.toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" });
+}
+
+function startNoticeRotation() {
+  if (!homeNoticeCarousel) return;
+
+  window.clearInterval(noticeTimer);
+  noticeTimer = window.setInterval(() => {
+    if (document.body.classList.contains("search-mode") || !previewModal.hidden) return;
+    activeNoticeIndex = (activeNoticeIndex + 1) % getHomeNotices().length;
+    renderHomeNoticeCarousel();
+  }, 5200);
 }
 
 function renderQuestionHub() {
@@ -1021,8 +1577,12 @@ function queueSearchAnalytics(query, resultCount) {
 }
 
 function readAnalyticsEvents() {
+  return readJsonArray("pym.analyticsEvents");
+}
+
+function readJsonArray(key) {
   try {
-    const parsed = JSON.parse(localStorage.getItem("pym.analyticsEvents") || "[]");
+    const parsed = JSON.parse(localStorage.getItem(key) || "[]");
     return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];

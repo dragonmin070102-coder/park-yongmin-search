@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>박용민 자료 검색</title>
-    <link rel="stylesheet" href="./styles.css?v=20260610-1" />
+    <link rel="stylesheet" href="./styles.css?v=20260610-6" />
   </head>
   <body>
     <header class="topbar">
@@ -34,17 +34,7 @@
               <button type="submit" aria-label="검색">→</button>
             </div>
           </form>
-          <article class="clinical-card" aria-label="오늘의 임상추천">
-            <div class="clinical-copy">
-              <p>
-                <span>오늘의 임상추천</span>
-                <strong>NEW</strong>
-              </p>
-              <h2>길랭바레 환자, SpO2 99%인데 ICU 보고가 필요할까요?</h2>
-              <button type="button" data-query="GBS">답 보기</button>
-            </div>
-            <img src="./assets/nurse-guide.png" alt="" loading="eager" />
-          </article>
+          <article class="clinical-card" id="homeNoticeCarousel" aria-label="홈 공지와 추천 자료"></article>
           <div class="quick-tags" aria-label="추천 검색어">
             <button type="button" data-query="ECG">ECG</button>
             <button type="button" data-query="신경계">신경계</button>
@@ -79,6 +69,8 @@
           <div class="question-list" id="questionList"></div>
         </div>
       </section>
+
+      <section class="trend-screen" id="trendScreen" aria-label="최근 간호 동향"></section>
 
       <section class="category-hub" aria-labelledby="category-title">
         <div class="section-title">
@@ -183,6 +175,6 @@
       window.PYM_SUPABASE_URL = "https://htoocddwxzgspqdihonm.supabase.co";
       window.PYM_SUPABASE_ANON_KEY = "sb_publishable_azcwJigJPfzpdcnNKFBm6g_dA_HQU-F";
     </script>
-    <script type="module" src="./src/main.js?v=20260610-1"></script>
+    <script type="module" src="./src/main.js?v=20260610-6"></script>
   </body>
 </html>
