@@ -46,3 +46,36 @@ create policy "Allow anonymous comment like update"
   to anon
   using (hidden = false)
   with check (hidden = false and likes >= 0);
+
+drop view if exists public.trend_article_stats;
+create view public.trend_article_stats as
+with article_views as (
+  select
+    properties->>'articleId' as article_id,
+    count(*) as view_count,
+    max(created_at) as last_viewed_at
+  from public.analytics_events
+  where event_name = 'trend_article_open'
+    and coalesce(properties->>'articleId', '') <> ''
+  group by properties->>'articleId'
+),
+comment_stats as (
+  select
+    article_id,
+    count(*) filter (where hidden = false) as comment_count,
+    coalesce(sum(likes) filter (where hidden = false), 0) as like_count,
+    max(created_at) filter (where hidden = false) as last_commented_at
+  from public.trend_comments
+  group by article_id
+)
+select
+  coalesce(article_views.article_id, comment_stats.article_id) as article_id,
+  coalesce(article_views.view_count, 0) as view_count,
+  coalesce(comment_stats.comment_count, 0) as comment_count,
+  coalesce(comment_stats.like_count, 0) as like_count,
+  article_views.last_viewed_at,
+  comment_stats.last_commented_at
+from article_views
+full outer join comment_stats using (article_id);
+
+grant select on public.trend_article_stats to anon;

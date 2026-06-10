@@ -1,4 +1,4 @@
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260610-6";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260611-2";
 
 let resources = normalizeResourceData(await loadResourceData());
 
@@ -71,6 +71,16 @@ let recentIds = readStoredIds("pym.recent");
 let lastSearchSignature = "";
 let activeNoticeIndex = 0;
 let noticeTimer = null;
+let resourceStats = new Map();
+let trendStats = new Map();
+let adminDashboardState = {
+  period: "all",
+  query: "",
+  loading: false,
+  data: null,
+  error: ""
+};
+let adminSearchTimer = null;
 
 const analyticsUserId = getOrCreateAnalyticsUserId();
 const analyticsSessionId = createSessionId();
@@ -198,6 +208,7 @@ renderBottomTabs();
 renderResults();
 renderDetail(activeResource);
 setHomeMode();
+loadContentStats();
 trackEvent("page_view", {
   path: window.location.pathname,
   hash: window.location.hash || "#home",
@@ -430,6 +441,11 @@ document.addEventListener("click", (event) => {
   if (!link) return;
 
   const resource = resources.find((item) => item.id === link.dataset.drive);
+  if (resource) {
+    bumpResourceView(resource.id);
+    renderResults();
+    renderDetail(activeResource);
+  }
   trackEvent("drive_open", resource ? resourcePayload(resource) : { resourceId: link.dataset.drive });
 });
 
@@ -446,6 +462,31 @@ document.addEventListener("click", (event) => {
   if (!exportButton) return;
 
   exportAnalytics();
+});
+
+document.addEventListener("click", (event) => {
+  const periodButton = event.target.closest("[data-admin-period]");
+  if (!periodButton) return;
+
+  adminDashboardState.period = periodButton.dataset.adminPeriod;
+  renderAnalyticsAdmin();
+  loadAdminDashboardData();
+});
+
+document.addEventListener("input", (event) => {
+  const searchInput = event.target.closest("[data-admin-search]");
+  if (!searchInput) return;
+
+  adminDashboardState.query = searchInput.value;
+  window.clearTimeout(adminSearchTimer);
+  adminSearchTimer = window.setTimeout(renderAnalyticsAdmin, 220);
+});
+
+document.addEventListener("click", (event) => {
+  const csvButton = event.target.closest("[data-admin-csv]");
+  if (!csvButton) return;
+
+  exportAdminCsv(csvButton.dataset.adminCsv);
 });
 
 document.addEventListener("click", (event) => {
@@ -798,6 +839,7 @@ function trendCardTemplate(article, index) {
       </div>
       <h2>${escapeHtml(article.hook)}</h2>
       <p>${escapeHtml(article.summary)}</p>
+      <div class="content-stats">${escapeHtml(trendMetaText(article))}</div>
       <div class="trend-tags">
         ${article.tags.map((tag) => `<span>#${escapeHtml(tag)}</span>`).join("")}
       </div>
@@ -807,7 +849,9 @@ function trendCardTemplate(article, index) {
 }
 
 function openTrendArticle(article) {
+  bumpTrendView(article.id);
   trackEvent("trend_article_open", { articleId: article.id, title: article.title, source: article.source });
+  renderTrendScreen();
   modalContent.innerHTML = trendDetailTemplate(article);
   previewModal.hidden = false;
   document.body.classList.add("modal-open");
@@ -819,7 +863,7 @@ function trendDetailTemplate(article) {
     <div class="trend-detail">
       <div class="trend-detail-top">
         <img class="trend-detail-image" src="${escapeHtml(article.image)}" alt="" loading="lazy" />
-        <p>${escapeHtml(article.category)} · ${escapeHtml(article.source)} · ${escapeHtml(article.date)}</p>
+        <p>${escapeHtml(article.category)} · ${escapeHtml(article.source)} · ${escapeHtml(article.date)} · ${trendMetaText(article)}</p>
         <h2 id="modalTitle">${escapeHtml(article.hook)}</h2>
       </div>
       <section class="trend-summary-box">
@@ -839,7 +883,7 @@ function trendDetailTemplate(article) {
       </section>
       <div class="trend-detail-actions">
         <a href="${escapeHtml(article.sourceUrl)}" target="_blank" rel="noreferrer">원문 기사 열기</a>
-        <button type="button" data-trend-comments="${escapeHtml(article.id)}">댓글 보기 (${article.comments.length})</button>
+        <button type="button" data-trend-comments="${escapeHtml(article.id)}">댓글 보기 (${getTrendCommentCount(article)})</button>
       </div>
     </div>
   `;
@@ -874,7 +918,11 @@ function openTrendComments(article) {
   trackEvent("trend_comments_open", { articleId: article.id, title: article.title });
   renderTrendComments(article, { loading: true });
   loadTrendComments(article)
-    .then((comments) => renderTrendComments(article, { comments }))
+    .then((comments) => {
+      setTrendCommentCount(article.id, comments.length);
+      renderTrendScreen();
+      renderTrendComments(article, { comments });
+    })
     .catch(() => {
       renderTrendComments(article, { error: "댓글 서버 연결 전이라 예시 댓글을 보여주고 있어요." });
     });
@@ -984,6 +1032,8 @@ async function submitTrendComment(articleId) {
     textarea.value = "";
     showToast("댓글을 등록했어요");
     const comments = await loadTrendComments(article);
+    setTrendCommentCount(article.id, comments.length);
+    renderTrendScreen();
     renderTrendComments(article, { comments });
   } catch {
     showToast("댓글 저장 실패. Supabase SQL/RLS를 확인해 주세요");
@@ -1016,6 +1066,8 @@ async function likeTrendComment(commentId, articleId) {
     localStorage.setItem(likedKey, JSON.stringify(Array.from(liked).slice(-300)));
     trackEvent("trend_comment_like", { articleId, commentId });
     const comments = await loadTrendComments(article);
+    setTrendCommentCount(article.id, comments.length);
+    renderTrendScreen();
     renderTrendComments(article, { comments });
   } catch {
     showToast("좋아요 반영에 실패했어요");
@@ -1260,7 +1312,7 @@ function cardTemplate(resource, score, hasQuery) {
         <button class="save-button ${saved ? "saved" : ""}" type="button" data-save="${escapeHtml(resource.id)}" aria-label="${saved ? "즐겨찾기 해제" : "즐겨찾기 추가"}">${saved ? "★" : "☆"}</button>
       </div>
       <div class="inline-source">
-        <span>${escapeHtml(resource.stage)} · ${escapeHtml(resource.confidence)} · ${escapeHtml(resource.source)}</span>
+        <span>${escapeHtml(resource.stage)} · 조회 ${formatCount(getResourceViews(resource.id))} · ${escapeHtml(resource.source)}</span>
         <a href="${escapeHtml(resource.url)}" target="_blank" rel="noreferrer" data-drive="${escapeHtml(resource.id)}">원본 PDF</a>
       </div>
     </article>
@@ -1340,6 +1392,7 @@ function detailTemplate(resource) {
         <span class="badge">${escapeHtml(resource.source)}</span>
       </div>
       <h3 class="detail-title" id="modalTitle">${escapeHtml(resource.displayTitle)}</h3>
+      <div class="content-stats">조회 ${formatCount(getResourceViews(resource.id))} · ${escapeHtml(resource.confidence)} · ${escapeHtml(resource.source)}</div>
       <p class="detail-summary">${escapeHtml(resource.summary)}</p>
       <div class="detail-section">
         <h3>간단 설명</h3>
@@ -1421,6 +1474,7 @@ function relatedTemplate(resource) {
 }
 
 function openPreviewModal(resource) {
+  bumpResourceView(resource.id);
   rememberRecent(resource.id);
   trackEvent("resource_open", resourcePayload(resource));
   renderModalContent(resource);
@@ -1522,6 +1576,95 @@ function showCopyFallback(text) {
   host.querySelector(".detail-body")?.append(wrapper);
   textarea.focus();
   textarea.select();
+}
+
+async function loadContentStats() {
+  if (!supabaseConfig.enabled) return;
+
+  try {
+    const resourceRows = await supabaseRequest("analytics_popular_resources?select=resource_id,open_count");
+    resourceStats = new Map(resourceRows
+      .filter((row) => row.resource_id)
+      .map((row) => [row.resource_id, { views: Number(row.open_count || 0) }]));
+    renderResults();
+    renderDetail(activeResource);
+  } catch {
+    // Stats are a display enhancement; keep the app usable if views are missing.
+  }
+
+  try {
+    const trendRows = await supabaseRequest("trend_article_stats?select=article_id,view_count,comment_count,like_count");
+    trendStats = new Map(trendRows
+      .filter((row) => row.article_id)
+      .map((row) => [row.article_id, {
+        views: Number(row.view_count || 0),
+        comments: Number(row.comment_count || 0),
+        likes: Number(row.like_count || 0)
+      }]));
+    renderTrendScreen();
+  } catch {
+    loadTrendCommentCounts();
+  }
+}
+
+async function loadTrendCommentCounts() {
+  try {
+    const commentRows = await supabaseRequest("trend_comments?select=article_id,likes&hidden=eq.false&limit=500");
+    const counts = new Map();
+    commentRows.forEach((row) => {
+      const current = counts.get(row.article_id) || { comments: 0, likes: 0 };
+      counts.set(row.article_id, {
+        comments: current.comments + 1,
+        likes: current.likes + Number(row.likes || 0)
+      });
+    });
+    counts.forEach((value, articleId) => {
+      const current = getTrendStats(articleId);
+      trendStats.set(articleId, { ...current, ...value });
+    });
+    renderTrendScreen();
+  } catch {
+    // Keep static demo counts if comment stats are not available yet.
+  }
+}
+
+function getResourceViews(resourceId) {
+  return Number(resourceStats.get(resourceId)?.views || 0);
+}
+
+function bumpResourceView(resourceId) {
+  const current = resourceStats.get(resourceId) || { views: 0 };
+  resourceStats.set(resourceId, { ...current, views: Number(current.views || 0) + 1 });
+}
+
+function getTrendStats(articleId) {
+  return trendStats.get(articleId) || { views: 0, comments: 0, likes: 0 };
+}
+
+function bumpTrendView(articleId) {
+  const current = getTrendStats(articleId);
+  trendStats.set(articleId, { ...current, views: Number(current.views || 0) + 1 });
+}
+
+function getTrendCommentCount(article) {
+  return Number(getTrendStats(article.id).comments || article.comments.length || 0);
+}
+
+function setTrendCommentCount(articleId, count) {
+  const current = getTrendStats(articleId);
+  trendStats.set(articleId, { ...current, comments: Number(count || 0) });
+}
+
+function trendMetaText(article) {
+  const stats = getTrendStats(article.id);
+  return `조회 ${formatCount(stats.views)} · 댓글 ${formatCount(getTrendCommentCount(article))}`;
+}
+
+function formatCount(value) {
+  const count = Number(value || 0);
+  if (count >= 10000) return `${(count / 10000).toFixed(count >= 100000 ? 0 : 1)}만`;
+  if (count >= 1000) return `${(count / 1000).toFixed(count >= 10000 ? 0 : 1)}천`;
+  return String(count);
 }
 
 function trackEvent(name, properties = {}) {
@@ -1776,109 +1919,440 @@ function syncAdminRoute() {
 }
 
 function renderAnalyticsAdmin() {
-  const events = readAnalyticsEvents();
-  const users = new Set(events.map((event) => event.userId));
-  const sessions = new Set(events.map((event) => event.sessionId));
-  const resourceOpens = events.filter((event) => event.name === "resource_open");
-  const driveOpens = events.filter((event) => event.name === "drive_open");
-  const searches = events.filter((event) => event.name === "search" || event.name === "search_no_result");
-  const noResults = events.filter((event) => event.name === "search_no_result");
-  const sentCount = readSupabaseSentIds().size;
-  const pendingCount = Math.max(events.length - sentCount, 0);
+  const data = adminDashboardState.data || buildEmptyAdminDashboardData();
+  const filtered = filterAdminData(data);
+  const kpis = getAdminKpis(filtered);
+  const insights = getAdminInsights(filtered);
+  const gaps = getContentGaps(filtered.noResults);
+  const demand = getDemandAnalysis(filtered.searchTerms, filtered.popularResources);
+  const periodLabel = adminPeriodLabel(adminDashboardState.period);
 
   analyticsContent.innerHTML = `
-    <div class="admin-summary">
-      ${adminMetricTemplate("이벤트", events.length)}
-      ${adminMetricTemplate("익명 사용자", users.size)}
-      ${adminMetricTemplate("세션", sessions.size)}
-      ${adminMetricTemplate("원본 열기", driveOpens.length)}
+    <section class="admin-hero">
+      <p class="eyebrow">Content Operating Center</p>
+      <h2>박용민 콘텐츠 운영센터</h2>
+      <p>검색, 조회, 실패어, 댓글을 묶어서 다음 콘텐츠 우선순위를 판단합니다.</p>
+    </section>
+    <div class="admin-toolbar">
+      <div class="admin-period-tabs">
+        ${["today", "7d", "30d", "all"].map((period) => `
+          <button type="button" class="${adminDashboardState.period === period ? "active" : ""}" data-admin-period="${period}">${adminPeriodLabel(period)}</button>
+        `).join("")}
+      </div>
+      <input data-admin-search type="search" value="${escapeHtml(adminDashboardState.query)}" placeholder="검색어, 자료명 검색" />
     </div>
-    <section class="admin-card">
+    ${adminDashboardState.loading ? `<p class="admin-status">Supabase 데이터를 불러오는 중이에요.</p>` : ""}
+    ${adminDashboardState.error ? `<p class="admin-status error">${escapeHtml(adminDashboardState.error)}</p>` : ""}
+    <div class="admin-summary dashboard-kpis">
+      ${adminMetricTemplate("총 이벤트 수", kpis.totalEvents)}
+      ${adminMetricTemplate("총 검색 수", kpis.totalSearches)}
+      ${adminMetricTemplate("총 자료 조회 수", kpis.totalResourceViews)}
+      ${adminMetricTemplate("검색 실패 수", kpis.totalFailures)}
+      ${adminMetricTemplate("댓글 수", kpis.totalComments)}
+      ${adminMetricTemplate("최근 7일 활성 사용자", kpis.activeUsers7d)}
+    </div>
+    <section class="admin-card insight-card">
       <div class="admin-card-head">
-        <h2>인기 자료</h2>
-        <span>${resourceOpens.length}회 열람</span>
+        <h2>운영자 인사이트</h2>
+        <span>${periodLabel} 기준</span>
       </div>
-      ${adminRankList(countBy(resourceOpens, (event) => event.properties.resourceTitle || event.properties.resourceId), "아직 자료 열람 데이터가 없어요")}
-    </section>
-    <section class="admin-card">
-      <div class="admin-card-head">
-        <h2>인기 검색어</h2>
-        <span>${searches.length}회 검색</span>
-      </div>
-      ${adminRankList(countBy(searches.filter((event) => event.properties.query), (event) => event.properties.query), "아직 검색 데이터가 없어요")}
-    </section>
-    <section class="admin-card">
-      <div class="admin-card-head">
-        <h2>결과 없는 검색어</h2>
-        <span>${noResults.length}회</span>
-      </div>
-      ${adminRankList(countBy(noResults, (event) => event.properties.query), "결과 없는 검색어가 아직 없어요")}
-    </section>
-    <section class="admin-card">
-      <div class="admin-card-head">
-        <h2>최근 이벤트</h2>
-        <span>최근 12개</span>
-      </div>
-      <div class="admin-event-list">
-        ${events.slice(-12).reverse().map(adminEventTemplate).join("") || `<p class="admin-empty">아직 이벤트가 없어요.</p>`}
+      <div class="admin-insights">
+        ${insights.map((insight) => `<article>${escapeHtml(insight)}</article>`).join("")}
       </div>
     </section>
     <section class="admin-card">
       <div class="admin-card-head">
-        <h2>자료 관리</h2>
-        <span>${resources.length}개 연결됨</span>
+        <h2>인기 검색어 TOP 20</h2>
+        <button type="button" data-admin-csv="searchTerms">CSV</button>
       </div>
-      <div class="admin-resource-guide">
-        <article>
-          <strong>자료 원본</strong>
-          <span>data/resources.json</span>
-        </article>
-        <article>
-          <strong>입력 양식</strong>
-          <span>data/resources-template.csv</span>
-        </article>
-        <article>
-          <strong>수정 방법</strong>
-          <span>JSON에 자료를 추가하고 새로고침하면 검색에 반영됩니다.</span>
-        </article>
+      ${barChartTemplate(filtered.searchTerms.slice(0, 10), "query", "search_count")}
+      ${adminDataTable(["검색어", "검색 횟수", "최근 검색일"], filtered.searchTerms.slice(0, 20).map((row) => [
+        row.query,
+        formatCount(row.search_count),
+        formatAdminDate(row.last_searched_at)
+      ]), "검색어 데이터가 없어요")}
+    </section>
+    <section class="admin-card">
+      <div class="admin-card-head">
+        <h2>검색 실패어 TOP 20</h2>
+        <button type="button" data-admin-csv="noResults">CSV</button>
+      </div>
+      ${lineChartTemplate(filtered.noResults.slice(0, 20))}
+      ${adminDataTable(["검색어", "실패 횟수", "마지막 검색일", "운영 판단"], filtered.noResults.slice(0, 20).map((row) => [
+        row.query,
+        formatCount(row.no_result_count),
+        formatAdminDate(row.last_searched_at),
+        row.no_result_count >= 3 ? `<span class="admin-badge danger">콘텐츠 제작 후보</span>` : `<span class="admin-badge">관찰</span>`
+      ]), "검색 실패 데이터가 없어요")}
+    </section>
+    <section class="admin-card">
+      <div class="admin-card-head">
+        <h2>인기 콘텐츠 TOP 20</h2>
+        <button type="button" data-admin-csv="popularResources">CSV</button>
+      </div>
+      ${barChartTemplate(filtered.popularResources.slice(0, 10), "resource_title", "open_count")}
+      ${adminDataTable(["제목", "조회수", "최근 조회일"], filtered.popularResources.slice(0, 20).map((row) => [
+        row.resource_title || row.resource_id,
+        formatCount(row.open_count),
+        formatAdminDate(row.last_opened_at)
+      ]), "인기 콘텐츠 데이터가 없어요")}
+    </section>
+    <section class="admin-card">
+      <div class="admin-card-head">
+        <h2>콘텐츠 수요 분석</h2>
+        <span>검색→조회 전환율</span>
+      </div>
+      ${adminDataTable(["주제", "검색량", "조회량", "전환율"], demand.slice(0, 20).map((row) => [
+        row.topic,
+        formatCount(row.searches),
+        formatCount(row.views),
+        `${row.conversion}%`
+      ]), "수요 분석 데이터가 부족해요")}
+    </section>
+    <section class="admin-card">
+      <div class="admin-card-head">
+        <h2>콘텐츠 갭 분석</h2>
+        <span>실패 3회 이상</span>
+      </div>
+      <div class="gap-list">
+        ${gaps.length ? gaps.map((row) => `
+          <article>
+            <strong>🔥 ${escapeHtml(row.query)}</strong>
+            <span>검색 실패 ${formatCount(row.no_result_count)}회 · 사용자 수요는 있으나 콘텐츠가 부족한 주제</span>
+          </article>
+        `).join("") : `<p class="admin-empty">현재 기준 콘텐츠 제작 추천 항목이 없어요.</p>`}
       </div>
     </section>
     <section class="admin-card">
       <div class="admin-card-head">
-        <h2>Supabase 연결</h2>
-        <span>${supabaseConfig.enabled ? `연결 준비 · 대기 ${pendingCount}개` : "미연결"}</span>
+        <h2>데이터 연결</h2>
+        <span>${supabaseConfig.enabled ? "Supabase 연결됨" : "미연결"}</span>
       </div>
-      <form class="supabase-form" data-supabase-form>
-        <label>
-          <span>Project URL</span>
-          <input name="supabaseUrl" type="url" placeholder="https://xxxxx.supabase.co" value="${escapeHtml(supabaseConfig.url)}" autocomplete="off" />
-        </label>
-        <label>
-          <span>Anon public key</span>
-          <input name="supabaseAnonKey" type="password" placeholder="eyJhbGci..." value="${escapeHtml(supabaseConfig.anonKey)}" autocomplete="off" />
-        </label>
-        <div class="supabase-actions">
-          <button type="submit">저장하고 동기화</button>
-          <button type="button" data-supabase-test>테스트 전송</button>
-        </div>
-      </form>
-      <p class="admin-empty">Supabase SQL Editor에서 supabase/analytics_events.sql을 먼저 실행한 뒤 URL과 anon key를 넣으면 됩니다. 현재 전송 완료 ${sentCount}개.</p>
+      <p class="admin-note">검색어 길이 2 이하의 노이즈는 기본 숨김 처리됩니다. 기간 필터는 각 집계 row의 최근 활동일 기준으로 적용됩니다.</p>
     </section>
     <div class="admin-actions">
       <button type="button" data-admin-export>JSON 내보내기</button>
-      <button type="button" data-admin-reset>이 기기 데이터 초기화</button>
+      <button type="button" data-supabase-test>Supabase 테스트</button>
     </div>
-    <p class="admin-note">앱 방문자는 개인정보 없이 익명 ID로 기록됩니다. Supabase에는 insert만 열고 select는 닫아두는 구성이 안전합니다.</p>
   `;
+
+  if (supabaseConfig.enabled && !adminDashboardState.data && !adminDashboardState.loading) {
+    loadAdminDashboardData();
+  }
 }
 
 function adminMetricTemplate(label, value) {
   return `
     <article>
-      <strong>${escapeHtml(value)}</strong>
+      <strong>${escapeHtml(formatCount(value))}</strong>
       <span>${escapeHtml(label)}</span>
     </article>
   `;
+}
+
+async function loadAdminDashboardData() {
+  if (!supabaseConfig.enabled) {
+    adminDashboardState.error = "Supabase 연결 정보가 필요합니다.";
+    renderAnalyticsAdmin();
+    return;
+  }
+
+  adminDashboardState.loading = true;
+  adminDashboardState.error = "";
+  renderAnalyticsAdmin();
+
+  try {
+    const [searchTerms, noResults, popularResources, comments, rawEvents] = await Promise.all([
+      supabaseRequest("analytics_search_terms?select=query,search_count,last_searched_at&order=search_count.desc&limit=200"),
+      supabaseRequest("analytics_no_result_terms?select=query,no_result_count,last_searched_at&order=no_result_count.desc&limit=200"),
+      supabaseRequest("analytics_popular_resources?select=resource_id,resource_title,open_count,last_opened_at&order=open_count.desc&limit=200"),
+      supabaseRequest("trend_comments?select=id,article_id,nickname,body,likes,created_at&hidden=eq.false&order=created_at.desc&limit=500"),
+      supabaseRequest("analytics_events?select=event_name,anonymous_user_id,created_at&limit=1000")
+        .catch(() => [])
+    ]);
+
+    adminDashboardState.data = {
+      searchTerms: normalizeAdminRows(searchTerms, "query", "search_count", "last_searched_at"),
+      noResults: normalizeAdminRows(noResults, "query", "no_result_count", "last_searched_at"),
+      popularResources: popularResources.map((row) => ({
+        ...row,
+        open_count: Number(row.open_count || 0)
+      })),
+      comments,
+      rawEvents
+    };
+  } catch {
+    adminDashboardState.error = "Supabase 데이터를 불러오지 못했어요. view 권한과 SQL 실행 상태를 확인해 주세요.";
+  } finally {
+    adminDashboardState.loading = false;
+    renderAnalyticsAdmin();
+  }
+}
+
+function normalizeAdminRows(rows, labelKey, countKey, dateKey) {
+  return rows
+    .map((row) => ({
+      ...row,
+      [labelKey]: String(row[labelKey] || "").trim(),
+      [countKey]: Number(row[countKey] || 0),
+      [dateKey]: row[dateKey] || null
+    }))
+    .filter((row) => row[labelKey]);
+}
+
+function buildEmptyAdminDashboardData() {
+  return {
+    searchTerms: [],
+    noResults: [],
+    popularResources: [],
+    comments: [],
+    rawEvents: readAnalyticsEvents()
+  };
+}
+
+function filterAdminData(data) {
+  const rangeStart = adminPeriodStart(adminDashboardState.period);
+  const needle = adminDashboardState.query.trim().toLowerCase();
+
+  const dateInRange = (value) => {
+    if (!rangeStart || !value) return true;
+    return new Date(value).getTime() >= rangeStart.getTime();
+  };
+  const matches = (...values) => {
+    if (!needle) return true;
+    return values.some((value) => String(value || "").toLowerCase().includes(needle));
+  };
+
+  return {
+    searchTerms: data.searchTerms
+      .filter((row) => isMeaningfulQuery(row.query))
+      .filter((row) => dateInRange(row.last_searched_at))
+      .filter((row) => matches(row.query))
+      .sort((a, b) => b.search_count - a.search_count),
+    noResults: data.noResults
+      .filter((row) => isMeaningfulQuery(row.query))
+      .filter((row) => dateInRange(row.last_searched_at))
+      .filter((row) => matches(row.query))
+      .sort((a, b) => b.no_result_count - a.no_result_count),
+    popularResources: data.popularResources
+      .filter((row) => dateInRange(row.last_opened_at))
+      .filter((row) => matches(row.resource_title, row.resource_id))
+      .sort((a, b) => b.open_count - a.open_count),
+    comments: data.comments
+      .filter((row) => dateInRange(row.created_at))
+      .filter((row) => matches(row.body, row.nickname, row.article_id)),
+    rawEvents: data.rawEvents.filter((row) => dateInRange(row.created_at))
+  };
+}
+
+function getAdminKpis(data) {
+  const totalSearches = sumBy(data.searchTerms, "search_count");
+  const totalFailures = sumBy(data.noResults, "no_result_count");
+  const totalResourceViews = sumBy(data.popularResources, "open_count");
+  const totalComments = data.comments.length;
+  const rawEvents = data.rawEvents || [];
+  const localEvents = readAnalyticsEvents();
+  const activeSource = rawEvents.length ? rawEvents : localEvents;
+  const activeUsers7d = new Set(activeSource
+    .filter((event) => new Date(event.created_at || event.createdAt).getTime() >= Date.now() - 7 * 24 * 60 * 60 * 1000)
+    .map((event) => event.anonymous_user_id || event.userId)
+    .filter(Boolean)).size;
+  const totalEvents = rawEvents.length || totalSearches + totalFailures + totalResourceViews + totalComments;
+
+  return {
+    totalEvents,
+    totalSearches,
+    totalResourceViews,
+    totalFailures,
+    totalComments,
+    activeUsers7d
+  };
+}
+
+function getDemandAnalysis(searchTerms, popularResources) {
+  const resourceLookup = popularResources.map((resource) => ({
+    title: resource.resource_title || resource.resource_id,
+    id: resource.resource_id,
+    views: Number(resource.open_count || 0)
+  }));
+
+  return searchTerms.map((term) => {
+    const match = resourceLookup.find((resource) => {
+      const haystack = `${resource.title} ${resource.id}`.toLowerCase();
+      return haystack.includes(term.query.toLowerCase()) || term.query.toLowerCase().includes(String(resource.id || "").toLowerCase());
+    });
+    const searches = Number(term.search_count || 0);
+    const views = Number(match?.views || 0);
+    return {
+      topic: term.query,
+      searches,
+      views,
+      conversion: searches ? Math.round((views / searches) * 100) : 0
+    };
+  }).sort((a, b) => (b.searches + b.views) - (a.searches + a.views));
+}
+
+function getContentGaps(noResults) {
+  return noResults
+    .filter((row) => row.no_result_count >= 3)
+    .slice(0, 12);
+}
+
+function getAdminInsights(data) {
+  const demand = getDemandAnalysis(data.searchTerms, data.popularResources);
+  const gaps = getContentGaps(data.noResults);
+  const insights = [];
+
+  if (demand[0]) {
+    insights.push(`${demand[0].topic}는 검색량 ${formatCount(demand[0].searches)}회, 조회량 ${formatCount(demand[0].views)}회로 가장 강한 관심 신호를 보입니다.`);
+  }
+  const topResource = data.popularResources[0];
+  if (topResource) {
+    insights.push(`${topResource.resource_title || topResource.resource_id} 자료가 조회 ${formatCount(topResource.open_count)}회로 가장 많이 열렸습니다.`);
+  }
+  if (gaps[0]) {
+    insights.push(`${gaps[0].query} 검색 실패가 ${formatCount(gaps[0].no_result_count)}회라 신규 콘텐츠 제작을 고려하세요.`);
+  }
+  if (!insights.length) {
+    insights.push("아직 판단할 데이터가 부족합니다. 검색과 자료 열람이 쌓이면 자동 인사이트가 생성됩니다.");
+  }
+
+  return insights;
+}
+
+function barChartTemplate(rows, labelKey, valueKey) {
+  const data = rows.filter((row) => Number(row[valueKey] || 0) > 0).slice(0, 10);
+  if (!data.length) return `<p class="admin-empty">차트로 볼 데이터가 아직 없어요.</p>`;
+  const max = Math.max(...data.map((row) => Number(row[valueKey] || 0)), 1);
+
+  return `
+    <div class="admin-bar-chart">
+      ${data.map((row) => {
+        const label = row[labelKey] || row.resource_id || "이름 없음";
+        const value = Number(row[valueKey] || 0);
+        return `
+          <div class="bar-row">
+            <span>${escapeHtml(label)}</span>
+            <div><i style="width: ${Math.max(5, Math.round((value / max) * 100))}%"></i></div>
+            <strong>${formatCount(value)}</strong>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function lineChartTemplate(rows) {
+  const data = rows.filter((row) => Number(row.no_result_count || 0) > 0).slice(0, 12);
+  if (!data.length) return `<p class="admin-empty">추이로 볼 검색 실패 데이터가 아직 없어요.</p>`;
+  const max = Math.max(...data.map((row) => Number(row.no_result_count || 0)), 1);
+  const points = data.map((row, index) => {
+    const x = data.length === 1 ? 50 : (index / (data.length - 1)) * 100;
+    const y = 100 - (Number(row.no_result_count || 0) / max) * 82 - 8;
+    return `${x},${y}`;
+  }).join(" ");
+
+  return `
+    <div class="admin-line-chart">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="검색 실패 추이">
+        <polyline points="${points}" fill="none" stroke="#3182f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
+      </svg>
+      <div>
+        ${data.slice(0, 4).map((row) => `<span>${escapeHtml(row.query)}</span>`).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function adminDataTable(headers, rows, emptyText) {
+  if (!rows.length) return `<p class="admin-empty">${escapeHtml(emptyText)}</p>`;
+  return `
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>${headers.map((header) => `<th>${escapeHtml(header)}</th>`).join("")}</tr>
+        </thead>
+        <tbody>
+          ${rows.map((row) => `
+            <tr>${row.map((cell) => `<td>${String(cell).startsWith("<") ? cell : escapeHtml(cell)}</td>`).join("")}</tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function exportAdminCsv(kind) {
+  const data = adminDashboardState.data ? filterAdminData(adminDashboardState.data) : buildEmptyAdminDashboardData();
+  const map = {
+    searchTerms: {
+      filename: "popular-search-terms",
+      rows: [["query", "search_count", "last_searched_at"], ...data.searchTerms.map((row) => [row.query, row.search_count, row.last_searched_at])]
+    },
+    noResults: {
+      filename: "no-result-terms",
+      rows: [["query", "no_result_count", "last_searched_at"], ...data.noResults.map((row) => [row.query, row.no_result_count, row.last_searched_at])]
+    },
+    popularResources: {
+      filename: "popular-resources",
+      rows: [["resource_title", "resource_id", "open_count", "last_opened_at"], ...data.popularResources.map((row) => [row.resource_title, row.resource_id, row.open_count, row.last_opened_at])]
+    }
+  };
+  const target = map[kind];
+  if (!target) return;
+
+  const csv = target.rows.map((row) => row.map(csvEscape).join(",")).join("\n");
+  const blob = new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${target.filename}-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function csvEscape(value) {
+  const text = String(value ?? "");
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function sumBy(rows, key) {
+  return rows.reduce((sum, row) => sum + Number(row[key] || 0), 0);
+}
+
+function isMeaningfulQuery(query) {
+  const text = String(query || "").trim();
+  if (text.length <= 2) return false;
+  return !/^[A-Za-z]$/.test(text);
+}
+
+function adminPeriodStart(period) {
+  const now = new Date();
+  if (period === "today") return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (period === "7d") return new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  if (period === "30d") return new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  return null;
+}
+
+function adminPeriodLabel(period) {
+  return {
+    today: "오늘",
+    "7d": "7일",
+    "30d": "30일",
+    all: "전체"
+  }[period] || "전체";
+}
+
+function formatAdminDate(value) {
+  if (!value) return "-";
+  return new Date(value).toLocaleString("ko-KR", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 }
 
 function countBy(events, getKey) {
