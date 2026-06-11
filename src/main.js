@@ -1,4 +1,5 @@
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260611-2";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260611-3";
+const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 
 let resources = normalizeResourceData(await loadResourceData());
 
@@ -320,6 +321,28 @@ document.addEventListener("click", (event) => {
   renderBottomTabs();
   renderResults();
   document.querySelector("#results").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-khsim-open]");
+  if (!button) return;
+
+  trackEvent("khshim_notice_open", { url: KHSIM_URL });
+  openKhsimNotice();
+});
+
+document.addEventListener("click", (event) => {
+  const link = event.target.closest("[data-khsim-link]");
+  if (!link) return;
+
+  trackEvent("khshim_external_open", { url: link.href });
+});
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-khsim-dismiss]");
+  if (!button) return;
+
+  closePreviewModal();
 });
 
 document.addEventListener("click", (event) => {
@@ -852,6 +875,7 @@ function openTrendArticle(article) {
   bumpTrendView(article.id);
   trackEvent("trend_article_open", { articleId: article.id, title: article.title, source: article.source });
   renderTrendScreen();
+  previewModal.setAttribute("aria-labelledby", "modalTitle");
   modalContent.innerHTML = trendDetailTemplate(article);
   previewModal.hidden = false;
   document.body.classList.add("modal-open");
@@ -929,6 +953,7 @@ function openTrendComments(article) {
 }
 
 function renderTrendComments(article, options = {}) {
+  previewModal.setAttribute("aria-labelledby", "modalTitle");
   modalContent.innerHTML = trendCommentsTemplate(article, options);
 }
 
@@ -1477,7 +1502,46 @@ function openPreviewModal(resource) {
   bumpResourceView(resource.id);
   rememberRecent(resource.id);
   trackEvent("resource_open", resourcePayload(resource));
+  previewModal.setAttribute("aria-labelledby", "modalTitle");
   renderModalContent(resource);
+  previewModal.hidden = false;
+  document.body.classList.add("modal-open");
+  document.body.style.overflow = "hidden";
+}
+
+function openKhsimNotice() {
+  previewModal.setAttribute("aria-labelledby", "khsimModalTitle");
+  modalContent.innerHTML = `
+    <div class="khshim-notice">
+      <p class="eyebrow">KHSIM Simulation</p>
+      <h2 id="khsimModalTitle">태블릿이나 PC에서 체험해 주세요</h2>
+      <p class="khshim-lead">
+        KHSIM은 실제 환자 시뮬레이션처럼 화면을 보면서 조작하는 콘텐츠라 모바일에서는 버튼과 화면이 답답할 수 있어요.
+        휴대폰에서는 미리 둘러보고, 제대로 체험할 때는 태블릿이나 PC로 여는 걸 추천합니다.
+      </p>
+      <div class="khshim-device-list" aria-label="권장 환경">
+        <div>
+          <span>PC</span>
+          <strong>가장 추천</strong>
+          <p>화면과 조작 영역을 한 번에 보기 좋아요.</p>
+        </div>
+        <div>
+          <span>Tablet</span>
+          <strong>체험 가능</strong>
+          <p>가로 모드로 보면 훨씬 안정적이에요.</p>
+        </div>
+        <div>
+          <span>Mobile</span>
+          <strong>미리보기용</strong>
+          <p>접속은 가능하지만 조작이 불편할 수 있어요.</p>
+        </div>
+      </div>
+      <div class="khshim-actions">
+        <button type="button" data-khsim-dismiss>나중에 보기</button>
+        <a href="${KHSIM_URL}" target="_blank" rel="noreferrer" data-khsim-link>KHSIM 열기</a>
+      </div>
+    </div>
+  `;
   previewModal.hidden = false;
   document.body.classList.add("modal-open");
   document.body.style.overflow = "hidden";
