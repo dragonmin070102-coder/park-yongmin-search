@@ -1,4 +1,4 @@
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260611-3";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260614-1";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 
 let resources = normalizeResourceData(await loadResourceData());

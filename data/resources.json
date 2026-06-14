@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-10T07:43:23.200Z",
+  "updatedAt": "2026-06-14T14:15:00.000Z",
   "resources": [
     {
       "id": "acs-ecg",
@@ -633,6 +633,77 @@
         "ODS"
       ],
       "rank": 13
+    },
+    {
+      "id": "abga",
+      "title": "ABGA arterial blood gas analysis",
+      "displayTitle": "ABGA 동맥혈가스분석",
+      "type": "검사수치",
+      "format": "PDF",
+      "source": "박용민 임상추론 PDF",
+      "url": "./assets/pdfs/abga-arterial-blood-gas-analysis.pdf",
+      "tags": [
+        "ABGA",
+        "ABG",
+        "동맥혈가스분석",
+        "Arterial Blood Gas Analysis",
+        "pH",
+        "PaCO2",
+        "HCO3",
+        "PaO2",
+        "SaO2",
+        "Base Excess",
+        "BE",
+        "ROME",
+        "호흡성 산증",
+        "대사성 산증",
+        "보상",
+        "부분 보상",
+        "COPD",
+        "저산소혈증",
+        "CO2 narcosis",
+        "Allen test",
+        "검사수치",
+        "임상추론",
+        "핵심"
+      ],
+      "summary": "pH, PaCO2, HCO3, PaO2로 산염기 불균형과 보상 여부를 추론하는 ABGA 임상추론 자료입니다.",
+      "points": [
+        "ROME 법칙으로 호흡성/대사성 문제를 구분하고 pH 정상범위 여부로 완전 보상과 부분 보상을 판단합니다.",
+        "COPD 사례에서 pH 7.32, PaCO2 58, HCO3 28, PaO2 56을 부분 보상된 호흡성 산증과 저산소혈증으로 연결합니다.",
+        "PaO2 60mmHg 미만, 의식수준 저하, 호흡양상 악화, 청색증은 ABGA 결과와 함께 즉시 보고해야 할 기준으로 정리합니다."
+      ],
+      "useCase": "ABGA 해석 순서, 산염기 불균형 감별, COPD 호흡성 산증, 실습 중 ABGA 보고 기준 확인",
+      "confidence": "본문 확인",
+      "system": "검사수치",
+      "intent": "임상추론",
+      "stage": "핵심",
+      "evidence": "로컬로 제공된 ABGA_동맥혈가스분석 PDF에서 정상범위, ROME 법칙, Base Excess, COPD 사례, 부분 보상된 호흡성 산증, 저산소혈증, 간호 우선순위와 보고 기준을 확인했습니다.",
+      "related": [
+        "pneumothorax-cxr",
+        "gbs",
+        "siadh",
+        "ast-alt-ratio"
+      ],
+      "keywords": [
+        "ABGA",
+        "ABG",
+        "동맥혈가스분석",
+        "pH",
+        "PaCO2",
+        "HCO3",
+        "PaO2",
+        "Base Excess",
+        "BE",
+        "ROME",
+        "호흡성 산증",
+        "부분 보상",
+        "COPD",
+        "저산소혈증",
+        "CO2 narcosis",
+        "Allen test"
+      ],
+      "rank": 14
     }
   ]
 }
