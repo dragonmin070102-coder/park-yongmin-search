@@ -765,6 +765,46 @@ input[type="search"]:focus {
   color: #4e5968;
 }
 
+.resource-community {
+  display: grid;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid #edf0f3;
+  border-radius: 8px;
+  background: #f7f8fa;
+}
+
+.resource-community p {
+  margin: 0;
+  color: #6b7684;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.resource-reactions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.resource-reactions button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #4e5968;
+  font-size: 13px;
+  font-weight: 850;
+  box-shadow: inset 0 0 0 1px #edf0f3;
+}
+
+.resource-reactions button.active {
+  background: #e8f3ff;
+  color: #1b64da;
+  box-shadow: none;
+}
+
 .copy-fallback {
   display: grid;
   gap: 10px;
@@ -3841,4 +3881,79 @@ body.admin-mode .bottom-tabs {
 
 .admin-table tr:last-child td {
   border-bottom: 0;
+}
+
+/* Final search layout lock: keep the app in one mobile column even on wide browser panes. */
+body.search-mode {
+  background: #f7f8fa;
+}
+
+body.search-mode main {
+  width: min(100%, 430px);
+  min-height: 100vh;
+  margin: 0 auto;
+  background: #f7f8fa;
+}
+
+body.search-mode .app-shell {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 0 !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 0 calc(112px + env(safe-area-inset-bottom)) !important;
+  background: #f7f8fa !important;
+}
+
+body.search-mode .search-screen-head,
+body.search-mode .results-panel,
+body.search-mode .filters {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  grid-column: 1 / -1 !important;
+}
+
+body.search-mode .search-screen-head {
+  position: sticky !important;
+  top: 0 !important;
+  left: auto !important;
+  right: auto !important;
+  margin: 0 !important;
+}
+
+body.search-mode .results-panel {
+  margin: 0 !important;
+  padding: 0 0 12px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body.search-mode .results-head {
+  padding: 16px 16px 10px !important;
+}
+
+body.search-mode .result-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 10px !important;
+  padding: 0 14px !important;
+}
+
+body.search-mode .filters {
+  position: fixed !important;
+  right: 14px !important;
+  bottom: calc(74px + env(safe-area-inset-bottom)) !important;
+  left: 14px !important;
+  z-index: 28 !important;
+  width: min(calc(100% - 28px), 402px) !important;
+  margin: 0 auto !important;
+  padding: 8px !important;
+  border-radius: 8px !important;
+}
+
+body.search-mode .detail-panel {
+  display: none !important;
 }

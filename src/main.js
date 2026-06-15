@@ -1,4 +1,4 @@
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260614-1";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260615-2";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 
 let resources = normalizeResourceData(await loadResourceData());
@@ -74,6 +74,8 @@ let activeNoticeIndex = 0;
 let noticeTimer = null;
 let resourceStats = new Map();
 let trendStats = new Map();
+let resourceDiscussionStats = new Map();
+let noticeTouchStart = null;
 let adminDashboardState = {
   period: "all",
   query: "",
@@ -355,6 +357,11 @@ document.addEventListener("click", (event) => {
   startNoticeRotation();
 });
 
+if (homeNoticeCarousel) {
+  homeNoticeCarousel.addEventListener("touchstart", handleHomeNoticeTouchStart, { passive: true });
+  homeNoticeCarousel.addEventListener("touchend", handleHomeNoticeTouchEnd, { passive: true });
+}
+
 document.addEventListener("click", (event) => {
   const source = event.target.closest("[data-notice-source]");
   if (!source) return;
@@ -401,6 +408,36 @@ document.addEventListener("click", (event) => {
   if (!button) return;
 
   likeTrendComment(button.dataset.commentLike, button.dataset.articleId);
+});
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-resource-like]");
+  if (!button) return;
+
+  toggleResourceLike(button.dataset.resourceLike);
+});
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-resource-comments]");
+  if (!button) return;
+
+  const resource = resources.find((item) => item.id === button.dataset.resourceComments);
+  if (!resource) return;
+  openResourceComments(resource);
+});
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-resource-comment-submit]");
+  if (!button) return;
+
+  submitResourceComment(button.dataset.resourceCommentSubmit);
+});
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-resource-comment-like]");
+  if (!button) return;
+
+  likeResourceComment(button.dataset.resourceCommentLike, button.dataset.resourceId);
 });
 
 document.addEventListener("click", (event) => {
@@ -831,6 +868,41 @@ function getHomeNotices() {
   ];
 }
 
+function handleHomeNoticeTouchStart(event) {
+  const touch = event.changedTouches?.[0];
+  if (!touch) return;
+
+  noticeTouchStart = {
+    x: touch.clientX,
+    y: touch.clientY,
+    time: Date.now()
+  };
+}
+
+function handleHomeNoticeTouchEnd(event) {
+  if (!noticeTouchStart) return;
+
+  const touch = event.changedTouches?.[0];
+  if (!touch) return;
+
+  const dx = touch.clientX - noticeTouchStart.x;
+  const dy = touch.clientY - noticeTouchStart.y;
+  const elapsed = Date.now() - noticeTouchStart.time;
+  noticeTouchStart = null;
+
+  if (elapsed > 650 || Math.abs(dx) < 42 || Math.abs(dx) < Math.abs(dy) * 1.25) return;
+
+  moveHomeNotice(dx < 0 ? 1 : -1);
+}
+
+function moveHomeNotice(direction) {
+  const notices = getHomeNotices();
+  activeNoticeIndex = (activeNoticeIndex + direction + notices.length) % notices.length;
+  trackEvent("home_notice_swipe", { index: activeNoticeIndex, direction });
+  renderHomeNoticeCarousel();
+  startNoticeRotation();
+}
+
 function renderTrendScreen() {
   if (!trendScreen) return;
 
@@ -1094,6 +1166,199 @@ async function likeTrendComment(commentId, articleId) {
     setTrendCommentCount(article.id, comments.length);
     renderTrendScreen();
     renderTrendComments(article, { comments });
+  } catch {
+    showToast("좋아요 반영에 실패했어요");
+  }
+}
+
+function openResourceComments(resource) {
+  trackEvent("resource_comments_open", resourcePayload(resource));
+  renderResourceComments(resource, { loading: true });
+  loadResourceComments(resource)
+    .then((comments) => {
+      setResourceCommentCount(resource.id, comments.length);
+      renderDetail(activeResource);
+      renderResourceComments(resource, { comments });
+    })
+    .catch(() => {
+      const comments = readLocalResourceComments(resource.id);
+      setResourceCommentCount(resource.id, comments.length);
+      renderResourceComments(resource, {
+        comments,
+        error: supabaseConfig.enabled
+          ? "댓글 서버 연결 전이라 이 기기에서 남긴 댓글을 보여주고 있어요."
+          : "Supabase 연결 전이라 이 기기에서만 댓글이 저장돼요."
+      });
+    });
+}
+
+function renderResourceComments(resource, options = {}) {
+  previewModal.setAttribute("aria-labelledby", "modalTitle");
+  modalContent.innerHTML = resourceCommentsTemplate(resource, options);
+  previewModal.hidden = false;
+  document.body.classList.add("modal-open");
+  document.body.style.overflow = "hidden";
+}
+
+function resourceCommentsTemplate(resource, options = {}) {
+  const comments = options.comments || readLocalResourceComments(resource.id);
+  const titleCount = options.loading ? getResourceCommentCount(resource) : comments.length;
+
+  return `
+    <div class="trend-comments resource-comments">
+      <h2 id="modalTitle">${escapeHtml(resource.displayTitle)} 댓글 (${formatCount(titleCount)})</h2>
+      <div class="comment-guide">자료를 보며 헷갈린 지점, 실습에서 궁금한 점, 추가로 보고 싶은 내용을 남겨주세요.</div>
+      ${options.loading ? `<div class="comment-status">댓글을 불러오는 중이에요.</div>` : ""}
+      ${options.error ? `<div class="comment-status">${escapeHtml(options.error)}</div>` : ""}
+      <div class="comment-list">
+        ${comments.length ? comments.map((comment) => `
+          <article class="comment-card">
+            <div>
+              <strong>${escapeHtml(comment.name)}</strong>
+              <span>${escapeHtml(comment.time)}</span>
+            </div>
+            <p>${escapeHtml(comment.text)}</p>
+            <button type="button" data-resource-comment-like="${escapeHtml(String(comment.id))}" data-resource-id="${escapeHtml(resource.id)}">좋아요 ${formatCount(comment.likes || 0)}</button>
+          </article>
+        `).join("") : `<div class="comment-status">아직 댓글이 없어요. 첫 질문을 남겨보세요.</div>`}
+      </div>
+      <div class="comment-input">
+        <textarea maxlength="300" placeholder="의견이나 질문을 남겨주세요." aria-label="자료 댓글 입력"></textarea>
+        <button type="button" data-resource-comment-submit="${escapeHtml(resource.id)}">등록</button>
+      </div>
+    </div>
+  `;
+}
+
+async function loadResourceComments(resource) {
+  if (!supabaseConfig.enabled) {
+    throw new Error("Supabase is not configured");
+  }
+
+  const query = new URLSearchParams({
+    select: "id,resource_id,nickname,body,likes,created_at",
+    resource_id: `eq.${resource.id}`,
+    hidden: "eq.false",
+    order: "created_at.desc",
+    limit: "50"
+  });
+  const rows = await supabaseRequest(`resource_comments?${query.toString()}`);
+
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.nickname,
+    time: relativeTime(row.created_at),
+    text: row.body,
+    likes: row.likes || 0
+  }));
+}
+
+async function submitResourceComment(resourceId) {
+  const resource = resources.find((item) => item.id === resourceId);
+  if (!resource) return;
+
+  const textarea = modalContent.querySelector(".comment-input textarea");
+  const button = modalContent.querySelector(`[data-resource-comment-submit="${CSS.escape(resourceId)}"]`);
+  const body = String(textarea?.value || "").trim();
+
+  if (!body) {
+    showToast("댓글 내용을 입력해 주세요");
+    textarea?.focus();
+    return;
+  }
+
+  if (body.length > 300) {
+    showToast("댓글은 300자 안으로 남겨주세요");
+    return;
+  }
+
+  if (isBlockedComment(body)) {
+    showToast("개인정보, 광고 링크, 비방 표현은 남길 수 없어요");
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "등록 중";
+
+  if (supabaseConfig.enabled) {
+    try {
+      await supabaseRequest("resource_comments", {
+        method: "POST",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({
+          resource_id: resource.id,
+          anonymous_user_id: analyticsUserId,
+          nickname: getCommentNickname(),
+          body
+        })
+      });
+      trackEvent("resource_comment_submit", { ...resourcePayload(resource), bodyLength: body.length });
+      textarea.value = "";
+      showToast("댓글을 등록했어요");
+      const comments = await loadResourceComments(resource);
+      setResourceCommentCount(resource.id, comments.length);
+      renderDetail(activeResource);
+      renderResourceComments(resource, { comments });
+      return;
+    } catch {
+      // Fall through to local save so the user does not lose their comment.
+    }
+  }
+
+  saveLocalResourceComment(resource, body);
+  trackEvent("resource_comment_submit_local", { ...resourcePayload(resource), bodyLength: body.length });
+  textarea.value = "";
+  showToast(supabaseConfig.enabled ? "서버 저장이 막혀 이 기기에 임시 저장했어요" : "이 기기에 댓글을 저장했어요");
+  const comments = readLocalResourceComments(resource.id);
+  setResourceCommentCount(resource.id, comments.length);
+  renderDetail(activeResource);
+  renderResourceComments(resource, {
+    comments,
+    error: "Supabase 댓글 테이블을 연결하면 다른 사용자도 이 댓글을 볼 수 있어요."
+  });
+}
+
+async function likeResourceComment(commentId, resourceId) {
+  const resource = resources.find((item) => item.id === resourceId);
+  if (!resource || !commentId) return;
+
+  if (String(commentId).startsWith("local_")) {
+    const likedKey = "pym.likedLocalResourceComments";
+    const liked = new Set(readJsonArray(likedKey));
+    if (liked.has(commentId)) {
+      showToast("이미 좋아요를 눌렀어요");
+      return;
+    }
+    updateLocalResourceCommentLike(resourceId, commentId);
+    liked.add(commentId);
+    localStorage.setItem(likedKey, JSON.stringify(Array.from(liked).slice(-300)));
+    renderResourceComments(resource, { comments: readLocalResourceComments(resourceId) });
+    return;
+  }
+
+  if (!supabaseConfig.enabled) return;
+
+  const likedKey = "pym.likedResourceComments";
+  const liked = new Set(readJsonArray(likedKey));
+  if (liked.has(commentId)) {
+    showToast("이미 좋아요를 눌렀어요");
+    return;
+  }
+
+  try {
+    const rows = await supabaseRequest(`resource_comments?select=likes&id=eq.${encodeURIComponent(commentId)}&limit=1`);
+    const currentLikes = Number(rows[0]?.likes || 0);
+    await supabaseRequest(`resource_comments?id=eq.${encodeURIComponent(commentId)}`, {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ likes: currentLikes + 1 })
+    });
+    liked.add(commentId);
+    localStorage.setItem(likedKey, JSON.stringify(Array.from(liked).slice(-300)));
+    trackEvent("resource_comment_like", { resourceId, commentId });
+    const comments = await loadResourceComments(resource);
+    setResourceCommentCount(resource.id, comments.length);
+    renderResourceComments(resource, { comments });
   } catch {
     showToast("좋아요 반영에 실패했어요");
   }
@@ -1419,6 +1684,13 @@ function detailTemplate(resource) {
       <h3 class="detail-title" id="modalTitle">${escapeHtml(resource.displayTitle)}</h3>
       <div class="content-stats">조회 ${formatCount(getResourceViews(resource.id))} · ${escapeHtml(resource.confidence)} · ${escapeHtml(resource.source)}</div>
       <p class="detail-summary">${escapeHtml(resource.summary)}</p>
+      <div class="resource-community">
+        <div class="resource-reactions" aria-label="자료 반응">
+          <button type="button" class="${isResourceLiked(resource.id) ? "active" : ""}" data-resource-like="${escapeHtml(resource.id)}">좋아요 ${formatCount(getResourceLikeCount(resource.id))}</button>
+          <button type="button" data-resource-comments="${escapeHtml(resource.id)}">댓글 ${formatCount(getResourceCommentCount(resource))}</button>
+        </div>
+        <p>이 자료가 도움 됐는지 남기고, 헷갈리는 포인트는 댓글로 같이 정리해요.</p>
+      </div>
       <div class="detail-section">
         <h3>간단 설명</h3>
         <ul>
@@ -1643,6 +1915,9 @@ function showCopyFallback(text) {
 }
 
 async function loadContentStats() {
+  mergeLocalTrendViewStats();
+  renderTrendScreen();
+
   if (!supabaseConfig.enabled) return;
 
   try {
@@ -1657,17 +1932,39 @@ async function loadContentStats() {
   }
 
   try {
-    const trendRows = await supabaseRequest("trend_article_stats?select=article_id,view_count,comment_count,like_count");
-    trendStats = new Map(trendRows
-      .filter((row) => row.article_id)
-      .map((row) => [row.article_id, {
-        views: Number(row.view_count || 0),
-        comments: Number(row.comment_count || 0),
-        likes: Number(row.like_count || 0)
+    const resourceDiscussionRows = await supabaseRequest("resource_discussion_stats?select=resource_id,like_count,comment_count");
+    resourceDiscussionStats = new Map(resourceDiscussionRows
+      .filter((row) => row.resource_id)
+      .map((row) => [row.resource_id, {
+        likes: Math.max(Number(row.like_count || 0), Number(isResourceLiked(row.resource_id) ? 1 : 0)),
+        comments: Math.max(Number(row.comment_count || 0), readLocalResourceComments(row.resource_id).length)
       }]));
+    renderResults();
+    renderDetail(activeResource);
+  } catch {
+    mergeLocalResourceDiscussionStats();
+  }
+
+  try {
+    const trendRows = await supabaseRequest("trend_article_stats?select=article_id,view_count,comment_count,like_count");
+    const nextTrendStats = new Map(trendStats);
+    trendRows
+      .filter((row) => row.article_id)
+      .forEach((row) => {
+        const current = nextTrendStats.get(row.article_id) || { views: 0, comments: 0, likes: 0 };
+        nextTrendStats.set(row.article_id, {
+          views: Math.max(Number(current.views || 0), Number(row.view_count || 0)),
+          comments: Number(row.comment_count || 0),
+          likes: Number(row.like_count || 0)
+        });
+      });
+    trendStats = nextTrendStats;
+    mergeLocalTrendViewStats();
     renderTrendScreen();
   } catch {
+    mergeLocalTrendViewStats();
     loadTrendCommentCounts();
+    renderTrendScreen();
   }
 }
 
@@ -1701,8 +1998,124 @@ function bumpResourceView(resourceId) {
   resourceStats.set(resourceId, { ...current, views: Number(current.views || 0) + 1 });
 }
 
+function getResourceDiscussionStats(resourceId) {
+  return resourceDiscussionStats.get(resourceId) || { likes: 0, comments: 0 };
+}
+
+function getResourceLikeCount(resourceId) {
+  const stats = getResourceDiscussionStats(resourceId);
+  return Number(stats.likes || 0);
+}
+
+function getResourceCommentCount(resource) {
+  const stats = getResourceDiscussionStats(resource.id);
+  return Number(stats.comments || readLocalResourceComments(resource.id).length || 0);
+}
+
+function setResourceCommentCount(resourceId, count) {
+  const current = getResourceDiscussionStats(resourceId);
+  resourceDiscussionStats.set(resourceId, { ...current, comments: Number(count || 0) });
+}
+
+function isResourceLiked(resourceId) {
+  return new Set(readJsonArray("pym.likedResources")).has(resourceId);
+}
+
+function toggleResourceLike(resourceId) {
+  const resource = resources.find((item) => item.id === resourceId);
+  if (!resource) return;
+
+  const liked = new Set(readJsonArray("pym.likedResources"));
+  if (liked.has(resourceId)) {
+    showToast("이미 좋아요를 눌렀어요");
+    return;
+  }
+
+  liked.add(resourceId);
+  localStorage.setItem("pym.likedResources", JSON.stringify(Array.from(liked).slice(-500)));
+  const current = getResourceDiscussionStats(resourceId);
+  resourceDiscussionStats.set(resourceId, {
+    ...current,
+    likes: Number(current.likes || 0) + 1
+  });
+  trackEvent("resource_like", resourcePayload(resource));
+  showToast("좋아요를 눌렀어요");
+  renderDetail(activeResource);
+  if (!previewModal.hidden) {
+    renderModalContent(resource);
+  }
+}
+
+function mergeLocalResourceDiscussionStats() {
+  resources.forEach((resource) => {
+    const current = getResourceDiscussionStats(resource.id);
+    resourceDiscussionStats.set(resource.id, {
+      ...current,
+      likes: Math.max(Number(current.likes || 0), Number(isResourceLiked(resource.id) ? 1 : 0)),
+      comments: Math.max(Number(current.comments || 0), readLocalResourceComments(resource.id).length)
+    });
+  });
+}
+
+function readLocalResourceComments(resourceId) {
+  return readJsonArray("pym.localResourceComments")
+    .filter((comment) => comment.resourceId === resourceId)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .map((comment) => ({
+      id: comment.id,
+      name: comment.name,
+      time: relativeTime(comment.createdAt),
+      text: comment.text,
+      likes: Number(comment.likes || 0)
+    }));
+}
+
+function saveLocalResourceComment(resource, body) {
+  const comments = readJsonArray("pym.localResourceComments");
+  comments.push({
+    id: `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    resourceId: resource.id,
+    name: getCommentNickname(),
+    text: body,
+    likes: 0,
+    createdAt: new Date().toISOString()
+  });
+  localStorage.setItem("pym.localResourceComments", JSON.stringify(comments.slice(-500)));
+}
+
+function updateLocalResourceCommentLike(resourceId, commentId) {
+  const comments = readJsonArray("pym.localResourceComments");
+  const next = comments.map((comment) => {
+    if (comment.resourceId !== resourceId || comment.id !== commentId) return comment;
+    return { ...comment, likes: Number(comment.likes || 0) + 1 };
+  });
+  localStorage.setItem("pym.localResourceComments", JSON.stringify(next.slice(-500)));
+}
+
 function getTrendStats(articleId) {
   return trendStats.get(articleId) || { views: 0, comments: 0, likes: 0 };
+}
+
+function getLocalTrendViewCounts() {
+  const counts = new Map();
+  readAnalyticsEvents()
+    .filter((event) => event.name === "trend_article_open")
+    .forEach((event) => {
+      const articleId = event.properties?.articleId;
+      if (!articleId) return;
+      counts.set(articleId, Number(counts.get(articleId) || 0) + 1);
+    });
+  return counts;
+}
+
+function mergeLocalTrendViewStats() {
+  getLocalTrendViewCounts().forEach((views, articleId) => {
+    const current = getTrendStats(articleId);
+    trendStats.set(articleId, {
+      ...current,
+      views: Math.max(Number(current.views || 0), Number(views || 0))
+    });
+  });
 }
 
 function bumpTrendView(articleId) {
@@ -1800,7 +2213,12 @@ function sendRemoteAnalytics(event) {
   if (!supabaseConfig.enabled) return;
 
   postSupabaseEvents([event])
-    .then(() => markSupabaseSent([event.id]))
+    .then(() => {
+      markSupabaseSent([event.id]);
+      if (event.name === "trend_article_open") {
+        loadContentStats();
+      }
+    })
     .catch((error) => {
       if (error.status === 409) {
         markSupabaseSent([event.id]);
