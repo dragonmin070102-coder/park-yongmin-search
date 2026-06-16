@@ -1,4 +1,4 @@
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260615-2";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260616-1";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 
 let resources = normalizeResourceData(await loadResourceData());
@@ -122,6 +122,83 @@ const communityQuestions = [
 
 const trendArticles = [
   {
+    id: "abga-five-step",
+    category: "검사수치",
+    source: "널스링크",
+    date: "2026.06.15",
+    hook: "ABGA, 숫자 5개를 어떤 순서로 봐야 할까?",
+    title: "ABG 5단계 해석법, 이번 주 다시 정리하기",
+    summary: "ABGA는 pH, PaO2, PaCO2, HCO3, BE를 단계적으로 보면 산증/알칼리증과 호흡성/대사성 원인을 빠르게 구분할 수 있어요.",
+    image: "./assets/thumb-lab.png",
+    tags: ["ABGA", "산염기", "보상기전"],
+    sourceUrl: "https://nurse-link.co.kr/community/campus_talk/126520249",
+    relatedIds: ["abga", "pneumothorax-cxr", "siadh"],
+    keyPoints: [
+      "pH로 산증/알칼리증을 먼저 판단하고 PaCO2, HCO3로 원인을 좁히는 순서가 중요해요.",
+      "PaO2와 SpO2는 산소화 문제를 확인하는 지표라 호흡곤란, 청색증, 의식상태와 같이 봐야 해요.",
+      "pH가 정상범위 안인지 밖인지에 따라 완전 보상과 부분 보상을 구분할 수 있어요."
+    ],
+    why: "응급실, 중환자실, 호흡기내과 실습에서 ABGA는 산소요법과 보고 우선순위를 판단하는 핵심 검사예요.",
+    nursePrep: "ABGA 결과를 받으면 pH, PaCO2, HCO3, PaO2 순서로 읽고, PaO2 60mmHg 미만이나 의식저하는 즉시 보고 기준으로 정리해두세요.",
+    studentPrep: "ROME 법칙과 보상기전을 한 장 표로 외우기보다 COPD 사례처럼 숫자를 따라가며 해석하는 연습을 해보세요.",
+    comments: [
+      { name: "익명 학생_2046", time: "1시간 전", text: "ABGA는 숫자는 아는데 순서가 늘 헷갈렸어요. 플로우차트 있으면 좋겠어요.", likes: 7 },
+      { name: "익명 간호사_3478", time: "3시간 전", text: "실습에서는 PaO2랑 의식상태를 같이 보는 습관이 중요하더라고요.", likes: 9 },
+      { name: "익명 학생_1184", time: "어제", text: "ROME 법칙으로 풀어보는 예시 문제가 같이 있으면 바로 저장할 것 같아요.", likes: 4 },
+      { name: "익명 신규_6021", time: "어제", text: "COPD 환자 ABGA 예시랑 같이 보면 훨씬 기억에 남을 듯해요.", likes: 3 }
+    ]
+  },
+  {
+    id: "acls-guideline-2026",
+    category: "심혈관",
+    source: "AHA 업데이트",
+    date: "2026.06.15",
+    hook: "ACLS 업데이트, 간호학생은 뭘 먼저 봐야 할까?",
+    title: "2025 AHA ACLS·소생술 가이드라인, 2026년 교육 현장 반영",
+    summary: "2025년 발표된 AHA 소생술 가이드라인이 2026년 교육 자료와 강사 업데이트에 순차 반영되고 있어요.",
+    image: "./assets/thumb-cardio.png",
+    tags: ["ACLS", "CPR", "고품질 흉부압박"],
+    sourceUrl: "https://cpraedcourse.com/blog/aha-acls-guidelines/",
+    relatedIds: ["acs-ecg", "mi", "abga"],
+    keyPoints: [
+      "ACLS와 CPR은 신규간호사 교육과 임상실습에서 반복적으로 확인되는 핵심 역량이에요.",
+      "고품질 흉부압박은 강하고 빠르게, 그리고 중단 시간을 최소화하는 원칙이 중심이에요.",
+      "특수 상황 프로토콜이 보강되면서 기본 알고리즘을 먼저 탄탄하게 익히는 게 더 중요해졌어요."
+    ],
+    why: "응급상황에서 간호사는 리듬 확인, 흉부압박 교대, 약물 준비, 기록, 보고를 동시에 수행해야 해서 알고리즘 이해가 중요해요.",
+    nursePrep: "병원 BLS/ACLS 교육 전 고품질 CPR 기준, 제세동 흐름, 에피네프린 투여 타이밍을 다시 확인해두세요.",
+    studentPrep: "국가고시 관점에서는 흉부압박 깊이와 속도, AED 사용 흐름, 심정지 초기 대응 순서를 먼저 잡아두면 좋아요.",
+    comments: [
+      { name: "익명 신규간호사_2210", time: "2시간 전", text: "ACLS는 알고리즘을 외워도 실제 상황에서 역할이 헷갈려요.", likes: 8 },
+      { name: "익명 학생_9012", time: "4시간 전", text: "CPR 기준이 국가고시에도 계속 나와서 따로 정리되면 좋겠어요.", likes: 5 },
+      { name: "익명 학생_7815", time: "어제", text: "제세동 리듬이랑 비제세동 리듬을 한 번에 비교해주면 좋겠어요.", likes: 6 }
+    ]
+  },
+  {
+    id: "nihss-stroke-assessment",
+    category: "신경계",
+    source: "대한뇌졸중학회",
+    date: "2026.06.15",
+    hook: "뇌졸중 환자 사정, 왜 NIHSS로 말해야 할까?",
+    title: "뇌졸중 환자 사정의 핵심, NIHSS 활용 재조명",
+    summary: "국내 뇌졸중 진료지침은 초기 중증도 평가에 NIHSS 사용을 권고하며, 체계적 신경학적 사정의 중요성을 강조해요.",
+    image: "./assets/thumb-neuro.png",
+    tags: ["NIHSS", "뇌졸중", "신경계 사정"],
+    sourceUrl: "https://www.stroke.or.kr/guidelines/view.php?sid=33",
+    relatedIds: ["iicp", "gbs", "ms"],
+    keyPoints: [
+      "NIHSS는 의식, 시야, 안면마비, 운동, 감각, 언어 등을 수치화해 상태 변화를 공유하는 도구예요.",
+      "응급실과 신경과 실습에서는 주관적 표현보다 객관적 점수로 보고하는 능력이 중요해요.",
+      "뇌졸중 초기 사정은 치료 시간창과 연결되기 때문에 빠르고 체계적인 관찰이 필요해요."
+    ],
+    why: "신경계 환자는 작은 변화가 예후와 치료 방향에 영향을 줄 수 있어, 간호사의 반복 사정과 정확한 보고가 핵심이에요.",
+    nursePrep: "편측마비, 언어장애, 의식변화, 동공변화처럼 즉시 보고해야 하는 신경계 변화 기준을 병동 프로토콜과 함께 확인하세요.",
+    studentPrep: "실습 전에는 GCS와 NIHSS의 차이, FAST 증상, 뇌졸중 초기 간호 우선순위를 같이 묶어 공부해보세요.",
+    comments: [
+      { name: "익명 간호사_7730", time: "6시간 전", text: "응급실에서는 증상 시작 시간과 변화 양상 보고가 정말 중요합니다.", likes: 11 }
+    ]
+  },
+  {
     id: "nurse-ai-tools",
     category: "헬스케어경제",
     source: "Axios",
@@ -143,8 +220,8 @@ const trendArticles = [
     studentPrep: "디지털 헬스케어와 간호정보학의 기본 개념을 익히고, 케이스 스터디에서 어떤 정보가 실제 판단에 필요한지 정리해보세요.",
     comments: [
       { name: "익명 간호사_3478", time: "1시간 전", text: "기록 업무가 너무 많아서 정작 환자 케어 시간이 줄어드는 게 가장 큰 문제 같아요.", likes: 8 },
-      { name: "익명 학생_2046", time: "3시간 전", text: "간호학생인데요, 추천하신 AI 도구 관련 자료나 입문 강의가 있다면 공유 부탁드려요!", likes: 5 },
-      { name: "익명 간호사_1129", time: "5시간 전", text: "현장에서 사용할 수 있는 간단하고 직관적인 도구가 나왔으면 좋겠어요.", likes: 6 }
+      { name: "익명 간호사_1129", time: "5시간 전", text: "현장에서 사용할 수 있는 간단하고 직관적인 도구가 나왔으면 좋겠어요.", likes: 6 },
+      { name: "익명 학생_2046", time: "어제", text: "간호정보학 수업이랑 연결해서 보면 재밌을 것 같아요. 관련 PDF도 있으면 좋겠어요.", likes: 5 }
     ]
   },
   {
@@ -168,8 +245,7 @@ const trendArticles = [
     nursePrep: "낙상 고위험, 호흡곤란, 의식변화처럼 즉시 보고해야 하는 기준을 병동별로 다시 확인해두세요.",
     studentPrep: "실습 중에는 환자 수보다 우선순위 판단을 먼저 연습하고, 보고 기준을 질환별로 묶어 공부해보세요.",
     comments: [
-      { name: "익명 간호사_2210", time: "2시간 전", text: "인력 부족할수록 보고 기준이 머릿속에 바로 있어야 버티는 것 같아요.", likes: 11 },
-      { name: "익명 학생_9012", time: "4시간 전", text: "실습 때 선생님들이 왜 I/O랑 의식수준을 계속 보라고 하는지 이해됐어요.", likes: 7 }
+      { name: "익명 간호사_2210", time: "2시간 전", text: "인력 부족할수록 보고 기준이 머릿속에 바로 있어야 버티는 것 같아요.", likes: 11 }
     ]
   },
   {
@@ -194,7 +270,9 @@ const trendArticles = [
     studentPrep: "소세포폐암과 SIADH처럼 질환-검사-간호중재가 연결되는 케이스를 우선 연습해보세요.",
     comments: [
       { name: "익명 학생_5581", time: "30분 전", text: "SIADH랑 암 환자 케이스가 이렇게 연결되는 줄 몰랐어요.", likes: 4 },
-      { name: "익명 간호사_7730", time: "6시간 전", text: "항암 병동은 전해질이랑 감염 사정이 진짜 중요합니다.", likes: 10 }
+      { name: "익명 간호사_7730", time: "6시간 전", text: "항암 병동은 전해질이랑 감염 사정이 진짜 중요합니다.", likes: 10 },
+      { name: "익명 학생_3309", time: "어제", text: "항암 부작용이랑 전해질 이상을 같이 묶어서 공부하면 좋을 것 같아요.", likes: 5 },
+      { name: "익명 간호사_4802", time: "2일 전", text: "발열성 호중구감소증처럼 바로 보고해야 하는 포인트도 연결되면 좋겠네요.", likes: 12 }
     ]
   }
 ];
@@ -824,7 +902,6 @@ function renderHomeNoticeCarousel() {
 function getHomeNotices() {
   const latest = resources.slice().sort((a, b) => b.rank - a.rank)[0] || resources[0];
   const recommended = resources.find((resource) => resource.id === "gbs") || resources[0];
-  const trend = resources.find((resource) => resource.id === "siadh") || latest;
   const trendArticle = trendArticles[0];
 
   return [
@@ -855,14 +932,14 @@ function getHomeNotices() {
     {
       label: "최근 간호 동향",
       badge: "TREND",
-      title: "간호 AI보다 먼저 필요한 건 간호사용 도구",
-      description: "최근 조사에서 간호사는 의사보다 AI 활용률이 낮았고, 간호 업무에 맞춘 도구 부족이 이유로 언급됐어요.",
-      query: "임상추론",
+      title: trendArticle.hook || trendArticle.title,
+      description: trendArticle.summary,
+      query: trendArticle.tags?.[0] || trendArticle.title,
       action: "관련 자료 보기",
       sourceLabel: "요약 보기",
       sourceUrl: trendArticle.sourceUrl,
       articleId: trendArticle.id,
-      image: visualMeta(trend).image || "./assets/thumb-lab.png",
+      image: trendArticle.image || "./assets/thumb-lab.png",
       tone: "trend"
     }
   ];
@@ -906,6 +983,9 @@ function moveHomeNotice(direction) {
 function renderTrendScreen() {
   if (!trendScreen) return;
 
+  const latestArticles = trendArticles.slice(0, 3);
+  const previousArticles = trendArticles.slice(3);
+
   trendScreen.innerHTML = `
     <div class="trend-top">
       <div>
@@ -915,11 +995,25 @@ function renderTrendScreen() {
       <button type="button" aria-label="동향 알림">⌕</button>
     </div>
     <section class="trend-feature">
-      <p class="eyebrow">이번 주 핵심 이슈</p>
-      <div class="trend-list">
-        ${trendArticles.map((article, index) => trendCardTemplate(article, index)).join("")}
+      <div class="trend-section-head">
+        <p class="eyebrow">이번 주 핵심 이슈</p>
+        <span>옆으로 넘겨보기</span>
+      </div>
+      <div class="trend-list trend-list-latest" aria-label="이번 주 핵심 이슈">
+        ${latestArticles.map((article, index) => trendCardTemplate(article, index)).join("")}
       </div>
     </section>
+    ${previousArticles.length ? `
+      <section class="trend-feature trend-archive">
+        <div class="trend-section-head">
+          <p class="eyebrow">지난 동향</p>
+          <span>${previousArticles.length}개</span>
+        </div>
+        <div class="trend-archive-list">
+          ${previousArticles.map((article) => trendArchiveTemplate(article)).join("")}
+        </div>
+      </section>
+    ` : ""}
   `;
 }
 
@@ -939,6 +1033,29 @@ function trendCardTemplate(article, index) {
         ${article.tags.map((tag) => `<span>#${escapeHtml(tag)}</span>`).join("")}
       </div>
       <button type="button" data-trend-open="${escapeHtml(article.id)}">요약 보기</button>
+    </article>
+  `;
+}
+
+function trendArchiveTemplate(article) {
+  return `
+    <article class="trend-archive-row">
+      <div>
+        <p>
+          <span>${escapeHtml(article.category)}</span>
+          <em>${escapeHtml(article.date)}</em>
+        </p>
+        <h2>${escapeHtml(article.hook)}</h2>
+        <strong>${escapeHtml(article.summary)}</strong>
+        <div class="trend-archive-stats">${escapeHtml(trendMetaText(article))}</div>
+        <div class="trend-archive-tags">
+          ${article.tags.slice(0, 2).map((tag) => `<span>#${escapeHtml(tag)}</span>`).join("")}
+        </div>
+      </div>
+      <button type="button" data-trend-open="${escapeHtml(article.id)}" aria-label="${escapeHtml(article.hook)} 요약 보기">
+        <span>요약</span>
+        <i aria-hidden="true">›</i>
+      </button>
     </article>
   `;
 }

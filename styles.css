@@ -2730,15 +2730,44 @@ body.search-mode .empty-card {
   box-shadow: 0 6px 18px rgba(25, 31, 40, 0.04);
 }
 
-.trend-feature > .eyebrow {
+.trend-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 14px;
+}
+
+.trend-section-head .eyebrow {
+  margin: 0;
   color: #191f28;
   font-size: 16px;
+}
+
+.trend-section-head span {
+  color: #8b95a1;
+  font-size: 12px;
+  font-weight: 850;
 }
 
 .trend-list {
   display: grid;
   gap: 14px;
+}
+
+.trend-list-latest {
+  display: flex;
+  gap: 12px;
+  margin: 0 -22px;
+  padding: 0 22px 8px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.trend-list-latest::-webkit-scrollbar {
+  display: none;
 }
 
 .trend-card {
@@ -2752,9 +2781,16 @@ body.search-mode .empty-card {
   box-shadow: 0 8px 22px rgba(25, 31, 40, 0.045);
 }
 
+.trend-list-latest .trend-card {
+  flex: 0 0 78%;
+  max-width: 292px;
+  min-height: 352px;
+  scroll-snap-align: start;
+}
+
 .trend-card-image {
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 1.45 / 1;
   display: block;
   object-fit: cover;
   object-position: center;
@@ -2792,9 +2828,9 @@ body.search-mode .empty-card {
 
 .trend-card h2 {
   margin: 0;
-  max-width: 300px;
+  max-width: 230px;
   color: #191f28;
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1.35;
   font-weight: 850;
 }
@@ -2802,8 +2838,8 @@ body.search-mode .empty-card {
 .trend-card p {
   margin: 0;
   color: #4e5968;
-  font-size: 13px;
-  line-height: 1.55;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .content-stats {
@@ -2821,7 +2857,7 @@ body.search-mode .empty-card {
 
 .trend-tags span {
   min-height: 28px;
-  padding: 6px 9px;
+  padding: 6px 8px;
   border-radius: 8px;
   background: #f2f4f6;
   color: #4e5968;
@@ -2839,6 +2875,115 @@ body.search-mode .empty-card {
   color: #1b64da;
   font-size: 13px;
   font-weight: 850;
+}
+
+.trend-archive {
+  margin-top: 36px;
+}
+
+.trend-archive-list {
+  display: grid;
+  gap: 10px;
+}
+
+.trend-archive-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: 12px;
+  min-height: 116px;
+  padding: 15px;
+  border: 1px solid #edf0f3;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(25, 31, 40, 0.04);
+}
+
+.trend-archive-row p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 7px;
+  color: #6b7684;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.trend-archive-row p span {
+  padding: 4px 7px;
+  border-radius: 8px;
+  background: #f2f4f6;
+  color: #4e5968;
+}
+
+.trend-archive-row em {
+  font-style: normal;
+  color: #8b95a1;
+}
+
+.trend-archive-row h2 {
+  margin: 0;
+  color: #191f28;
+  font-size: 16px;
+  line-height: 1.35;
+  font-weight: 900;
+}
+
+.trend-archive-row strong {
+  display: -webkit-box;
+  margin-top: 5px;
+  overflow: hidden;
+  color: #6b7684;
+  font-size: 12px;
+  line-height: 1.45;
+  font-weight: 700;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.trend-archive-stats {
+  margin-top: 8px;
+  color: #8b95a1;
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.trend-archive-tags {
+  display: flex;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.trend-archive-tags span {
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: #f7f8fa;
+  color: #8b95a1;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.trend-archive-row button {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 52px;
+  height: 34px;
+  padding: 0 9px 0 11px;
+  border: 1px solid rgba(49, 130, 246, 0.16);
+  border-radius: 8px;
+  background: #f5f9ff;
+  color: #1b64da;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.trend-archive-row button i {
+  font-style: normal;
+  font-size: 16px;
+  line-height: 1;
 }
 
 .trend-detail,
