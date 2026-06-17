@@ -1,4 +1,4 @@
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260616-1";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260617-1";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 
 let resources = normalizeResourceData(await loadResourceData());
@@ -1867,7 +1867,8 @@ function visualMeta(resource) {
     "수술간호": { key: "surgery", icon: "+", image: "./assets/thumb-surgery.png" }
   };
 
-  return map[resource.system] || { key: "default", icon: "PDF" };
+  const fallback = map[resource.system] || { key: "default", icon: "PDF" };
+  return resource.image ? { ...fallback, image: resource.image } : fallback;
 }
 
 function relatedTemplate(resource) {

@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-14T14:15:00.000Z",
+  "updatedAt": "2026-06-17T23:55:00.000Z",
   "resources": [
     {
       "id": "acs-ecg",
@@ -37,7 +37,8 @@
       "stage": "핵심",
       "evidence": "본문에서 흉통 4단계 구조를 좁아짐, 터짐, 부분막힘, 완전막힘으로 정리하고 Stable angina, Unstable angina, NSTEMI, STEMI를 비교합니다.",
       "related": [
-        "mi"
+        "mi",
+        "acls"
       ],
       "keywords": [
         "흉통 4단계",
@@ -88,7 +89,8 @@
       "stage": "심화",
       "evidence": "본문에서 stable plaque와 vulnerable plaque, ischemia와 infarction, ST depression/elevation의 차이를 연결해 설명합니다.",
       "related": [
-        "acs-ecg"
+        "acs-ecg",
+        "acls"
       ],
       "keywords": [
         "협심증",
@@ -683,7 +685,8 @@
         "pneumothorax-cxr",
         "gbs",
         "siadh",
-        "ast-alt-ratio"
+        "ast-alt-ratio",
+        "acls"
       ],
       "keywords": [
         "ABGA",
@@ -704,6 +707,72 @@
         "Allen test"
       ],
       "rank": 14
+    },
+    {
+      "id": "acls",
+      "title": "ACLS clinical reasoning",
+      "displayTitle": "ACLS 임상추론",
+      "type": "심혈관",
+      "format": "PDF",
+      "source": "박용민 임상추론 PDF",
+      "url": "./assets/pdfs/acls-clinical-reasoning.pdf",
+      "image": "./assets/acls-clinical-reasoning.png",
+      "tags": [
+        "ACLS",
+        "Advanced Cardiovascular Life Support",
+        "심정지",
+        "CPR",
+        "BLS",
+        "고품질 CPR",
+        "리듬분석",
+        "제세동",
+        "비제세동",
+        "VF",
+        "pVT",
+        "Asystole",
+        "PEA",
+        "Epinephrine",
+        "Amiodarone",
+        "ROSC",
+        "응급간호",
+        "심혈관",
+        "임상추론",
+        "핵심"
+      ],
+      "summary": "심정지 상황에서 고품질 CPR, 리듬 분석, 제세동·비제세동 알고리즘을 임상 흐름으로 연결하는 ACLS 임상추론 자료입니다.",
+      "points": [
+        "심정지 환자에서 의식·호흡·맥박 확인 후 고품질 CPR과 도움 요청으로 이어지는 초기 대응 흐름을 정리합니다.",
+        "VF/pVT처럼 제세동이 필요한 리듬과 Asystole/PEA처럼 비제세동 리듬을 구분해 ACLS 알고리즘으로 연결합니다.",
+        "Epinephrine, Amiodarone, ROSC 이후 사정처럼 신규간호사와 간호학생이 헷갈리기 쉬운 역할과 보고 포인트를 확인하기 좋습니다."
+      ],
+      "useCase": "ACLS 알고리즘, 심정지 초기 대응, 제세동/비제세동 리듬 감별, 응급실·중환자실 실습 전 빠른 확인",
+      "confidence": "파일 확인",
+      "system": "심혈관",
+      "intent": "임상추론",
+      "stage": "핵심",
+      "evidence": "로컬로 제공된 ACLS_임상추론_박용민 PDF를 사이트 자료로 추가했습니다. 심정지 대응, CPR, 리듬 분석, ACLS 약물과 ROSC 이후 사정을 중심 키워드로 분류했습니다.",
+      "related": [
+        "acs-ecg",
+        "mi",
+        "abga"
+      ],
+      "keywords": [
+        "ACLS",
+        "심정지",
+        "CPR",
+        "고품질 CPR",
+        "리듬분석",
+        "제세동",
+        "비제세동",
+        "VF",
+        "pVT",
+        "Asystole",
+        "PEA",
+        "Epinephrine",
+        "Amiodarone",
+        "ROSC"
+      ],
+      "rank": 15
     }
   ]
 }
