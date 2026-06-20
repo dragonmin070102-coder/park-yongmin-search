@@ -1,4 +1,4 @@
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260617-1";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260620-1";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 
 let resources = normalizeResourceData(await loadResourceData());
@@ -908,11 +908,11 @@ function getHomeNotices() {
     {
       label: "새 자료 업데이트",
       badge: "NEW",
-      title: `${latest.displayTitle} 자료가 추가됐어요`,
-      description: latest.summary,
+      title: latest.bannerTitle || `${latest.displayTitle} 자료가 추가됐어요`,
+      description: latest.bannerDescription || latest.summary,
       query: latest.keywords?.[0] || latest.displayTitle,
-      action: "새 자료 보기",
-      sourceLabel: "원본 PDF",
+      action: latest.bannerAction || "새 자료 보기",
+      sourceLabel: latest.bannerSourceLabel || "원본 자료",
       sourceUrl: latest.url,
       image: visualMeta(latest).image || "./assets/thumb-lab.png",
       tone: "update"
