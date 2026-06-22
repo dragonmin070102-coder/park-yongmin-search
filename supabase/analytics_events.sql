@@ -24,6 +24,8 @@ create index if not exists analytics_events_user_idx
 
 alter table public.analytics_events enable row level security;
 
+grant select, insert on public.analytics_events to anon;
+
 drop policy if exists "Allow anonymous analytics insert" on public.analytics_events;
 create policy "Allow anonymous analytics insert"
   on public.analytics_events
@@ -43,6 +45,8 @@ where event_name in ('search', 'search_no_result')
 group by properties->>'query'
 order by search_count desc, last_searched_at desc;
 
+grant select on public.analytics_search_terms to anon;
+
 drop view if exists public.analytics_popular_resources;
 create view public.analytics_popular_resources as
 select
@@ -55,6 +59,8 @@ where event_name in ('resource_open', 'drive_open')
 group by properties->>'resourceId', properties->>'resourceTitle'
 order by open_count desc, last_opened_at desc;
 
+grant select on public.analytics_popular_resources to anon;
+
 drop view if exists public.analytics_no_result_terms;
 create view public.analytics_no_result_terms as
 select
@@ -66,3 +72,5 @@ where event_name = 'search_no_result'
   and coalesce(properties->>'query', '') <> ''
 group by properties->>'query'
 order by no_result_count desc, last_searched_at desc;
+
+grant select on public.analytics_no_result_terms to anon;

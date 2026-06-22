@@ -324,6 +324,10 @@ input[type="search"]:focus {
   background: #e5f9ff;
 }
 
+.category-dot.orange {
+  background: #fff3e0;
+}
+
 .category-dot.gray {
   background: #f2f4f6;
 }

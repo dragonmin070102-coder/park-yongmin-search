@@ -1,4 +1,4 @@
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260620-1";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260622-1";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 
 let resources = normalizeResourceData(await loadResourceData());
@@ -84,6 +84,7 @@ let adminDashboardState = {
   error: ""
 };
 let adminSearchTimer = null;
+let analyticsFlushScheduled = false;
 
 const analyticsUserId = getOrCreateAnalyticsUserId();
 const analyticsSessionId = createSessionId();
@@ -668,6 +669,12 @@ document.addEventListener("click", (event) => {
 });
 
 window.addEventListener("hashchange", syncAdminRoute);
+window.addEventListener("pagehide", () => flushRemoteAnalytics({ silent: true, limit: 20 }));
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") {
+    flushRemoteAnalytics({ silent: true, limit: 20 });
+  }
+});
 
 document.querySelectorAll("[data-close-modal]").forEach((button) => {
   button.addEventListener("click", closePreviewModal);
@@ -721,11 +728,12 @@ function renderFilters() {
 
 function renderCategoryHub() {
   const categoryMeta = [
-    { system: "전체", title: "전체 자료", description: "박용민 PDF 폴더 자료를 한 번에 봐요.", accent: "blue" },
-    { system: "심혈관", title: "심혈관", description: "ACS, ECG, 허혈과 경색 흐름을 정리했어요.", accent: "red" },
-    { system: "신경계", title: "신경계", description: "IICP와 임상추론 자료를 모아봤어요.", accent: "purple" },
-    { system: "검사수치", title: "검사수치", description: "AST, ALT, 간수치 해석을 빠르게 찾아요.", accent: "green" },
-    { system: "호흡기", title: "호흡기", description: "기흉과 흉부 X-ray 자료를 확인해요.", accent: "cyan" },
+    { system: "전체", title: "전체 자료", description: "박용민 자료와 시뮬레이션을 한 번에 봐요.", accent: "blue" },
+    { system: "신경계", title: "신경계 임상추론", description: "GBS, MG, ALS, MS, PD를 비교해서 봐요.", accent: "purple" },
+    { system: "검사수치", title: "검사수치 해석", description: "ABGA, AST/ALT, SIADH를 케이스에 연결해요.", accent: "green" },
+    { system: "심혈관", title: "심혈관·ECG", description: "ACS, ECG, MI, ACLS 흐름을 정리했어요.", accent: "red" },
+    { system: "호흡기", title: "호흡기 케이스", description: "폐렴, 기흉, CXR, 산소화 판단을 확인해요.", accent: "cyan" },
+    { system: "시뮬레이션", title: "KHSIM", description: "읽은 자료를 환자 시나리오로 적용해요.", accent: "orange" },
     { system: "수술간호", title: "수술간호", description: "수술 전후 관찰 포인트를 찾아요.", accent: "gray" }
   ];
 
@@ -751,6 +759,7 @@ function filterGroupTemplate(title, key, values, activeValue) {
     "신경계": "brain",
     "검사수치": "lab",
     "호흡기": "lung",
+    "시뮬레이션": "guide",
     "수술간호": "care"
   };
 
@@ -1701,6 +1710,13 @@ function scoreResources(query) {
   });
 }
 
+function resourceSourceLabel(resource) {
+  if (resource.id === "khsim-simulation") return "KHSIM 열기";
+  if (resource.format === "Google Doc") return "원본 문서";
+  if (resource.format === "Web App") return "체험하기";
+  return "원본 PDF";
+}
+
 function cardTemplate(resource, score, hasQuery) {
   const selected = resource.id === activeResource.id ? "selected" : "";
   const saved = savedIds.has(resource.id);
@@ -1720,7 +1736,7 @@ function cardTemplate(resource, score, hasQuery) {
       </div>
       <div class="inline-source">
         <span>${escapeHtml(resource.stage)} · 조회 ${formatCount(getResourceViews(resource.id))} · ${escapeHtml(resource.source)}</span>
-        <a href="${escapeHtml(resource.url)}" target="_blank" rel="noreferrer" data-drive="${escapeHtml(resource.id)}">원본 PDF</a>
+        <a href="${escapeHtml(resource.url)}" target="_blank" rel="noreferrer" data-drive="${escapeHtml(resource.id)}">${escapeHtml(resourceSourceLabel(resource))}</a>
       </div>
     </article>
   `;
@@ -1837,7 +1853,7 @@ function detailTemplate(resource) {
       <div class="detail-actions">
         <button type="button" data-detail-copy="${escapeHtml(resource.id)}">요약과 링크 복사</button>
         <button type="button" data-detail-save="${escapeHtml(resource.id)}">${saved ? "즐겨찾기 해제" : "즐겨찾기 저장"}</button>
-        <a class="detail-link" href="${escapeHtml(resource.url)}" target="_blank" rel="noreferrer" data-drive="${escapeHtml(resource.id)}">원본 Drive 자료 열기</a>
+        <a class="detail-link" href="${escapeHtml(resource.url)}" target="_blank" rel="noreferrer" data-drive="${escapeHtml(resource.id)}">${escapeHtml(resourceSourceLabel(resource))}</a>
       </div>
     </div>
   `;
@@ -1864,6 +1880,7 @@ function visualMeta(resource) {
     "신경계": { key: "neuro", icon: "N", image: "./assets/thumb-neuro.png" },
     "검사수치": { key: "lab", icon: "Lab", image: "./assets/thumb-lab.png" },
     "호흡기": { key: "resp", icon: "XR", image: "./assets/thumb-resp.png" },
+    "시뮬레이션": { key: "sim", icon: "SIM", image: "./assets/nurse-guide.png" },
     "수술간호": { key: "surgery", icon: "+", image: "./assets/thumb-surgery.png" }
   };
 
@@ -2290,9 +2307,12 @@ function trackEvent(name, properties = {}) {
 function queueSearchAnalytics(query, resultCount) {
   if (resultMode !== "search" || !document.body.classList.contains("search-mode")) return;
 
-  const normalized = query.trim();
+  const normalized = normalizeSearchQuery(query);
+  const trackable = getSearchTrackingDecision(normalized, resultCount);
+  if (!trackable.shouldTrack) return;
+
   const signature = [
-    normalized || "(empty)",
+    normalized,
     resultCount,
     activeType,
     activeIntent,
@@ -2304,14 +2324,61 @@ function queueSearchAnalytics(query, resultCount) {
 
   window.clearTimeout(queueSearchAnalytics.timer);
   queueSearchAnalytics.timer = window.setTimeout(() => {
-    trackEvent(resultCount === 0 && normalized ? "search_no_result" : "search", {
+    const finalResultCount = scoreResources(normalized)
+      .filter((item) => activeType === "전체" || item.resource.system === activeType)
+      .filter((item) => activeIntent === "전체" || item.resource.intent === activeIntent)
+      .filter((item) => item.score > 0).length;
+    const finalDecision = getSearchTrackingDecision(normalized, finalResultCount);
+    if (!finalDecision.shouldTrack) return;
+
+    trackEvent(finalResultCount === 0 ? "search_no_result" : "search", {
       query: normalized,
-      resultCount,
+      resultCount: finalResultCount,
       system: activeType,
       intent: activeIntent,
-      sort: activeSort
+      sort: activeSort,
+      quality: finalDecision.quality
     });
-  }, 450);
+  }, 700);
+}
+
+function normalizeSearchQuery(query) {
+  return String(query || "").trim().replace(/\s+/g, " ");
+}
+
+function getSearchTrackingDecision(query, resultCount) {
+  if (!query) return { shouldTrack: false, quality: "empty" };
+  if (isNoiseQuery(query)) return { shouldTrack: false, quality: "noise" };
+  if (resultCount > 0) return { shouldTrack: true, quality: "matched" };
+  if (isExactKnownResourceQuery(query)) return { shouldTrack: true, quality: "known_zero" };
+  if (query.length >= 3 || /[가-힣]{2,}/.test(query)) return { shouldTrack: true, quality: "unmet_demand" };
+  return { shouldTrack: false, quality: "too_short_no_result" };
+}
+
+function isNoiseQuery(query) {
+  const text = normalizeSearchQuery(query);
+  if (text.length < 2) return true;
+  if (/^[ㄱ-ㅎㅏ-ㅣ]+$/.test(text)) return true;
+  if (/^[A-Za-z]$/.test(text)) return true;
+  if (/^[A-Za-z]{2}$/.test(text) && !isExactKnownResourceQuery(text)) return true;
+  return false;
+}
+
+function isExactKnownResourceQuery(query) {
+  const needle = normalizeSearchQuery(query).toLowerCase();
+  if (!needle) return false;
+  return resources.some((resource) => {
+    const values = [
+      resource.id,
+      resource.title,
+      resource.displayTitle,
+      resource.system,
+      resource.intent,
+      ...(resource.tags || []),
+      ...(resource.keywords || [])
+    ].filter(Boolean).map((value) => String(value).toLowerCase());
+    return values.includes(needle);
+  });
 }
 
 function readAnalyticsEvents() {
@@ -2333,39 +2400,54 @@ function sendRemoteAnalytics(event) {
   postSupabaseEvents([event])
     .then(() => {
       markSupabaseSent([event.id]);
-      if (event.name === "trend_article_open") {
+      if (["trend_article_open", "resource_open", "drive_open"].includes(event.name)) {
         loadContentStats();
       }
     })
     .catch((error) => {
       if (error.status === 409) {
         markSupabaseSent([event.id]);
+        return;
       }
+      scheduleAnalyticsFlush();
     });
 }
 
-async function flushRemoteAnalytics() {
-  if (!supabaseConfig.enabled) return;
+function scheduleAnalyticsFlush() {
+  if (analyticsFlushScheduled) return;
+  analyticsFlushScheduled = true;
+  window.setTimeout(() => {
+    analyticsFlushScheduled = false;
+    flushRemoteAnalytics({ silent: true, limit: 40 });
+  }, 3000);
+}
 
+async function flushRemoteAnalytics(options = {}) {
+  if (!supabaseConfig.enabled) return 0;
+
+  const silent = Boolean(options.silent);
+  const limit = Number(options.limit || 80);
   const sentIds = readSupabaseSentIds();
   const pending = readAnalyticsEvents()
     .filter((event) => !sentIds.has(event.id))
-    .slice(-80);
+    .slice(-limit);
 
   if (!pending.length) {
-    renderAnalyticsAdmin();
-    return;
+    if (!silent) renderAnalyticsAdmin();
+    return 0;
   }
 
   try {
     await postSupabaseEvents(pending);
     markSupabaseSent(pending.map((event) => event.id));
-    showToast(`${pending.length}개 이벤트를 Supabase로 보냈어요`);
+    if (!silent) showToast(`${pending.length}개 이벤트를 Supabase로 보냈어요`);
+    return pending.length;
   } catch {
     const synced = await flushRemoteAnalyticsOneByOne(pending);
-    showToast(`${synced}개 이벤트를 Supabase로 보냈어요`);
+    if (!silent) showToast(`${synced}개 이벤트를 Supabase로 보냈어요`);
+    return synced;
   } finally {
-    renderAnalyticsAdmin();
+    if (!silent) renderAnalyticsAdmin();
   }
 }
 
@@ -2923,9 +3005,7 @@ function sumBy(rows, key) {
 }
 
 function isMeaningfulQuery(query) {
-  const text = String(query || "").trim();
-  if (text.length <= 2) return false;
-  return !/^[A-Za-z]$/.test(text);
+  return !isNoiseQuery(query);
 }
 
 function adminPeriodStart(period) {

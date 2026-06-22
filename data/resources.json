@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-20T20:40:00.000Z",
+  "updatedAt": "2026-06-22T23:35:00.000+09:00",
   "resources": [
     {
       "id": "acs-ecg",
@@ -270,7 +270,8 @@
       "related": [
         "mg",
         "als",
-        "ms"
+        "ms",
+        "khsim-simulation"
       ],
       "keywords": [
         "GBS",
@@ -689,7 +690,8 @@
         "siadh",
         "ast-alt-ratio",
         "acls",
-        "pneumonia-case-study"
+        "pneumonia-case-study",
+        "khsim-simulation"
       ],
       "keywords": [
         "ABGA",
@@ -758,7 +760,8 @@
         "acs-ecg",
         "mi",
         "abga",
-        "pneumonia-case-study"
+        "pneumonia-case-study",
+        "khsim-simulation"
       ],
       "keywords": [
         "ACLS",
@@ -826,7 +829,8 @@
       "related": [
         "pneumothorax-cxr",
         "abga",
-        "acls"
+        "acls",
+        "khsim-simulation"
       ],
       "keywords": [
         "폐렴",
@@ -846,6 +850,54 @@
         "패혈증"
       ],
       "rank": 16
+    },
+    {
+      "id": "khsim-simulation",
+      "title": "KHSIM nursing simulation",
+      "displayTitle": "KHSIM 간호 시뮬레이션",
+      "type": "시뮬레이션",
+      "format": "Web App",
+      "source": "PYM KHSIM GitHub Pages",
+      "url": "https://dragonmin070102-coder.github.io/KHSIM/",
+      "tags": [
+        "KHSIM",
+        "시뮬레이션",
+        "간호술기",
+        "환자 시나리오",
+        "실습",
+        "응급상황",
+        "PC 권장",
+        "태블릿 권장",
+        "임상추론"
+      ],
+      "summary": "실제 환자 시나리오처럼 화면을 보며 간호 판단을 연습하는 KHSIM 시뮬레이션입니다. 모바일보다 태블릿이나 PC에서 체험하는 것을 권장합니다.",
+      "points": [
+        "KHSIM은 검색 자료를 읽고 끝나는 것이 아니라 환자 상태를 보며 판단을 연습하는 체험형 콘텐츠입니다.",
+        "모바일에서는 화면과 조작 영역이 좁아 제대로 체험하기 어렵기 때문에 태블릿 또는 PC 환경을 권장합니다.",
+        "ABGA, ACLS, 호흡기 케이스처럼 판단 흐름이 필요한 자료와 연결해 학습 루트로 확장하기 좋습니다."
+      ],
+      "useCase": "실습 전 시뮬레이션 체험, 간호 판단 연습, 박용민 PDF 학습 후 적용 훈련",
+      "confidence": "서비스 연결",
+      "system": "시뮬레이션",
+      "intent": "실습훈련",
+      "stage": "체험",
+      "evidence": "PYM에서 연결 중인 KHSIM GitHub Pages 시뮬레이션 서비스입니다. 모바일보다 큰 화면에서 안정적으로 체험하도록 안내합니다.",
+      "related": [
+        "abga",
+        "acls",
+        "pneumonia-case-study",
+        "gbs"
+      ],
+      "keywords": [
+        "KHSIM",
+        "간호 시뮬레이션",
+        "시뮬레이션",
+        "실습훈련",
+        "환자 시나리오",
+        "PC",
+        "태블릿"
+      ],
+      "rank": 17
     }
   ]
 }
