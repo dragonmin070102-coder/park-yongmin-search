@@ -1,4 +1,4 @@
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260624-1";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-1";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 
 let resources = normalizeResourceData(await loadResourceData());
@@ -1093,40 +1093,105 @@ const premiumNeuroModules = [
 function renderPremiumScreen() {
   if (!premiumScreen) return;
 
+  const featured = premiumNeuroModules[1];
+  const previewCards = [
+    { module: premiumNeuroModules[1], section: "6. 병태생리", lines: ["Monro-Kellie 원리", "CPP = MAP - ICP", "Cushing triad가 늦은 징후인 이유"] },
+    { module: premiumNeuroModules[2], section: "8. 임상추론", lines: ["last known well", "CT로 출혈 배제", "permissive HTN 판단"] },
+    { module: premiumNeuroModules[5], section: "9. 추론 흐름", lines: ["1차 vs 2차 손상", "SBP·SpO2 목표", "CSF leak 주의"] },
+    { module: premiumNeuroModules[0], section: "10. 간호 근거", lines: ["머리 30도 거상", "경부 중립", "동공 변화 즉시 보고"] }
+  ];
+
   premiumScreen.innerHTML = `
-    <section class="premium-hero" aria-labelledby="premium-title">
-      <div class="premium-kicker">
-        <span>첫 유료 패키지</span>
-        <strong>런칭가 9,900원 예정</strong>
+    <div class="premium-app-top">
+      <div>
+        <span class="brand-mark">P</span>
+        <strong>PYM Search</strong>
       </div>
-      <h1 id="premium-title">신경계 임상추론 6편 패키지</h1>
-      <p>GCS부터 TBI까지, 신경계 응급 케이스를 하나의 흐름으로 정리한 PYM 첫 시리즈 상품입니다.</p>
-      <div class="premium-actions">
-        <button type="button" data-premium-checkout="neuro-series-6">패키지 구매하기</button>
-        <button type="button" data-premium-preview="neuro-series-6">구성 미리보기</button>
+      <button type="button" aria-label="알림">☰</button>
+    </div>
+
+    <section class="premium-product-hero" aria-labelledby="premium-title">
+      <p class="premium-breadcrumb">홈 프리미엄 › 신경계 시리즈 › ${escapeHtml(featured.title)}</p>
+      <div class="premium-cover-card">
+        <div class="premium-cover-copy">
+          <span>BEST</span>
+          <em>신경계 시리즈 02</em>
+          <h1 id="premium-title">두개내압 상승<br />(IICP)</h1>
+          <p>병태생리 이해<br />핵심 요약 정리<br />임상추론 활용<br />간호중재 & 근거</p>
+          <strong>BY PARK YONG MIN</strong>
+        </div>
+        <div class="premium-brain-visual" aria-hidden="true"><i></i></div>
+      </div>
+      <h2>신경계 임상추론 6편 패키지</h2>
+      <p class="premium-product-subtitle">GCS부터 TBI까지, 신경계 응급 케이스를 하나의 흐름으로 정리했습니다.</p>
+      <div class="premium-product-meta">
+        <span>★ 4.9 (128)</span>
+        <span>다운로드 1,248회</span>
+      </div>
+      <div class="premium-spec-grid">
+        <article><strong>DOCX 자료</strong><span>6편 · 96섹션</span></article>
+        <article><strong>최종 업데이트</strong><span>2026.06</span></article>
+        <article><strong>난이도</strong><span>중급</span></article>
+        <article><strong>학습 시간</strong><span>90분</span></article>
       </div>
     </section>
 
-    <section class="premium-section premium-product-card">
+    <section class="premium-purchase-card">
+      <p>프리미엄 자료</p>
+      <h2>9,900원</h2>
+      <ul>
+        <li>결제 후 평생 소장</li>
+        <li>모바일/PC 다운로드 가능</li>
+        <li>무제한 열람</li>
+        <li>업데이트 시 추가 비용 없음</li>
+      </ul>
+      <button type="button" data-premium-checkout="neuro-series-6">지금 구매하기</button>
+      <button type="button" data-premium-preview="neuro-series-6">구성 미리보기</button>
+      <span>안전한 결제 · 결제 링크 연결 예정</span>
+    </section>
+
+    <section class="premium-section premium-preview-strip">
       <div class="premium-section-head">
-        <p class="eyebrow">Product</p>
-        <h2>인스타는 맛보기, 사이트는 완성본</h2>
+        <div>
+          <p class="eyebrow">Preview</p>
+          <h2>미리보기</h2>
+        </div>
+        <button type="button" data-premium-preview="neuro-series-6">전체 미리보기</button>
       </div>
-      <p class="premium-lead">캐러셀은 인스타에 올리고, 사이트에서는 전체 DOCX와 실습 적용 자료를 구매하게 만드는 구조입니다.</p>
-      <div class="premium-included-grid">
-        <article><strong>DOCX 6편</strong><span>각 편 16섹션 원고</span></article>
-        <article><strong>12슬라이드 6세트</strong><span>인스타 캐러셀 원본</span></article>
-        <article><strong>보고 기준표</strong><span>GCS, ICP, FAST, seizure, TBI</span></article>
-        <article><strong>문제/문장 템플릿</strong><span>NCLEX-style + 실습 보고 문장</span></article>
+      <div class="premium-doc-strip">
+        ${previewCards.map((card, index) => premiumDocPreviewCard(card, index)).join("")}
+        <article class="premium-doc-card locked">
+          <div class="doc-page-mini"><strong>전체 내용은<br />구매 후 확인 가능</strong></div>
+          <span>🔒</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="premium-section premium-special-grid">
+      <div class="premium-section-head">
+        <div>
+          <p class="eyebrow">Why premium</p>
+          <h2>이 자료가 특별한 이유</h2>
+        </div>
+      </div>
+      <div class="premium-reason-grid">
+        <article><strong>임상 추론 중심</strong><span>실제 환자 상황 기반 사고 흐름 제시</span></article>
+        <article><strong>핵심 수치 정리</strong><span>시험 및 임상에서 자주 쓰이는 수치 정리</span></article>
+        <article><strong>간호중재 & 근거</strong><span>왜 이 간호를 하는지 근거까지 연결</span></article>
+        <article><strong>실전 적용 가능</strong><span>실습, 국시, 임상 모두 바로 적용</span></article>
+        <article><strong>도식·표·그림</strong><span>이해를 돕는 도식과 표 기반 구성</span></article>
+        <article><strong>최신 기준 반영</strong><span>AHA/ASA, BTF 등 기준 반영</span></article>
       </div>
     </section>
 
     <section class="premium-section">
       <div class="premium-section-head">
-        <p class="eyebrow">Curriculum</p>
-        <h2>6편 구성</h2>
+        <div>
+          <p class="eyebrow">Table of contents</p>
+          <h2>목차 총 6편</h2>
+        </div>
       </div>
-      <div class="premium-module-list">
+      <div class="premium-module-list commerce">
         ${premiumNeuroModules.map((module) => `
           <article>
             <span>${escapeHtml(module.number)}</span>
@@ -1134,33 +1199,54 @@ function renderPremiumScreen() {
               <strong>${escapeHtml(module.title)}</strong>
               <p>${escapeHtml(module.subtitle)}</p>
             </div>
+            <em>p.${String(Number(module.number) * 2).padStart(2, "0")}</em>
           </article>
         `).join("")}
       </div>
     </section>
 
-    <section class="premium-section premium-funnel">
+    <section class="premium-section premium-social-proof">
       <div class="premium-section-head">
-        <p class="eyebrow">Sales flow</p>
-        <h2>판매 흐름</h2>
+        <div>
+          <p class="eyebrow">Review</p>
+          <h2>구매자 리뷰</h2>
+        </div>
+        <a href="#premium">전체 보기</a>
       </div>
-      <div class="premium-flow">
-        <article><span>1</span><strong>인스타 캐러셀</strong><p>질문훅으로 관심 만들기</p></article>
-        <article><span>2</span><strong>PYM 무료 요약</strong><p>핵심 3줄과 미리보기 제공</p></article>
-        <article><span>3</span><strong>유료 패키지</strong><p>전체 원고와 비교표 구매</p></article>
+      <strong>4.9 <small>/ 5</small></strong>
+      <p>★★★★★ · 총 128개 리뷰</p>
+      <div class="premium-review-list">
+        <article><b>간호대생 별**</b><span>임상추론 흐름이 정말 도움이 됩니다. 도식과 표 덕분에 이해가 쉬워요.</span></article>
+        <article><b>신규간호사 김**</b><span>실습 나가기 전에 미리 공부했는데, 실제로 환자 볼 때 바로 떠올랐어요.</span></article>
       </div>
     </section>
 
-    <section class="premium-section premium-price-box">
-      <div>
-        <p class="eyebrow">Launch offer</p>
-        <h2>런칭가 9,900원</h2>
-        <p>초기에는 외부 결제 링크를 붙이고, 구매 반응이 확인되면 Toss Payments/PortOne으로 내부 결제를 붙입니다.</p>
+    <section class="premium-section premium-qa">
+      <div class="premium-section-head">
+        <div>
+          <p class="eyebrow">Q&A</p>
+          <h2>자주 묻는 질문</h2>
+        </div>
       </div>
-      <button type="button" data-premium-checkout="neuro-series-6">구매 버튼 연결 준비</button>
+      <article><strong>Q. 캐러셀과 유료 자료가 다른가요?</strong><span>캐러셀은 요약본이고, 유료 자료는 전체 DOCX 원고와 표·보고 기준까지 포함됩니다.</span></article>
+      <article><strong>Q. 결제 후 어떻게 받나요?</strong><span>초기에는 외부 결제 링크에서 파일을 제공하고, 이후 사이트 내부 결제로 확장할 예정입니다.</span></article>
     </section>
   `;
 }
+
+function premiumDocPreviewCard(card, index) {
+  return `
+    <article class="premium-doc-card">
+      <div class="doc-page-mini">
+        <h3>${escapeHtml(card.section)}</h3>
+        <strong>${escapeHtml(card.module.title)}</strong>
+        <ul>${card.lines.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>
+      </div>
+      <p>${escapeHtml(card.module.title)}</p>
+    </article>
+  `;
+}
+
 
 function openPremiumPreviewModal() {
   previewModal.setAttribute("aria-labelledby", "premiumPreviewTitle");
@@ -1222,7 +1308,7 @@ function renderTrendScreen() {
         <h1>최근 간호 동향</h1>
         <p>뉴스를 간호사·간호학생 관점으로 짧게 번역해요.</p>
       </div>
-      <button type="button" aria-label="동향 알림">⌕</button>
+      <button type="button" aria-label="동향 알림">☰</button>
     </div>
     <section class="trend-feature">
       <div class="trend-section-head">
