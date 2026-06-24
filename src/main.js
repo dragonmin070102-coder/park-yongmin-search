@@ -1,4 +1,4 @@
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260622-1";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260624-1";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 
 let resources = normalizeResourceData(await loadResourceData());
@@ -60,6 +60,7 @@ const analyticsAdmin = document.querySelector("#analyticsAdmin");
 const analyticsContent = document.querySelector("#analyticsContent");
 const homeNoticeCarousel = document.querySelector("#homeNoticeCarousel");
 const trendScreen = document.querySelector("#trendScreen");
+const premiumScreen = document.querySelector("#premiumScreen");
 
 let activeType = "전체";
 let activeIntent = "전체";
@@ -284,6 +285,7 @@ startNoticeRotation();
 renderHomeFeed();
 renderQuestionHub();
 renderTrendScreen();
+renderPremiumScreen();
 renderCategoryHub();
 renderFilters();
 renderBottomTabs();
@@ -668,11 +670,40 @@ document.addEventListener("click", (event) => {
   testSupabaseConnection();
 });
 
+document.addEventListener("click", (event) => {
+  const premiumNav = event.target.closest("[data-premium-nav]");
+  if (!premiumNav) return;
+
+  event.preventDefault();
+  window.location.hash = "premium";
+  setPremiumMode();
+});
+
 window.addEventListener("hashchange", syncAdminRoute);
 window.addEventListener("pagehide", () => flushRemoteAnalytics({ silent: true, limit: 20 }));
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden") {
     flushRemoteAnalytics({ silent: true, limit: 20 });
+  }
+});
+
+document.addEventListener("click", (event) => {
+  const checkout = event.target.closest("[data-premium-checkout]");
+  if (!checkout) return;
+
+  trackEvent("premium_checkout_click", { productId: checkout.dataset.premiumCheckout });
+  showToast("결제 링크를 붙이면 바로 판매 페이지로 연결돼요");
+});
+
+document.addEventListener("click", (event) => {
+  const preview = event.target.closest("[data-premium-preview]");
+  if (!preview) return;
+
+  trackEvent("premium_preview_click", { productId: preview.dataset.premiumPreview });
+  const firstNeuro = resources.find((resource) => resource.system === "신경계") || resources.find((resource) => resource.id === "iicp");
+  if (firstNeuro) {
+    activeResource = firstNeuro;
+    openPreviewModal(firstNeuro);
   }
 });
 
@@ -806,7 +837,10 @@ function renderBottomTabs() {
       setTrendMode();
       window.scrollTo({ top: 0, behavior: "smooth" });
     } },
-    { id: "profile", label: "마이페이지", icon: userIcon(), target: () => showToast("로그인 기능과 함께 확장하면 좋아요") }
+    { id: "premium", label: "유료", icon: paidIcon(), target: () => {
+      setPremiumMode();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } }
   ];
 
   bottomTabs.innerHTML = tabs.map((tab) => `
@@ -830,6 +864,7 @@ function renderBottomTabs() {
 function setHomeMode() {
   document.body.classList.remove("search-mode");
   document.body.classList.remove("trend-mode");
+  document.body.classList.remove("premium-mode");
   activeTab = "home";
   resultMode = "search";
   queryInput.value = "";
@@ -841,6 +876,7 @@ function setHomeMode() {
 function setSearchMode() {
   document.body.classList.add("search-mode");
   document.body.classList.remove("trend-mode");
+  document.body.classList.remove("premium-mode");
   screenQueryInput.value = queryInput.value;
   renderSortTabs();
 }
@@ -848,10 +884,21 @@ function setSearchMode() {
 function setTrendMode() {
   document.body.classList.remove("search-mode");
   document.body.classList.add("trend-mode");
+  document.body.classList.remove("premium-mode");
   activeTab = "trend";
   renderTrendScreen();
   renderBottomTabs();
   trackEvent("trend_view");
+}
+
+function setPremiumMode() {
+  document.body.classList.remove("search-mode");
+  document.body.classList.remove("trend-mode");
+  document.body.classList.add("premium-mode");
+  activeTab = "premium";
+  renderPremiumScreen();
+  renderBottomTabs();
+  trackEvent("premium_view", { productId: "neuro-series-6" });
 }
 
 function renderSortTabs() {
@@ -987,6 +1034,87 @@ function moveHomeNotice(direction) {
   trackEvent("home_notice_swipe", { index: activeNoticeIndex, direction });
   renderHomeNoticeCarousel();
   startNoticeRotation();
+}
+
+function renderPremiumScreen() {
+  if (!premiumScreen) return;
+
+  const modules = [
+    ["01", "신경학적 사정", "GCS · 동공 · LOC · 운동/감각"],
+    ["02", "두개내압 상승", "Monro-Kellie · Cushing triad · CPP"],
+    ["03", "허혈성 뇌졸중", "FAST · time window · tPA/EVT"],
+    ["04", "출혈성 뇌졸중", "혈압관리 · SAH · nimodipine"],
+    ["05", "경련·뇌전증", "안전간호 · 5분 · status epilepticus"],
+    ["06", "외상성 뇌손상", "1차/2차 손상 · ICP/CPP · BTF 기준"]
+  ];
+
+  premiumScreen.innerHTML = `
+    <section class="premium-hero" aria-labelledby="premium-title">
+      <div class="premium-kicker">
+        <span>첫 유료 패키지</span>
+        <strong>런칭가 9,900원 예정</strong>
+      </div>
+      <h1 id="premium-title">신경계 임상추론 6편 패키지</h1>
+      <p>GCS부터 TBI까지, 신경계 응급 케이스를 하나의 흐름으로 정리한 PYM 첫 시리즈 상품입니다.</p>
+      <div class="premium-actions">
+        <button type="button" data-premium-checkout="neuro-series-6">패키지 구매하기</button>
+        <button type="button" data-premium-preview="neuro-series-6">구성 미리보기</button>
+      </div>
+    </section>
+
+    <section class="premium-section premium-product-card">
+      <div class="premium-section-head">
+        <p class="eyebrow">Product</p>
+        <h2>인스타는 맛보기, 사이트는 완성본</h2>
+      </div>
+      <p class="premium-lead">캐러셀은 인스타에 올리고, 사이트에서는 전체 DOCX와 실습 적용 자료를 구매하게 만드는 구조입니다.</p>
+      <div class="premium-included-grid">
+        <article><strong>DOCX 6편</strong><span>각 편 16섹션 원고</span></article>
+        <article><strong>12슬라이드 6세트</strong><span>인스타 캐러셀 원본</span></article>
+        <article><strong>보고 기준표</strong><span>GCS, ICP, FAST, seizure, TBI</span></article>
+        <article><strong>문제/문장 템플릿</strong><span>NCLEX-style + 실습 보고 문장</span></article>
+      </div>
+    </section>
+
+    <section class="premium-section">
+      <div class="premium-section-head">
+        <p class="eyebrow">Curriculum</p>
+        <h2>6편 구성</h2>
+      </div>
+      <div class="premium-module-list">
+        ${modules.map(([number, title, desc]) => `
+          <article>
+            <span>${number}</span>
+            <div>
+              <strong>${escapeHtml(title)}</strong>
+              <p>${escapeHtml(desc)}</p>
+            </div>
+          </article>
+        `).join("")}
+      </div>
+    </section>
+
+    <section class="premium-section premium-funnel">
+      <div class="premium-section-head">
+        <p class="eyebrow">Sales flow</p>
+        <h2>판매 흐름</h2>
+      </div>
+      <div class="premium-flow">
+        <article><span>1</span><strong>인스타 캐러셀</strong><p>질문훅으로 관심 만들기</p></article>
+        <article><span>2</span><strong>PYM 무료 요약</strong><p>핵심 3줄과 미리보기 제공</p></article>
+        <article><span>3</span><strong>유료 패키지</strong><p>전체 원고와 비교표 구매</p></article>
+      </div>
+    </section>
+
+    <section class="premium-section premium-price-box">
+      <div>
+        <p class="eyebrow">Launch offer</p>
+        <h2>런칭가 9,900원</h2>
+        <p>초기에는 외부 결제 링크를 붙이고, 구매 반응이 확인되면 Toss Payments/PortOne으로 내부 결제를 붙입니다.</p>
+      </div>
+      <button type="button" data-premium-checkout="neuro-series-6">구매 버튼 연결 준비</button>
+    </section>
+  `;
 }
 
 function renderTrendScreen() {
@@ -2589,13 +2717,21 @@ function resourcePayload(resource) {
 }
 
 function syncAdminRoute() {
-  const isAdmin = window.location.hash === "#admin";
+  const hash = window.location.hash;
+  const isAdmin = hash === "#admin";
+  const isPremium = hash === "#premium";
   analyticsAdmin.hidden = !isAdmin;
   document.body.classList.toggle("admin-mode", isAdmin);
 
   if (isAdmin) {
     renderAnalyticsAdmin();
     trackEvent("admin_view");
+    window.scrollTo({ top: 0, behavior: "auto" });
+    return;
+  }
+
+  if (isPremium) {
+    setPremiumMode();
     window.scrollTo({ top: 0, behavior: "auto" });
   }
 }
@@ -3108,6 +3244,10 @@ function starIcon() {
 
 function bookIcon() {
   return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h5.2c1 0 1.8.8 1.8 1.8v13.2c0-.9-.8-1.6-1.8-1.6H5V4.5Zm14 0h-5.2c-1 0-1.8.8-1.8 1.8v13.2c0-.9.8-1.6 1.8-1.6H19V4.5Z"/></svg>`;
+}
+
+function paidIcon() {
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7.5h15v12h-15v-12Z"/><path d="M7 7.5V6a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1.5"/><path d="M8 12h8M8 15.5h5"/></svg>`;
 }
 
 function userIcon() {
