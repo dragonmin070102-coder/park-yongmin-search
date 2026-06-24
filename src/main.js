@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-6";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-7";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -123,6 +123,7 @@ let adminDashboardState = {
 };
 let adminSearchTimer = null;
 let analyticsFlushScheduled = false;
+let currentPremiumPreviewCards = [];
 
 const analyticsUserId = getOrCreateAnalyticsUserId();
 const analyticsSessionId = createSessionId();
@@ -739,6 +740,21 @@ document.addEventListener("click", (event) => {
   openPremiumPreviewModal();
 });
 
+document.addEventListener("click", (event) => {
+  const card = event.target.closest("[data-premium-preview-card]");
+  if (!card) return;
+
+  openPremiumPreviewCard(Number(card.dataset.premiumPreviewCard));
+});
+
+document.addEventListener("submit", (event) => {
+  const form = event.target.closest("[data-premium-review-form]");
+  if (!form) return;
+
+  event.preventDefault();
+  submitPremiumReview(form);
+});
+
 document.querySelectorAll("[data-close-modal]").forEach((button) => {
   button.addEventListener("click", closePreviewModal);
 });
@@ -1135,6 +1151,7 @@ function renderPremiumScreen() {
     { module: premiumNeuroModules[5], section: "9. 추론 흐름", lines: ["1차 vs 2차 손상", "SBP·SpO2 목표", "CSF leak 주의"] },
     { module: premiumNeuroModules[0], section: "10. 간호 근거", lines: ["머리 30도 거상", "경부 중립", "동공 변화 즉시 보고"] }
   ];
+  currentPremiumPreviewCards = previewCards;
 
   premiumScreen.innerHTML = `
     <div class="premium-app-top">
@@ -1155,13 +1172,13 @@ function renderPremiumScreen() {
           <p>병태생리 이해<br />핵심 요약 정리<br />임상추론 활용<br />간호중재 & 근거</p>
           <strong>BY PARK YONG MIN</strong>
         </div>
-        <div class="premium-brain-visual" aria-hidden="true"><i></i></div>
+        <img class="premium-brain-image" src="./assets/iicp-brain-cover.png" alt="두개내압 상승 학습을 상징하는 뇌 이미지" loading="eager" />
       </div>
       <h2>신경계 임상추론 6편 패키지</h2>
       <p class="premium-product-subtitle">GCS부터 TBI까지, 신경계 응급 케이스를 하나의 흐름으로 정리했습니다.</p>
       <div class="premium-product-meta">
-        <span>★ 4.9 (128)</span>
-        <span>다운로드 1,248회</span>
+        <span>자료 공개 준비 중</span>
+        <span>다운로드 6회</span>
       </div>
       <div class="premium-spec-grid">
         <article><strong>DOCX 자료</strong><span>6편 · 96섹션</span></article>
@@ -1248,11 +1265,14 @@ function renderPremiumScreen() {
         </div>
         <a href="#premium">전체 보기</a>
       </div>
-      <strong>4.9 <small>/ 5</small></strong>
-      <p>★★★★★ · 총 128개 리뷰</p>
-      <div class="premium-review-list">
-        <article><b>간호대생 별**</b><span>임상추론 흐름이 정말 도움이 됩니다. 도식과 표 덕분에 이해가 쉬워요.</span></article>
-        <article><b>신규간호사 김**</b><span>실습 나가기 전에 미리 공부했는데, 실제로 환자 볼 때 바로 떠올랐어요.</span></article>
+      <p class="premium-review-note">구매 후 실제 학습 후기를 남길 수 있게 준비 중이에요.</p>
+      <form class="premium-review-form" data-premium-review-form>
+        <input type="text" name="name" placeholder="닉네임" maxlength="18" aria-label="리뷰 닉네임" />
+        <textarea name="review" placeholder="자료를 보고 도움이 된 점을 남겨주세요." maxlength="300" aria-label="리뷰 내용"></textarea>
+        <button type="submit">리뷰 남기기</button>
+      </form>
+      <div class="premium-review-list" id="premiumReviewList">
+        ${renderPremiumReviews()}
       </div>
     </section>
 
@@ -1270,16 +1290,80 @@ function renderPremiumScreen() {
 }
 
 function premiumDocPreviewCard(card, index) {
-  return `
-    <article class="premium-doc-card">
-      <div class="doc-page-mini">
+  const image = card.image ? `<img src="${escapeHtml(card.image)}" alt="${escapeHtml(card.module.title)} ${escapeHtml(card.section)} 미리보기" loading="lazy" />` : "";
+  const mini = image || `
         <h3>${escapeHtml(card.section)}</h3>
         <strong>${escapeHtml(card.module.title)}</strong>
         <ul>${card.lines.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>
-      </div>
+      `;
+
+  return `
+    <button class="premium-doc-card" type="button" data-premium-preview-card="${index}">
+      <div class="doc-page-mini ${image ? "has-image" : ""}">${mini}</div>
       <p>${escapeHtml(card.module.title)}</p>
-    </article>
+    </button>
   `;
+}
+
+
+function renderPremiumReviews() {
+  const reviews = readJsonArray("pym.premiumReviews");
+  if (!reviews.length) {
+    return `<article class="premium-review-empty"><span>아직 등록된 리뷰가 없어요. 첫 구매자 후기를 받을 준비 중입니다.</span></article>`;
+  }
+
+  return reviews.slice(-5).reverse().map((review) => `
+    <article>
+      <b>${escapeHtml(review.name || "익명 학습자")}</b>
+      <span>${escapeHtml(review.body || "")}</span>
+    </article>
+  `).join("");
+}
+
+function submitPremiumReview(form) {
+  const formData = new FormData(form);
+  const name = String(formData.get("name") || "").trim() || "익명 학습자";
+  const body = String(formData.get("review") || "").trim();
+  if (body.length < 5) {
+    showToast("리뷰 내용을 조금만 더 적어주세요");
+    return;
+  }
+
+  const reviews = readJsonArray("pym.premiumReviews");
+  reviews.push({ name, body, createdAt: new Date().toISOString() });
+  safeStorageSet("pym.premiumReviews", JSON.stringify(reviews.slice(-30)));
+  form.reset();
+  const list = document.querySelector("#premiumReviewList");
+  if (list) list.innerHTML = renderPremiumReviews();
+  trackEvent("premium_review_submit", { productId: "neuro-series-6", bodyLength: body.length });
+  showToast("리뷰가 등록됐어요");
+}
+
+function openPremiumPreviewCard(index) {
+  const card = currentPremiumPreviewCards[index];
+  if (!card) return;
+
+  previewModal.setAttribute("aria-labelledby", "premiumCardPreviewTitle");
+  const image = card.image ? `<img class="premium-preview-large-image" src="${escapeHtml(card.image)}" alt="${escapeHtml(card.module.title)} 미리보기" />` : "";
+  modalContent.innerHTML = `
+    <div class="premium-preview-modal premium-card-preview-modal">
+      <p class="eyebrow">Preview</p>
+      <h2 id="premiumCardPreviewTitle">${escapeHtml(card.module.title)} · ${escapeHtml(card.section)}</h2>
+      ${image || `
+        <div class="premium-preview-large-doc">
+          <h3>${escapeHtml(card.section)}</h3>
+          <strong>${escapeHtml(card.module.title)}</strong>
+          <ul>${card.lines.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>
+        </div>
+      `}
+      <div class="premium-preview-actions single">
+        <button type="button" data-close-modal>닫기</button>
+      </div>
+    </div>
+  `;
+  previewModal.hidden = false;
+  document.body.classList.add("modal-open");
+  trackEvent("premium_preview_card_open", { productId: "neuro-series-6", section: card.section });
 }
 
 renderPremiumScreen();
