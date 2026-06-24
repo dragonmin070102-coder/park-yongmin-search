@@ -700,15 +700,18 @@ document.addEventListener("click", (event) => {
   if (!preview) return;
 
   trackEvent("premium_preview_click", { productId: preview.dataset.premiumPreview });
-  const firstNeuro = resources.find((resource) => resource.system === "신경계") || resources.find((resource) => resource.id === "iicp");
-  if (firstNeuro) {
-    activeResource = firstNeuro;
-    openPreviewModal(firstNeuro);
-  }
+  openPremiumPreviewModal();
 });
 
 document.querySelectorAll("[data-close-modal]").forEach((button) => {
   button.addEventListener("click", closePreviewModal);
+});
+
+document.addEventListener("click", (event) => {
+  const close = event.target.closest("[data-close-modal]");
+  if (!close) return;
+
+  closePreviewModal();
 });
 
 document.addEventListener("keydown", (event) => {
@@ -1036,17 +1039,59 @@ function moveHomeNotice(direction) {
   startNoticeRotation();
 }
 
+const premiumNeuroModules = [
+  {
+    number: "01",
+    title: "신경학적 사정",
+    subtitle: "GCS · 동공 · LOC · 운동/감각",
+    hook: "활력징후가 멀쩡해도, 의식 변화가 먼저 말해줍니다.",
+    preview: "GCS는 지금 점수보다 아까와 비교한 변화가 핵심입니다. 의식 저하와 한쪽 동공 산대는 두개내압 상승을 먼저 의심하게 만드는 신호입니다.",
+    paid: ["GCS 계산 흐름", "동공반사 해석", "의식수준 보고 문장", "신경계 사정표"]
+  },
+  {
+    number: "02",
+    title: "두개내압 상승",
+    subtitle: "Monro-Kellie · Cushing triad · CPP",
+    hook: "혈압은 오르는데 맥박은 느려지는 순간, 뇌의 마지막 SOS입니다.",
+    preview: "IICP는 닫힌 상자 안에서 자리가 없어지는 문제입니다. 의식 저하, 동공 변화, Cushing triad를 하나의 흐름으로 읽게 만듭니다.",
+    paid: ["ICP/CPP 해석", "Cushing triad 추론", "금기 간호", "즉시 보고 기준"]
+  },
+  {
+    number: "03",
+    title: "허혈성 뇌졸중",
+    subtitle: "FAST · time window · tPA/EVT",
+    hook: "마지막으로 멀쩡했던 시간이 치료를 정합니다.",
+    preview: "허혈성 뇌졸중은 페넘브라를 살리는 시간 싸움입니다. 혈압을 무조건 낮추지 않는 이유와 CT를 먼저 보는 이유를 연결합니다.",
+    paid: ["FAST 사정", "last known well 질문", "permissive HTN", "tPA/EVT 전후 간호"]
+  },
+  {
+    number: "04",
+    title: "출혈성 뇌졸중",
+    subtitle: "혈압관리 · SAH · nimodipine",
+    hook: "허혈성과 정반대입니다. 이번엔 더 새지 않게 막아야 합니다.",
+    preview: "출혈성 뇌졸중은 혈종 확대와 두개내압 상승을 막는 흐름입니다. SAH, 재출혈, 혈관연축 감시까지 이어집니다.",
+    paid: ["허혈성 vs 출혈성 비교", "혈압관리 흐름", "SAH 간호", "재출혈/혈관연축 감시"]
+  },
+  {
+    number: "05",
+    title: "경련·뇌전증",
+    subtitle: "안전간호 · 5분 · status epilepticus",
+    hook: "발작 중 가장 위험한 건 도와주려는 손일 수 있습니다.",
+    preview: "경련 간호는 억제하는 것이 아니라 다치지 않게 지키고, 시간을 재고, 5분을 기준으로 약물 단계를 판단하는 것입니다.",
+    paid: ["발작 중 금기", "5분 기준", "benzodiazepine 흐름", "post-ictal 관찰"]
+  },
+  {
+    number: "06",
+    title: "외상성 뇌손상",
+    subtitle: "1차/2차 손상 · ICP/CPP · BTF 기준",
+    hook: "충격은 끝났지만, 손상은 지금부터 막을 수 있습니다.",
+    preview: "TBI는 1차 손상과 2차 손상으로 나누어 봅니다. 저혈압, 저산소, ICP 상승을 막는 모든 간호가 하나의 방향으로 모입니다.",
+    paid: ["1차/2차 손상 비교", "SBP/SpO2 목표", "CSF leak 주의", "BTF 기준 기반 보고"]
+  }
+];
+
 function renderPremiumScreen() {
   if (!premiumScreen) return;
-
-  const modules = [
-    ["01", "신경학적 사정", "GCS · 동공 · LOC · 운동/감각"],
-    ["02", "두개내압 상승", "Monro-Kellie · Cushing triad · CPP"],
-    ["03", "허혈성 뇌졸중", "FAST · time window · tPA/EVT"],
-    ["04", "출혈성 뇌졸중", "혈압관리 · SAH · nimodipine"],
-    ["05", "경련·뇌전증", "안전간호 · 5분 · status epilepticus"],
-    ["06", "외상성 뇌손상", "1차/2차 손상 · ICP/CPP · BTF 기준"]
-  ];
 
   premiumScreen.innerHTML = `
     <section class="premium-hero" aria-labelledby="premium-title">
@@ -1082,12 +1127,12 @@ function renderPremiumScreen() {
         <h2>6편 구성</h2>
       </div>
       <div class="premium-module-list">
-        ${modules.map(([number, title, desc]) => `
+        ${premiumNeuroModules.map((module) => `
           <article>
-            <span>${number}</span>
+            <span>${escapeHtml(module.number)}</span>
             <div>
-              <strong>${escapeHtml(title)}</strong>
-              <p>${escapeHtml(desc)}</p>
+              <strong>${escapeHtml(module.title)}</strong>
+              <p>${escapeHtml(module.subtitle)}</p>
             </div>
           </article>
         `).join("")}
@@ -1115,6 +1160,54 @@ function renderPremiumScreen() {
       <button type="button" data-premium-checkout="neuro-series-6">구매 버튼 연결 준비</button>
     </section>
   `;
+}
+
+function openPremiumPreviewModal() {
+  previewModal.setAttribute("aria-labelledby", "premiumPreviewTitle");
+  modalContent.innerHTML = `
+    <div class="premium-preview-modal">
+      <p class="eyebrow">Package preview</p>
+      <h2 id="premiumPreviewTitle">신경계 임상추론 6편 구성</h2>
+      <p class="premium-preview-lead">실제 DOCX 6편 기준으로 구성한 미리보기입니다. 무료 화면에서는 각 편의 학습 방향과 일부 핵심 흐름만 보여주고, 전체 원고와 표·보고 문장은 구매 후 제공하는 구조입니다.</p>
+      <div class="premium-preview-summary">
+        <article><strong>6편</strong><span>Tier 0·1 응급 신경계</span></article>
+        <article><strong>96섹션</strong><span>각 편 16섹션 원고</span></article>
+        <article><strong>72장</strong><span>12슬라이드 캐러셀 6세트</span></article>
+      </div>
+      <div class="premium-preview-list">
+        ${premiumNeuroModules.map((module) => `
+          <article>
+            <div class="premium-preview-num">${escapeHtml(module.number)}</div>
+            <div>
+              <h3>${escapeHtml(module.title)}</h3>
+              <p class="premium-preview-hook">${escapeHtml(module.hook)}</p>
+              <p>${escapeHtml(module.preview)}</p>
+              <div class="premium-paid-tags">
+                ${module.paid.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}
+              </div>
+            </div>
+          </article>
+        `).join("")}
+      </div>
+      <section class="premium-free-paid">
+        <div>
+          <h3>무료 공개</h3>
+          <p>인스타 캐러셀, 사이트 핵심 요약, 각 편의 문제의식과 일부 미리보기</p>
+        </div>
+        <div>
+          <h3>구매 후 제공</h3>
+          <p>DOCX 전체 원고 6편, 12슬라이드 원본, 보고 기준표, 비교표, NCLEX-style 문제</p>
+        </div>
+      </section>
+      <div class="premium-preview-actions">
+        <button type="button" data-close-modal>닫기</button>
+        <button type="button" data-premium-checkout="neuro-series-6">패키지 구매하기</button>
+      </div>
+    </div>
+  `;
+  previewModal.hidden = false;
+  document.body.classList.add("modal-open");
+  document.body.style.overflow = "hidden";
 }
 
 function renderTrendScreen() {
