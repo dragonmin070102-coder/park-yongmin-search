@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-9";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-10";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -1102,6 +1102,7 @@ const premiumNeuroModules = [
     number: "01",
     title: "신경학적 사정",
     subtitle: "GCS · 동공 · LOC · 운동/감각",
+    pages: 9,
     hook: "활력징후가 멀쩡해도, 의식 변화가 먼저 말해줍니다.",
     preview: "GCS는 지금 점수보다 아까와 비교한 변화가 핵심입니다. 의식 저하와 한쪽 동공 산대는 두개내압 상승을 먼저 의심하게 만드는 신호입니다.",
     paid: ["GCS 계산 흐름", "동공반사 해석", "의식수준 보고 문장", "신경계 사정표"]
@@ -1110,6 +1111,7 @@ const premiumNeuroModules = [
     number: "02",
     title: "두개내압 상승",
     subtitle: "Monro-Kellie · Cushing triad · CPP",
+    pages: 9,
     hook: "혈압은 오르는데 맥박은 느려지는 순간, 뇌의 마지막 SOS입니다.",
     preview: "IICP는 닫힌 상자 안에서 자리가 없어지는 문제입니다. 의식 저하, 동공 변화, Cushing triad를 하나의 흐름으로 읽게 만듭니다.",
     paid: ["ICP/CPP 해석", "Cushing triad 추론", "금기 간호", "즉시 보고 기준"]
@@ -1118,6 +1120,7 @@ const premiumNeuroModules = [
     number: "03",
     title: "허혈성 뇌졸중",
     subtitle: "FAST · time window · tPA/EVT",
+    pages: 10,
     hook: "마지막으로 멀쩡했던 시간이 치료를 정합니다.",
     preview: "허혈성 뇌졸중은 페넘브라를 살리는 시간 싸움입니다. 혈압을 무조건 낮추지 않는 이유와 CT를 먼저 보는 이유를 연결합니다.",
     paid: ["FAST 사정", "last known well 질문", "permissive HTN", "tPA/EVT 전후 간호"]
@@ -1126,6 +1129,7 @@ const premiumNeuroModules = [
     number: "04",
     title: "출혈성 뇌졸중",
     subtitle: "혈압관리 · SAH · nimodipine",
+    pages: 10,
     hook: "허혈성과 정반대입니다. 이번엔 더 새지 않게 막아야 합니다.",
     preview: "출혈성 뇌졸중은 혈종 확대와 두개내압 상승을 막는 흐름입니다. SAH, 재출혈, 혈관연축 감시까지 이어집니다.",
     paid: ["허혈성 vs 출혈성 비교", "혈압관리 흐름", "SAH 간호", "재출혈/혈관연축 감시"]
@@ -1134,6 +1138,7 @@ const premiumNeuroModules = [
     number: "05",
     title: "경련·뇌전증",
     subtitle: "안전간호 · 5분 · status epilepticus",
+    pages: 10,
     hook: "발작 중 가장 위험한 건 도와주려는 손일 수 있습니다.",
     preview: "경련 간호는 억제하는 것이 아니라 다치지 않게 지키고, 시간을 재고, 5분을 기준으로 약물 단계를 판단하는 것입니다.",
     paid: ["발작 중 금기", "5분 기준", "benzodiazepine 흐름", "post-ictal 관찰"]
@@ -1142,6 +1147,7 @@ const premiumNeuroModules = [
     number: "06",
     title: "외상성 뇌손상",
     subtitle: "1차/2차 손상 · ICP/CPP · BTF 기준",
+    pages: 10,
     hook: "충격은 끝났지만, 손상은 지금부터 막을 수 있습니다.",
     preview: "TBI는 1차 손상과 2차 손상으로 나누어 봅니다. 저혈압, 저산소, ICP 상승을 막는 모든 간호가 하나의 방향으로 모입니다.",
     paid: ["1차/2차 손상 비교", "SBP/SpO2 목표", "CSF leak 주의", "BTF 기준 기반 보고"]
@@ -1261,7 +1267,7 @@ function renderPremiumScreen() {
               <strong>${escapeHtml(module.title)}</strong>
               <p>${escapeHtml(module.subtitle)}</p>
             </div>
-            <em>p.${String(Number(module.number) * 2).padStart(2, "0")}</em>
+            <em>${Number(module.pages || 0)}페이지</em>
           </article>
         `).join("")}
       </div>
