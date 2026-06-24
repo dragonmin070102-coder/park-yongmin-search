@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-7";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-8";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -1146,10 +1146,13 @@ function renderPremiumScreen() {
 
   const featured = premiumNeuroModules[1];
   const previewCards = [
-    { module: premiumNeuroModules[1], section: "6. 병태생리", lines: ["Monro-Kellie 원리", "CPP = MAP - ICP", "Cushing triad가 늦은 징후인 이유"] },
-    { module: premiumNeuroModules[2], section: "8. 임상추론", lines: ["last known well", "CT로 출혈 배제", "permissive HTN 판단"] },
-    { module: premiumNeuroModules[5], section: "9. 추론 흐름", lines: ["1차 vs 2차 손상", "SBP·SpO2 목표", "CSF leak 주의"] },
-    { module: premiumNeuroModules[0], section: "10. 간호 근거", lines: ["머리 30도 거상", "경부 중립", "동공 변화 즉시 보고"] }
+    { module: premiumNeuroModules[0], section: "p.01 왜 중요한가", image: "./assets/previews/neuro-assessment-p01.png", lines: ["시험·실습·임상 연결", "박용민 요점"] },
+    { module: premiumNeuroModules[0], section: "p.02 임상 상황", image: "./assets/previews/neuro-assessment-p02.png", lines: ["GCS 변화", "동공 변화", "생각해보기"] },
+    { module: premiumNeuroModules[0], section: "p.03 병태생리", image: "./assets/previews/neuro-assessment-p03.png", lines: ["Monro-Kellie", "악화 순서"] },
+    { module: premiumNeuroModules[0], section: "p.04 핵심 검사 및 수치", image: "./assets/previews/neuro-assessment-p04.png", lines: ["GCS", "GCS-P", "ICP/CPP"] },
+    { module: premiumNeuroModules[0], section: "p.05 임상추론 흐름", image: "./assets/previews/neuro-assessment-p05.png", lines: ["해석", "우선순위", "보고"] },
+    { module: premiumNeuroModules[0], section: "p.06 간호중재와 근거", image: "./assets/previews/neuro-assessment-p06.png", lines: ["왜 이런 간호를 할까", "목표 및 수행"] },
+    { module: premiumNeuroModules[0], section: "p.08 30초 복습", image: "./assets/previews/neuro-assessment-p08.png", lines: ["체크리스트", "NCLEX Questions"] }
   ];
   currentPremiumPreviewCards = previewCards;
 
@@ -1206,9 +1209,9 @@ function renderPremiumScreen() {
       <div class="premium-section-head">
         <div>
           <p class="eyebrow">Preview</p>
-          <h2>미리보기</h2>
+          <h2>실제 자료 미리보기</h2>
         </div>
-        <button type="button" data-premium-preview="neuro-series-6">전체 미리보기</button>
+        <button type="button" data-premium-preview="neuro-series-6">구성 전체</button>
       </div>
       <div class="premium-doc-strip">
         ${previewCards.map((card, index) => premiumDocPreviewCard(card, index)).join("")}
