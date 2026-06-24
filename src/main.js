@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-8";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-9";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -744,7 +744,14 @@ document.addEventListener("click", (event) => {
   const card = event.target.closest("[data-premium-preview-card]");
   if (!card) return;
 
-  openPremiumPreviewCard(Number(card.dataset.premiumPreviewCard));
+  openPremiumPreviewGallery(Number(card.dataset.premiumPreviewCard));
+});
+
+document.addEventListener("click", (event) => {
+  const gallery = event.target.closest("[data-premium-preview-gallery]");
+  if (!gallery) return;
+
+  openPremiumPreviewGallery(Number(gallery.dataset.premiumPreviewGallery || 0));
 });
 
 document.addEventListener("submit", (event) => {
@@ -1170,7 +1177,7 @@ function renderPremiumScreen() {
       <div class="premium-cover-card">
         <div class="premium-cover-copy">
           <span>BEST</span>
-          <em>신경계 시리즈 02</em>
+          <em>신경계 시리즈 01</em>
           <h1 id="premium-title">두개내압 상승<br />(IICP)</h1>
           <p>병태생리 이해<br />핵심 요약 정리<br />임상추론 활용<br />간호중재 & 근거</p>
           <strong>BY PARK YONG MIN</strong>
@@ -1211,7 +1218,7 @@ function renderPremiumScreen() {
           <p class="eyebrow">Preview</p>
           <h2>실제 자료 미리보기</h2>
         </div>
-        <button type="button" data-premium-preview="neuro-series-6">구성 전체</button>
+        <button type="button" data-premium-preview-gallery="0">전체 보기</button>
       </div>
       <div class="premium-doc-strip">
         ${previewCards.map((card, index) => premiumDocPreviewCard(card, index)).join("")}
@@ -1342,23 +1349,30 @@ function submitPremiumReview(form) {
   showToast("리뷰가 등록됐어요");
 }
 
-function openPremiumPreviewCard(index) {
-  const card = currentPremiumPreviewCards[index];
-  if (!card) return;
+function openPremiumPreviewGallery(index = 0) {
+  const cards = currentPremiumPreviewCards.filter((card) => card.image);
+  if (!cards.length) return;
+  const startIndex = Math.max(0, Math.min(Number(index) || 0, cards.length - 1));
 
-  previewModal.setAttribute("aria-labelledby", "premiumCardPreviewTitle");
-  const image = card.image ? `<img class="premium-preview-large-image" src="${escapeHtml(card.image)}" alt="${escapeHtml(card.module.title)} 미리보기" />` : "";
+  previewModal.setAttribute("aria-labelledby", "premiumGalleryPreviewTitle");
   modalContent.innerHTML = `
-    <div class="premium-preview-modal premium-card-preview-modal">
-      <p class="eyebrow">Preview</p>
-      <h2 id="premiumCardPreviewTitle">${escapeHtml(card.module.title)} · ${escapeHtml(card.section)}</h2>
-      ${image || `
-        <div class="premium-preview-large-doc">
-          <h3>${escapeHtml(card.section)}</h3>
-          <strong>${escapeHtml(card.module.title)}</strong>
-          <ul>${card.lines.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>
+    <div class="premium-preview-modal premium-gallery-preview-modal">
+      <div class="premium-gallery-head">
+        <div>
+          <p class="eyebrow">Preview</p>
+          <h2 id="premiumGalleryPreviewTitle">실제 자료 미리보기</h2>
         </div>
-      `}
+        <span>${cards.length}장</span>
+      </div>
+      <div class="premium-preview-gallery-track" data-premium-gallery-track>
+        ${cards.map((card, cardIndex) => `
+          <figure class="premium-preview-gallery-page">
+            <img src="${escapeHtml(card.image)}" alt="${escapeHtml(card.section)} 미리보기" />
+            <figcaption>${escapeHtml(card.section)} · ${cardIndex + 1}/${cards.length}</figcaption>
+          </figure>
+        `).join("")}
+      </div>
+      <p class="premium-gallery-hint">좌우로 넘겨서 실제 자료 일부를 확인해보세요.</p>
       <div class="premium-preview-actions single">
         <button type="button" data-close-modal>닫기</button>
       </div>
@@ -1366,7 +1380,14 @@ function openPremiumPreviewCard(index) {
   `;
   previewModal.hidden = false;
   document.body.classList.add("modal-open");
-  trackEvent("premium_preview_card_open", { productId: "neuro-series-6", section: card.section });
+
+  window.requestAnimationFrame(() => {
+    const track = modalContent.querySelector("[data-premium-gallery-track]");
+    const target = track?.children[startIndex];
+    if (target) target.scrollIntoView({ behavior: "auto", inline: "start", block: "nearest" });
+  });
+
+  trackEvent("premium_preview_gallery_open", { productId: "neuro-series-6", startIndex });
 }
 
 renderPremiumScreen();

@@ -5231,3 +5231,73 @@ body.search-mode .premium-screen {
   border-radius: 8px;
   background: #f7f8fa;
 }
+
+/* Premium preview swipe gallery */
+.premium-gallery-preview-modal {
+  gap: 12px;
+}
+
+.premium-gallery-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.premium-gallery-head h2,
+.premium-gallery-head p {
+  margin: 0;
+}
+
+.premium-gallery-head span {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border-radius: 8px;
+  background: #e8f3ff;
+  color: #1b64da;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.premium-preview-gallery-track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 100%;
+  gap: 12px;
+  margin: 0 -22px;
+  padding: 0 22px 6px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.premium-preview-gallery-track::-webkit-scrollbar {
+  display: none;
+}
+
+.premium-preview-gallery-page {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  scroll-snap-align: center;
+}
+
+.premium-preview-gallery-page img {
+  display: block;
+  width: 100%;
+  max-height: 72vh;
+  object-fit: contain;
+  border: 1px solid #e5e8eb;
+  border-radius: 8px;
+  background: #f7f8fa;
+}
+
+.premium-preview-gallery-page figcaption,
+.premium-gallery-hint {
+  margin: 0;
+  color: #6b7684;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
