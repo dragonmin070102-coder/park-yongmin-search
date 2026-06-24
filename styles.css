@@ -759,6 +759,9 @@ input[type="search"]:focus {
   min-height: 42px;
   padding: 0 14px;
   border-radius: 8px;
+  border: 0;
+  font-family: inherit;
+  cursor: pointer;
   font-weight: 900;
   text-decoration: none;
 }
@@ -5300,4 +5303,113 @@ body.search-mode .premium-screen {
   font-size: 12px;
   font-weight: 800;
   text-align: center;
+}
+
+/* Premium purchase unlock */
+.premium-purchase-complete {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid #b7ebc6;
+  border-radius: 8px;
+  background: #ecfdf3;
+}
+
+.premium-purchase-complete strong {
+  color: #12b76a;
+  font-size: 16px;
+}
+
+.premium-purchase-complete span,
+.premium-access-card p {
+  margin: 0;
+  color: #4e5968;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.premium-primary-link {
+  display: grid;
+  min-height: 52px;
+  place-items: center;
+  border-radius: 8px;
+  background: #3182f6;
+  color: #fff;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.premium-access-card.locked {
+  background: #fbfcfd;
+}
+
+.premium-access-badge {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border-radius: 8px;
+  background: #ecfdf3;
+  color: #12b76a;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.premium-download-list {
+  display: grid;
+  gap: 8px;
+}
+
+.premium-download-list a,
+.premium-download-list buttonrticle {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #edf0f3;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.premium-download-list a,
+.premium-download-list buttonrticle div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.premium-download-list strong {
+  color: #191f28;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.premium-download-list span {
+  color: #6b7684;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.premium-download-list a,
+.premium-download-list button {
+  display: grid;
+  min-height: 38px;
+  place-items: center;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: #eef6ff;
+  color: #1b64da;
+  font-size: 13px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.premium-download-actions {
+  display: flex !important;
+  gap: 6px !important;
+  justify-content: flex-end;
+}
+
+.premium-download-actions a,
+.premium-download-actions button {
+  min-width: 54px;
 }

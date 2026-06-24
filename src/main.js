@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-10";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-11";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -728,8 +728,15 @@ document.addEventListener("click", (event) => {
   const checkout = event.target.closest("[data-premium-checkout]");
   if (!checkout) return;
 
-  trackEvent("premium_checkout_click", { productId: checkout.dataset.premiumCheckout });
-  showToast("결제 링크를 붙이면 바로 판매 페이지로 연결돼요");
+  completePremiumPurchase(checkout.dataset.premiumCheckout);
+});
+
+document.addEventListener("click", (event) => {
+  const secureFile = event.target.closest("[data-premium-secure-file]");
+  if (!secureFile) return;
+
+  trackEvent("premium_secure_file_click", { fileNumber: secureFile.dataset.premiumSecureFile });
+  showToast("결제 검증 서버와 연결하면 이 버튼으로 자료가 열려요");
 });
 
 document.addEventListener("click", (event) => {
@@ -1154,10 +1161,20 @@ const premiumNeuroModules = [
   }
 ];
 
+const premiumDownloadFiles = [
+  { number: "01", title: "신경학적 사정", pages: 9 },
+  { number: "02", title: "두개내압 상승", pages: 9 },
+  { number: "03", title: "허혈성 뇌졸중", pages: 10 },
+  { number: "04", title: "출혈성 뇌졸중", pages: 10 },
+  { number: "05", title: "경련·뇌전증", pages: 10 },
+  { number: "06", title: "외상성 뇌손상", pages: 10 }
+];
+
 function renderPremiumScreen() {
   if (!premiumScreen) return;
 
   const featured = premiumNeuroModules[1];
+  const purchased = isPremiumPurchased("neuro-series-6");
   const previewCards = [
     { module: premiumNeuroModules[0], section: "p.01 왜 중요한가", image: "./assets/previews/neuro-assessment-p01.png", lines: ["시험·실습·임상 연결", "박용민 요점"] },
     { module: premiumNeuroModules[0], section: "p.02 임상 상황", image: "./assets/previews/neuro-assessment-p02.png", lines: ["GCS 변화", "동공 변화", "생각해보기"] },
@@ -1200,7 +1217,7 @@ function renderPremiumScreen() {
         <article><strong>DOCX 자료</strong><span>6편 · 96섹션</span></article>
         <article><strong>최종 업데이트</strong><span>2026.06</span></article>
         <article><strong>난이도</strong><span>중급</span></article>
-        <article><strong>학습 시간</strong><span>90분</span></article>
+        <article><strong>학습 시간</strong><span>30분</span></article>
       </div>
     </section>
 
@@ -1213,10 +1230,20 @@ function renderPremiumScreen() {
         <li>무제한 열람</li>
         <li>업데이트 시 추가 비용 없음</li>
       </ul>
-      <button type="button" data-premium-checkout="neuro-series-6">지금 구매하기</button>
-      <button type="button" data-premium-preview="neuro-series-6">구성 미리보기</button>
-      <span>안전한 결제 · 결제 링크 연결 예정</span>
+      ${purchased ? `
+        <div class="premium-purchase-complete">
+          <strong>구매완료</strong>
+          <span>신경계 시리즈 6편 자료가 열렸어요.</span>
+        </div>
+        <a class="premium-primary-link" href="#premiumAccess">자료 보러가기</a>
+      ` : `
+        <button type="button" data-premium-checkout="neuro-series-6">지금 구매하기</button>
+        <button type="button" data-premium-preview="neuro-series-6">구성 미리보기</button>
+        <span>결제 완료 후 바로 자료 보기와 다운로드가 열립니다.</span>
+      `}
     </section>
+
+    ${renderPremiumAccessPanel(purchased)}
 
     <section class="premium-section premium-preview-strip">
       <div class="premium-section-head">
@@ -1321,6 +1348,61 @@ function premiumDocPreviewCard(card, index) {
   `;
 }
 
+
+function isPremiumPurchased(productId) {
+  return safeStorageGet(`pym.premiumPurchased.${productId}`) === "true";
+}
+
+function completePremiumPurchase(productId) {
+  safeStorageSet(`pym.premiumPurchased.${productId}`, "true");
+  safeStorageSet(`pym.premiumPurchasedAt.${productId}`, new Date().toISOString());
+  trackEvent("premium_purchase_complete", { productId });
+  showToast("구매완료! 자료가 열렸어요");
+  renderPremiumScreen();
+  document.querySelector("#premiumAccess")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderPremiumAccessPanel(purchased) {
+  if (!purchased) {
+    return `
+      <section class="premium-section premium-access-card locked" id="premiumAccess">
+        <div class="premium-section-head">
+          <div>
+            <p class="eyebrow">Purchased content</p>
+            <h2>구매 후 제공 자료</h2>
+          </div>
+        </div>
+        <p>결제가 완료되면 DOCX 6편을 바로 열람하거나 다운로드할 수 있어요.</p>
+      </section>
+    `;
+  }
+
+  return `
+    <section class="premium-section premium-access-card" id="premiumAccess">
+      <div class="premium-section-head">
+        <div>
+          <p class="eyebrow">Purchased content</p>
+          <h2>구매완료 자료</h2>
+        </div>
+        <span class="premium-access-badge">OPEN</span>
+      </div>
+      <div class="premium-download-list">
+        ${premiumDownloadFiles.map((file) => `
+          <article>
+            <div>
+              <strong>${escapeHtml(file.number)}. ${escapeHtml(file.title)}</strong>
+              <span>${Number(file.pages)}페이지 · DOCX</span>
+            </div>
+            <div class="premium-download-actions">
+              <button type="button" data-premium-secure-file="${escapeHtml(file.number)}">열기</button>
+              <button type="button" data-premium-secure-file="${escapeHtml(file.number)}">다운로드</button>
+            </div>
+          </article>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
 
 function renderPremiumReviews() {
   const reviews = readJsonArray("pym.premiumReviews");
