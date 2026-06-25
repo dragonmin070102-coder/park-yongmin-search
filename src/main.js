@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-16";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-17";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -765,8 +765,10 @@ document.addEventListener("click", (event) => {
   const secureFile = event.target.closest("[data-premium-secure-file]");
   if (!secureFile) return;
 
-  trackEvent("premium_secure_file_click", { fileNumber: secureFile.dataset.premiumSecureFile });
-  showToast("결제 검증 서버와 연결하면 이 버튼으로 자료가 열려요");
+  trackEvent("premium_secure_file_click", {
+    fileNumber: secureFile.dataset.premiumSecureFile,
+    action: secureFile.dataset.premiumSecureAction || "open"
+  });
 });
 
 document.addEventListener("click", (event) => {
@@ -1192,12 +1194,12 @@ const premiumNeuroModules = [
 ];
 
 const premiumDownloadFiles = [
-  { number: "01", title: "신경학적 사정", pages: 9 },
-  { number: "02", title: "두개내압 상승", pages: 9 },
-  { number: "03", title: "허혈성 뇌졸중", pages: 10 },
-  { number: "04", title: "출혈성 뇌졸중", pages: 10 },
-  { number: "05", title: "경련·뇌전증", pages: 10 },
-  { number: "06", title: "외상성 뇌손상", pages: 10 }
+  { number: "01", title: "신경학적 사정", pages: 9, fileName: "neuro-01-neurological-assessment.docx" },
+  { number: "02", title: "두개내압 상승", pages: 9, fileName: "neuro-02-iicp.docx" },
+  { number: "03", title: "허혈성 뇌졸중", pages: 10, fileName: "neuro-03-ischemic-stroke.docx" },
+  { number: "04", title: "출혈성 뇌졸중", pages: 10, fileName: "neuro-04-hemorrhagic-stroke.docx" },
+  { number: "05", title: "경련·뇌전증", pages: 10, fileName: "neuro-05-seizure-epilepsy.docx" },
+  { number: "06", title: "외상성 뇌손상", pages: 10, fileName: "neuro-06-tbi.docx" }
 ];
 
 function renderPremiumScreen() {
@@ -1692,6 +1694,22 @@ function completePremiumPurchase(productId) {
   document.querySelector("#premiumAccess")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function premiumFileHref(file) {
+  const overrideMap = readJsonObject("pym.premiumFileLinks");
+  const override = overrideMap[file.number] || overrideMap[file.fileName] || "";
+  if (override) return override;
+  return `./assets/premium/${file.fileName}`;
+}
+
+function readJsonObject(key) {
+  try {
+    const parsed = JSON.parse(safeStorageGet(key) || "{}");
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
 function renderPremiumAccessPanel(purchased) {
   if (!purchased) {
     return `
@@ -1728,8 +1746,8 @@ function renderPremiumAccessPanel(purchased) {
               <span>${Number(file.pages)}페이지 · DOCX</span>
             </div>
             <div class="premium-download-actions">
-              <button type="button" data-premium-secure-file="${escapeHtml(file.number)}">열기</button>
-              <button type="button" data-premium-secure-file="${escapeHtml(file.number)}">다운로드</button>
+              <a href="${escapeHtml(premiumFileHref(file))}" target="_blank" rel="noreferrer" data-premium-secure-file="${escapeHtml(file.number)}" data-premium-secure-action="open">열기</a>
+              <a href="${escapeHtml(premiumFileHref(file))}" download="${escapeHtml(file.fileName)}" data-premium-secure-file="${escapeHtml(file.number)}" data-premium-secure-action="download">다운로드</a>
             </div>
           </article>
         `).join("")}
