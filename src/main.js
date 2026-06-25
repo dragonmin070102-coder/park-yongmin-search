@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-15";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-16";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -1459,6 +1459,51 @@ function fromBankTransferOrderRow(row) {
   };
 }
 
+
+function bankTransferOrderPayload(order) {
+  return {
+    orderId: order.id,
+    productId: order.productId,
+    productTitle: order.productTitle,
+    amount: order.amount,
+    depositor: order.depositor,
+    email: order.email,
+    phoneLast4: order.phoneLast4 || "",
+    memo: order.memo || "",
+    status: order.status || "pending",
+    createdAt: order.createdAt,
+    approvedAt: order.approvedAt || ""
+  };
+}
+
+function orderFromAnalyticsEvent(event) {
+  const props = event.properties || {};
+  const orderId = props.orderId || props.id;
+  if (!orderId) return null;
+  const approved = event.event_name === "bank_transfer_order_approve" || props.status === "approved";
+  return {
+    id: orderId,
+    productId: props.productId || "neuro-series-6",
+    productTitle: props.productTitle || "신경계 임상추론 6편 패키지",
+    amount: props.amount || BANK_TRANSFER_ACCOUNT.amount,
+    depositor: props.depositor || "입금자명 미기록",
+    email: props.email || "이메일 미기록",
+    phoneLast4: props.phoneLast4 || "",
+    memo: props.memo || "",
+    status: approved ? "approved" : "pending",
+    createdAt: props.createdAt || event.created_at,
+    approvedAt: approved ? (props.approvedAt || event.created_at) : "",
+    updatedAt: event.created_at
+  };
+}
+
+function extractBankTransferOrdersFromEvents(events) {
+  return mergeBankTransferOrders(events
+    .filter((event) => ["bank_transfer_order_submit", "bank_transfer_order_approve"].includes(event.event_name))
+    .map(orderFromAnalyticsEvent)
+    .filter(Boolean));
+}
+
 function getLatestBankTransferOrder(productId) {
   return readBankTransferOrders()
     .filter((order) => order.productId === productId)
@@ -1522,7 +1567,7 @@ function submitBankTransferOrder(form) {
   const orders = [...readBankTransferOrders(), order];
   writeBankTransferOrders(orders);
   pushBankTransferOrderToSupabase(order);
-  trackEvent("bank_transfer_order_submit", { productId, orderId: order.id, amount: order.amount });
+  trackEvent("bank_transfer_order_submit", bankTransferOrderPayload(order));
   if (!analyticsAdmin.hidden) renderAnalyticsAdmin();
   renderBankOrderSubmitted(order);
 }
@@ -1595,16 +1640,20 @@ function verifyBankTransferOrder(form) {
 }
 
 function approveBankTransferOrder(orderId) {
-  const orders = readBankTransferOrders();
-  const updated = orders.map((order) => order.id === orderId ? { ...order, status: "approved", approvedAt: new Date().toISOString() } : order);
-  writeBankTransferOrders(updated);
-  const order = updated.find((item) => item.id === orderId);
-  if (order) {
-    safeStorageSet(`pym.premiumAccess.${order.productId}`, "true");
-    safeStorageSet(`pym.premiumAccessAt.${order.productId}`, order.approvedAt);
-    pushBankTransferOrderToSupabase(order);
+  const localOrders = readBankTransferOrders();
+  const sourceOrder = getAdminBankTransferOrders().find((item) => item.id === orderId) || localOrders.find((item) => item.id === orderId);
+  if (!sourceOrder) {
+    showToast("주문을 찾지 못했어요");
+    return;
   }
-  trackEvent("bank_transfer_order_approve", { orderId });
+
+  const approvedOrder = { ...sourceOrder, status: "approved", approvedAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+  const updated = mergeBankTransferOrders(localOrders.filter((order) => order.id !== orderId), [approvedOrder]);
+  writeBankTransferOrders(updated);
+  safeStorageSet(`pym.premiumAccess.${approvedOrder.productId}`, "true");
+  safeStorageSet(`pym.premiumAccessAt.${approvedOrder.productId}`, approvedOrder.approvedAt);
+  pushBankTransferOrderToSupabase(approvedOrder);
+  trackEvent("bank_transfer_order_approve", bankTransferOrderPayload(approvedOrder));
   showToast("입금 확인 처리했어요");
   renderAnalyticsAdmin();
   renderPremiumScreen();
@@ -3643,11 +3692,12 @@ function buildEmptyAdminDashboardData() {
 
 function buildAdminDashboardDataFromEvents(events, comments = [], bankOrders = []) {
   const rawEvents = events.map(normalizeAdminEvent).filter((event) => event.created_at);
+  const eventOrders = extractBankTransferOrdersFromEvents(rawEvents);
   return {
     rawEvents,
     allRawEvents: rawEvents,
     comments,
-    bankOrders,
+    bankOrders: mergeBankTransferOrders(bankOrders, eventOrders),
     searchTerms: aggregateSearchTerms(rawEvents),
     noResults: aggregateNoResultTerms(rawEvents),
     popularResources: aggregatePopularResources(rawEvents)
