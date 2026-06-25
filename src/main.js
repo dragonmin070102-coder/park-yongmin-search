@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-25";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-26";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -337,7 +337,6 @@ trackEvent("page_view", {
 });
 flushRemoteAnalytics();
 loadRemotePremiumOperatingSettings();
-syncAdminRoute();
 
 categoryGrid.addEventListener("click", (event) => {
   const card = event.target.closest("[data-category]");
@@ -633,7 +632,6 @@ document.addEventListener("click", (event) => {
   if (!close) return;
 
   window.location.hash = "";
-  syncAdminRoute();
 });
 
 document.addEventListener("click", (event) => {
@@ -1941,6 +1939,7 @@ function openPremiumPreviewGallery(index = 0) {
 }
 
 renderPremiumScreen();
+syncAdminRoute();
 
 function openPremiumPreviewModal() {
   previewModal.setAttribute("aria-labelledby", "premiumPreviewTitle");
