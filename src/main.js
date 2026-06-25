@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-22";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-23";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -745,6 +745,7 @@ document.addEventListener("click", (event) => {
   const checkout = event.target.closest("[data-premium-checkout]");
   if (!checkout) return;
 
+  trackEvent("premium_checkout_click", { productId: checkout.dataset.premiumCheckout || "neuro-series-6" });
   openBankTransferOrderModal(checkout.dataset.premiumCheckout);
 });
 
@@ -761,6 +762,15 @@ document.addEventListener("submit", (event) => {
 
   event.preventDefault();
   submitBankTransferOrder(form);
+});
+
+document.addEventListener("input", (event) => {
+  const form = event.target.closest("[data-bank-order-form]");
+  if (!form || form.dataset.funnelStarted === "true") return;
+
+  form.dataset.funnelStarted = "true";
+  const productId = String(new FormData(form).get("productId") || "neuro-series-6");
+  trackEvent("bank_transfer_form_start", { productId });
 });
 
 document.addEventListener("submit", (event) => {
@@ -3287,6 +3297,8 @@ function trackEvent(name, properties = {}) {
   if (!analyticsAdmin.hidden) {
     renderAnalyticsAdmin();
   }
+
+  return event;
 }
 
 function queueSearchAnalytics(query, resultCount) {
@@ -3602,6 +3614,7 @@ function renderAnalyticsAdmin() {
   const gaps = getContentGaps(filtered.noResults);
   const demand = getDemandAnalysis(filtered.searchTerms, filtered.popularResources);
   const periodLabel = adminPeriodLabel(adminDashboardState.period);
+  const premiumFunnel = getPremiumFunnel(filtered.rawEvents);
 
   analyticsContent.innerHTML = `
     <section class="admin-hero">
@@ -3627,6 +3640,24 @@ function renderAnalyticsAdmin() {
       ${adminMetricTemplate("댓글 수", kpis.totalComments)}
       ${adminMetricTemplate("최근 7일 활성 사용자", kpis.activeUsers7d)}
     </div>
+    <section class="admin-card premium-funnel-card">
+      <div class="admin-card-head">
+        <h2>결제 페이지 퍼널</h2>
+        <span>${periodLabel} 기준</span>
+      </div>
+      <div class="premium-funnel-list">
+        ${premiumFunnel.map((step) => `
+          <article>
+            <div>
+              <strong>${escapeHtml(step.label)}</strong>
+              <span>이전 단계 대비 ${step.dropOff}% 이탈</span>
+            </div>
+            <b>${formatCount(step.count)}</b>
+            <em style="width: ${step.rate}%"></em>
+          </article>
+        `).join("")}
+      </div>
+    </section>
     <section class="admin-card insight-card">
       <div class="admin-card-head">
         <h2>운영자 인사이트</h2>
@@ -3714,10 +3745,6 @@ function renderAnalyticsAdmin() {
       <button type="button" data-supabase-test>Supabase 테스트</button>
     </div>
   `;
-
-  if (supabaseConfig.enabled && !adminDashboardState.data && !adminDashboardState.loading) {
-    loadAdminDashboardData();
-  }
 }
 
 function premiumOperatingSettingsAdminTemplate() {
@@ -3767,15 +3794,29 @@ async function savePremiumOperatingSettings(form) {
 
   safeStorageSet("pym.bankTransferAccount", JSON.stringify(account));
   safeStorageSet("pym.premiumFileLinks", JSON.stringify(fileLinks));
-  trackEvent("premium_operating_settings_update", { account, fileLinks, updatedAt: new Date().toISOString() });
+  const settingsEvent = trackEvent("premium_operating_settings_update", { account, fileLinks, updatedAt: new Date().toISOString() });
   const button = form.querySelector("button[type='submit']");
   if (button) {
     button.disabled = true;
     button.textContent = "저장 중...";
   }
 
-  const synced = await flushRemoteAnalytics({ silent: true, limit: 20 });
-  showToast(supabaseConfig.enabled && synced ? "계좌와 자료 링크를 서버에 저장했어요" : "이 기기에 저장했어요. Supabase 연결을 확인해주세요");
+  let synced = 0;
+  if (supabaseConfig.enabled) {
+    try {
+      await postSupabaseEvents([settingsEvent]);
+      markSupabaseSent([settingsEvent.id]);
+      synced = 1;
+    } catch (error) {
+      if (error.status === 409) {
+        markSupabaseSent([settingsEvent.id]);
+        synced = 1;
+      } else {
+        synced = await flushRemoteAnalytics({ silent: true, limit: 20 });
+      }
+    }
+  }
+  showToast(synced ? "계좌와 자료 링크를 서버에 저장했어요" : "이 기기에 저장했어요. Supabase 연결을 확인해주세요");
 
   if (button) {
     button.disabled = false;
@@ -4045,6 +4086,32 @@ function getContentGaps(noResults) {
     .filter((row) => row.no_result_count >= 3)
     .slice(0, 12);
 }
+
+
+function getPremiumFunnel(events) {
+  const normalized = (events || []).map(normalizeAdminEvent);
+  const steps = [
+    { key: "premium_view", label: "프리미엄 페이지 방문" },
+    { key: "premium_checkout_click", label: "구매 신청 클릭" },
+    { key: "bank_transfer_order_open", label: "계좌이체 창 열림" },
+    { key: "bank_transfer_form_start", label: "신청서 작성 시작" },
+    { key: "bank_transfer_order_submit", label: "구매 신청 접수" },
+    { key: "bank_transfer_order_approve", label: "입금 확인 승인" },
+    { key: "bank_transfer_order_verified", label: "구매자 승인 확인" },
+    { key: "premium_secure_file_click", label: "자료 열기/다운로드" }
+  ];
+  const counts = steps.map((step) => ({
+    ...step,
+    count: normalized.filter((event) => event.event_name === step.key).length
+  }));
+  const max = Math.max(1, counts[0]?.count || 0, ...counts.map((step) => step.count));
+  return counts.map((step, index) => {
+    const prev = index === 0 ? step.count : counts[index - 1].count;
+    const dropOff = prev > 0 ? Math.max(0, Math.round(((prev - step.count) / prev) * 100)) : 0;
+    return { ...step, rate: Math.max(4, Math.round((step.count / max) * 100)), dropOff };
+  });
+}
+
 
 function getAdminInsights(data) {
   const demand = getDemandAnalysis(data.searchTerms, data.popularResources);

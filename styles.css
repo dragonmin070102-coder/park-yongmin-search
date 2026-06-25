@@ -5693,3 +5693,102 @@ body.search-mode .premium-screen {
   font-size: 13px;
   font-weight: 900;
 }
+
+
+/* Desktop admin operating center */
+body.admin-mode {
+  min-width: 1024px;
+  background: #f7f8fa;
+}
+
+body.admin-mode .analytics-admin {
+  width: min(1180px, calc(100% - 48px));
+  max-width: none;
+  padding: 0 0 56px;
+}
+
+body.admin-mode .admin-top {
+  grid-template-columns: 44px minmax(0, 1fr);
+  padding: 22px 0 18px;
+}
+
+body.admin-mode #analyticsContent {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+body.admin-mode #analyticsContent > .admin-hero,
+body.admin-mode #analyticsContent > .admin-toolbar,
+body.admin-mode #analyticsContent > .admin-status,
+body.admin-mode #analyticsContent > .admin-summary,
+body.admin-mode #analyticsContent > .admin-actions {
+  grid-column: 1 / -1;
+}
+
+body.admin-mode #analyticsContent > .admin-card {
+  grid-column: span 6;
+  margin-top: 0;
+}
+
+body.admin-mode #analyticsContent > .premium-funnel-card,
+body.admin-mode #analyticsContent > .insight-card,
+body.admin-mode #analyticsContent > .premium-operating-card,
+body.admin-mode #analyticsContent > .bank-admin-card {
+  grid-column: span 6;
+}
+
+body.admin-mode .dashboard-kpis {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  margin: 0;
+}
+
+body.admin-mode .admin-toolbar {
+  margin: 0;
+}
+
+body.admin-mode .admin-card {
+  min-width: 0;
+}
+
+.premium-funnel-list {
+  display: grid;
+  gap: 10px;
+}
+
+.premium-funnel-list article {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  overflow: hidden;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f7f8fa;
+}
+
+.premium-funnel-list article em {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  border-radius: 999px;
+  background: #3182f6;
+}
+
+.premium-funnel-list strong,
+.premium-funnel-list b {
+  color: #191f28;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.premium-funnel-list span {
+  display: block;
+  margin-top: 3px;
+  color: #8b95a1;
+  font-size: 11px;
+  font-weight: 800;
+}
