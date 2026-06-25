@@ -5358,8 +5358,7 @@ body.search-mode .premium-screen {
   gap: 8px;
 }
 
-.premium-download-list a,
-.premium-download-list buttonrticle {
+.premium-download-list article {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
@@ -5370,8 +5369,7 @@ body.search-mode .premium-screen {
   background: #fff;
 }
 
-.premium-download-list a,
-.premium-download-list buttonrticle div {
+.premium-download-list article > div {
   display: grid;
   gap: 4px;
   min-width: 0;
@@ -5412,4 +5410,219 @@ body.search-mode .premium-screen {
 .premium-download-actions a,
 .premium-download-actions button {
   min-width: 54px;
+  border: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+
+/* Bank transfer order flow */
+.bank-order-modal {
+  display: grid;
+  gap: 14px;
+}
+
+.bank-order-modal h2 {
+  margin: 0;
+  color: #191f28;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.bank-order-modal p {
+  margin: 0;
+  color: #4e5968;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.55;
+}
+
+.bank-account-card {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 8px 12px;
+  padding: 14px;
+  border: 1px solid #d7e8ff;
+  border-radius: 8px;
+  background: #f2f7ff;
+}
+
+.bank-account-card span {
+  color: #6b7684;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.bank-account-card strong {
+  color: #191f28;
+  font-size: 14px;
+  font-weight: 900;
+  word-break: break-all;
+}
+
+.bank-order-form,
+.bank-order-lookup {
+  display: grid;
+  gap: 10px;
+}
+
+.bank-order-form label {
+  display: grid;
+  gap: 6px;
+}
+
+.bank-order-form label span {
+  color: #4e5968;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.bank-order-form input,
+.bank-order-form textarea,
+.bank-order-lookup input {
+  width: 100%;
+  border: 1px solid #e5e8eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #191f28;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 750;
+  outline: 0;
+}
+
+.bank-order-form input,
+.bank-order-lookup input {
+  min-height: 46px;
+  padding: 0 12px;
+}
+
+.bank-order-form textarea {
+  min-height: 82px;
+  padding: 12px;
+  resize: vertical;
+}
+
+.bank-order-form button,
+.bank-order-modal.submitted button,
+.bank-order-lookup button {
+  min-height: 48px;
+  border: 0;
+  border-radius: 8px;
+  background: #3182f6;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.bank-order-help {
+  color: #8b95a1 !important;
+  font-size: 12px !important;
+}
+
+.bank-order-code {
+  display: grid;
+  min-height: 54px;
+  place-items: center;
+  border-radius: 8px;
+  background: #191f28;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.bank-status-card {
+  background: #fbfcfd;
+}
+
+.bank-status-card p {
+  margin: 0;
+  color: #4e5968;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.bank-status {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 9px;
+  border-radius: 8px;
+  background: #fff7ed;
+  color: #b54708;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.bank-status.approved {
+  background: #ecfdf3;
+  color: #12b76a;
+}
+
+.bank-admin-card {
+  background: #fff;
+}
+
+.bank-admin-list {
+  display: grid;
+  gap: 8px;
+}
+
+.bank-admin-list article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 11px;
+  border-radius: 8px;
+  background: #f7f8fa;
+}
+
+.bank-admin-list article > div:first-child {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.bank-admin-list strong,
+.bank-admin-list span,
+.bank-admin-list em {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bank-admin-list strong {
+  color: #191f28;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.bank-admin-list span,
+.bank-admin-list em {
+  color: #6b7684;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 750;
+}
+
+.bank-admin-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.bank-admin-actions button {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid #d7e8ff;
+  border-radius: 8px;
+  background: #fff;
+  color: #1b64da;
+  font-size: 12px;
+  font-weight: 900;
 }

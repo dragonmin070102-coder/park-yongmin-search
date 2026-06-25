@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-13";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-14";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -728,7 +728,37 @@ document.addEventListener("click", (event) => {
   const checkout = event.target.closest("[data-premium-checkout]");
   if (!checkout) return;
 
-  completePremiumPurchase(checkout.dataset.premiumCheckout);
+  openBankTransferOrderModal(checkout.dataset.premiumCheckout);
+});
+
+document.addEventListener("submit", (event) => {
+  const form = event.target.closest("[data-bank-order-form]");
+  if (!form) return;
+
+  event.preventDefault();
+  submitBankTransferOrder(form);
+});
+
+document.addEventListener("submit", (event) => {
+  const form = event.target.closest("[data-bank-order-lookup-form]");
+  if (!form) return;
+
+  event.preventDefault();
+  verifyBankTransferOrder(form);
+});
+
+document.addEventListener("click", (event) => {
+  const approve = event.target.closest("[data-bank-order-approve]");
+  if (!approve) return;
+
+  approveBankTransferOrder(approve.dataset.bankOrderApprove);
+});
+
+document.addEventListener("click", (event) => {
+  const copy = event.target.closest("[data-bank-order-copy]");
+  if (!copy) return;
+
+  copyBankTransferOrder(copy.dataset.bankOrderCopy);
 });
 
 document.addEventListener("click", (event) => {
@@ -1174,7 +1204,9 @@ function renderPremiumScreen() {
   if (!premiumScreen) return;
 
   const featured = premiumNeuroModules[1];
-  const purchased = isPremiumPurchased("neuro-series-6");
+  const productId = "neuro-series-6";
+  const purchased = isPremiumPurchased(productId);
+  const activeOrder = getLatestBankTransferOrder(productId);
   const previewCards = [
     { module: premiumNeuroModules[0], section: "p.01 왜 중요한가", image: "./assets/previews/neuro-assessment-p01.png", lines: ["시험·실습·임상 연결", "박용민 요점"] },
     { module: premiumNeuroModules[0], section: "p.02 임상 상황", image: "./assets/previews/neuro-assessment-p02.png", lines: ["GCS 변화", "동공 변화", "생각해보기"] },
@@ -1237,11 +1269,13 @@ function renderPremiumScreen() {
         </div>
         <a class="premium-primary-link" href="#premiumAccess">자료 보러가기</a>
       ` : `
-        <button type="button" data-premium-checkout="neuro-series-6">지금 구매하기</button>
+        <button type="button" data-premium-checkout="neuro-series-6">계좌이체로 구매 신청</button>
         <button type="button" data-premium-preview="neuro-series-6">구성 미리보기</button>
-        <span>결제 완료 후 바로 자료 보기와 다운로드가 열립니다.</span>
+        <span>입금 확인 후 주문번호로 자료 열람이 열립니다.</span>
       `}
     </section>
+
+    ${renderBankTransferStatusPanel(activeOrder)}
 
     ${renderPremiumAccessPanel(purchased)}
 
@@ -1349,13 +1383,197 @@ function premiumDocPreviewCard(card, index) {
 }
 
 
+
+const BANK_TRANSFER_ACCOUNT = {
+  bank: "입금 계좌 설정 필요",
+  holder: "박용민",
+  number: "계좌번호를 입력해주세요",
+  amount: "9,900원"
+};
+
+function readBankTransferOrders() {
+  return readJsonArray("pym.bankTransferOrders");
+}
+
+function writeBankTransferOrders(orders) {
+  safeStorageSet("pym.bankTransferOrders", JSON.stringify(orders.slice(-200)));
+}
+
+function getLatestBankTransferOrder(productId) {
+  return readBankTransferOrders()
+    .filter((order) => order.productId === productId)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0] || null;
+}
+
+function openBankTransferOrderModal(productId) {
+  previewModal.hidden = false;
+  previewModal.setAttribute("aria-labelledby", "bankTransferTitle");
+  modalContent.innerHTML = `
+    <div class="bank-order-modal">
+      <p class="eyebrow">Bank transfer</p>
+      <h2 id="bankTransferTitle">신경계 시리즈 구매 신청</h2>
+      <p>입금자 정보를 남기고 아래 계좌로 이체하면 운영자가 입금 확인 후 자료 열람을 승인합니다.</p>
+      <div class="bank-account-card">
+        <span>입금액</span><strong>${escapeHtml(BANK_TRANSFER_ACCOUNT.amount)}</strong>
+        <span>은행</span><strong>${escapeHtml(BANK_TRANSFER_ACCOUNT.bank)}</strong>
+        <span>계좌</span><strong>${escapeHtml(BANK_TRANSFER_ACCOUNT.number)}</strong>
+        <span>예금주</span><strong>${escapeHtml(BANK_TRANSFER_ACCOUNT.holder)}</strong>
+      </div>
+      <form class="bank-order-form" data-bank-order-form>
+        <input type="hidden" name="productId" value="${escapeHtml(productId)}" />
+        <label><span>입금자명</span><input name="depositor" required placeholder="계좌이체할 때 입력할 이름" /></label>
+        <label><span>이메일</span><input name="email" type="email" required placeholder="자료 안내를 받을 이메일" /></label>
+        <label><span>휴대폰 뒤 4자리</span><input name="phoneLast4" inputmode="numeric" maxlength="4" placeholder="입금 확인 보조용" /></label>
+        <label><span>요청사항</span><textarea name="memo" maxlength="200" placeholder="남길 말이 있으면 적어주세요"></textarea></label>
+        <button type="submit">구매 신청 접수</button>
+      </form>
+      <p class="bank-order-help">입금자명은 신청한 이름과 같게 보내주세요. 운영자 테스트는 #admin에서 승인할 수 있어요.</p>
+    </div>
+  `;
+  trackEvent("bank_transfer_order_open", { productId });
+}
+
+function submitBankTransferOrder(form) {
+  const formData = new FormData(form);
+  const productId = String(formData.get("productId") || "neuro-series-6");
+  const depositor = String(formData.get("depositor") || "").trim();
+  const email = String(formData.get("email") || "").trim();
+  const phoneLast4 = String(formData.get("phoneLast4") || "").trim();
+  const memo = String(formData.get("memo") || "").trim();
+
+  if (!depositor || !email) {
+    showToast("입금자명과 이메일을 입력해주세요");
+    return;
+  }
+
+  const order = {
+    id: createBankOrderCode(),
+    productId,
+    productTitle: "신경계 임상추론 6편 패키지",
+    amount: BANK_TRANSFER_ACCOUNT.amount,
+    depositor,
+    email,
+    phoneLast4,
+    memo,
+    status: "pending",
+    createdAt: new Date().toISOString(),
+    approvedAt: ""
+  };
+  const orders = [...readBankTransferOrders(), order];
+  writeBankTransferOrders(orders);
+  trackEvent("bank_transfer_order_submit", { productId, orderId: order.id, amount: order.amount });
+  renderBankOrderSubmitted(order);
+}
+
+function renderBankOrderSubmitted(order) {
+  modalContent.innerHTML = `
+    <div class="bank-order-modal submitted">
+      <p class="eyebrow">Order received</p>
+      <h2>구매 신청이 접수됐어요</h2>
+      <div class="bank-order-code">${escapeHtml(order.id)}</div>
+      <p>아래 정보로 입금 후 운영자가 승인하면, 이 주문번호로 자료 열람을 열 수 있습니다.</p>
+      <div class="bank-account-card">
+        <span>입금액</span><strong>${escapeHtml(order.amount)}</strong>
+        <span>은행</span><strong>${escapeHtml(BANK_TRANSFER_ACCOUNT.bank)}</strong>
+        <span>계좌</span><strong>${escapeHtml(BANK_TRANSFER_ACCOUNT.number)}</strong>
+        <span>예금주</span><strong>${escapeHtml(BANK_TRANSFER_ACCOUNT.holder)}</strong>
+      </div>
+      <button type="button" data-close-modal>확인</button>
+    </div>
+  `;
+  renderPremiumScreen();
+  showToast("구매 신청이 접수됐어요");
+}
+
+function createBankOrderCode() {
+  const date = new Date();
+  const mmdd = `${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
+  const random = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `PYM-${mmdd}-${random}`;
+}
+
+function renderBankTransferStatusPanel(order) {
+  if (!order || isPremiumPurchased(order.productId)) return "";
+  return `
+    <section class="premium-section bank-status-card">
+      <div class="premium-section-head">
+        <div>
+          <p class="eyebrow">Bank transfer</p>
+          <h2>구매 신청 상태</h2>
+        </div>
+        <span class="bank-status ${escapeHtml(order.status)}">${order.status === "approved" ? "승인완료" : "입금 확인 대기"}</span>
+      </div>
+      <p>주문번호 <strong>${escapeHtml(order.id)}</strong> · 입금자명 ${escapeHtml(order.depositor)} · 금액 ${escapeHtml(order.amount)}</p>
+      <form class="bank-order-lookup" data-bank-order-lookup-form>
+        <input name="orderCode" value="${escapeHtml(order.id)}" autocomplete="off" />
+        <button type="submit">승인 확인</button>
+      </form>
+    </section>
+  `;
+}
+
+function verifyBankTransferOrder(form) {
+  const formData = new FormData(form);
+  const orderCode = String(formData.get("orderCode") || "").trim().toUpperCase();
+  const order = readBankTransferOrders().find((item) => item.id.toUpperCase() === orderCode);
+  if (!order) {
+    showToast("주문번호를 찾지 못했어요");
+    return;
+  }
+  if (order.status !== "approved") {
+    showToast("아직 입금 확인 대기 상태예요");
+    return;
+  }
+  safeStorageSet(`pym.premiumAccess.${order.productId}`, "true");
+  safeStorageSet(`pym.premiumAccessAt.${order.productId}`, order.approvedAt || new Date().toISOString());
+  trackEvent("bank_transfer_order_verified", { orderId: order.id, productId: order.productId });
+  showToast("승인 확인 완료! 자료가 열렸어요");
+  renderPremiumScreen();
+  document.querySelector("#premiumAccess")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function approveBankTransferOrder(orderId) {
+  const orders = readBankTransferOrders();
+  const updated = orders.map((order) => order.id === orderId ? { ...order, status: "approved", approvedAt: new Date().toISOString() } : order);
+  writeBankTransferOrders(updated);
+  const order = updated.find((item) => item.id === orderId);
+  if (order) {
+    safeStorageSet(`pym.premiumAccess.${order.productId}`, "true");
+    safeStorageSet(`pym.premiumAccessAt.${order.productId}`, order.approvedAt);
+  }
+  trackEvent("bank_transfer_order_approve", { orderId });
+  showToast("입금 확인 처리했어요");
+  renderAnalyticsAdmin();
+  renderPremiumScreen();
+}
+
+async function copyBankTransferOrder(orderId) {
+  const order = readBankTransferOrders().find((item) => item.id === orderId);
+  if (!order) return;
+  const text = [
+    `주문번호: ${order.id}`,
+    `상품: ${order.productTitle}`,
+    `금액: ${order.amount}`,
+    `입금자명: ${order.depositor}`,
+    `이메일: ${order.email}`,
+    `상태: ${order.status === "approved" ? "승인완료" : "대기"}`
+  ].join("\n");
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast("주문 정보를 복사했어요");
+  } catch {
+    showToast("복사에 실패했어요");
+  }
+}
+
 function isPremiumPurchased(productId) {
-  return safeStorageGet(`pym.premiumPurchased.${productId}`) === "true";
+  if (safeStorageGet(`pym.premiumAccess.${productId}`) === "true") return true;
+  return readBankTransferOrders().some((order) => order.productId === productId && order.status === "approved");
 }
 
 function completePremiumPurchase(productId) {
-  safeStorageSet(`pym.premiumPurchased.${productId}`, "true");
-  safeStorageSet(`pym.premiumPurchasedAt.${productId}`, new Date().toISOString());
+  safeStorageSet(`pym.premiumAccess.${productId}`, "true");
+  safeStorageSet(`pym.premiumAccessAt.${productId}`, new Date().toISOString());
   trackEvent("premium_purchase_complete", { productId });
   showToast("구매완료! 자료가 열렸어요");
   renderPremiumScreen();
@@ -1372,7 +1590,11 @@ function renderPremiumAccessPanel(purchased) {
             <h2>구매 후 제공 자료</h2>
           </div>
         </div>
-        <p>결제가 완료되면 DOCX 6편을 바로 열람하거나 다운로드할 수 있어요.</p>
+        <p>계좌이체 후 운영자 승인이 완료되면 주문번호로 DOCX 6편 열람 영역이 열립니다.</p>
+        <form class="bank-order-lookup" data-bank-order-lookup-form>
+          <input name="orderCode" placeholder="주문번호 입력 (예: PYM-0625-AB12)" autocomplete="off" />
+          <button type="submit">승인 확인</button>
+        </form>
       </section>
     `;
   }
@@ -3252,6 +3474,7 @@ function renderAnalyticsAdmin() {
         `).join("") : `<p class="admin-empty">현재 기준 콘텐츠 제작 추천 항목이 없어요.</p>`}
       </div>
     </section>
+    ${bankTransferOrdersAdminTemplate()}
     <section class="admin-card">
       <div class="admin-card-head">
         <h2>데이터 연결</h2>
@@ -3268,6 +3491,36 @@ function renderAnalyticsAdmin() {
   if (supabaseConfig.enabled && !adminDashboardState.data && !adminDashboardState.loading) {
     loadAdminDashboardData();
   }
+}
+
+function bankTransferOrdersAdminTemplate() {
+  const orders = readBankTransferOrders().slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  return `
+    <section class="admin-card bank-admin-card">
+      <div class="admin-card-head">
+        <h2>계좌이체 구매 신청</h2>
+        <span>${orders.length ? `${orders.length}건` : "신청 없음"}</span>
+      </div>
+      ${orders.length ? `
+        <div class="bank-admin-list">
+          ${orders.slice(0, 20).map((order) => `
+            <article>
+              <div>
+                <strong>${escapeHtml(order.id)}</strong>
+                <span>${escapeHtml(order.depositor)} · ${escapeHtml(order.email)} · ${escapeHtml(order.amount)}</span>
+                <em>${escapeHtml(formatAdminDate(order.createdAt))}</em>
+              </div>
+              <div class="bank-admin-actions">
+                <span class="bank-status ${escapeHtml(order.status)}">${order.status === "approved" ? "승인완료" : "대기"}</span>
+                <button type="button" data-bank-order-copy="${escapeHtml(order.id)}">복사</button>
+                ${order.status === "approved" ? "" : `<button type="button" data-bank-order-approve="${escapeHtml(order.id)}">입금 확인</button>`}
+              </div>
+            </article>
+          `).join("")}
+        </div>
+      ` : `<p class="admin-empty">아직 구매 신청이 없어요. 프리미엄 페이지에서 테스트 신청을 넣어볼 수 있습니다.</p>`}
+    </section>
+  `;
 }
 
 function adminMetricTemplate(label, value) {
