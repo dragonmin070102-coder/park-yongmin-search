@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-27";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-28";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -124,6 +124,7 @@ let adminDashboardState = {
 let adminSearchTimer = null;
 let analyticsFlushScheduled = false;
 let currentPremiumPreviewCards = [];
+let premiumSocialProof = { reviews: [], accessCount: 0 };
 
 const analyticsUserId = getOrCreateAnalyticsUserId();
 const analyticsSessionId = createSessionId();
@@ -804,9 +805,12 @@ document.addEventListener("click", (event) => {
   if (!secureFile) return;
 
   trackEvent("premium_secure_file_click", {
+    productId: "neuro-series-6",
     fileNumber: secureFile.dataset.premiumSecureFile,
     action: secureFile.dataset.premiumSecureAction || "open"
   });
+  premiumSocialProof.accessCount += 1;
+  renderPremiumScreen();
 });
 
 document.addEventListener("click", (event) => {
@@ -1273,17 +1277,17 @@ function renderPremiumScreen() {
         <div class="premium-cover-copy">
           <span>BEST</span>
           <em>신경계 시리즈 01</em>
-          <h1 id="premium-title">두개내압 상승<br />(IICP)</h1>
+          <h1 id="premium-title">신경계<br />임상추론</h1>
           <p>병태생리 이해<br />핵심 요약 정리<br />임상추론 활용<br />간호중재 & 근거</p>
           <strong>BY PARK YONG MIN</strong>
         </div>
-        <img class="premium-brain-image" src="./assets/iicp-brain-cover.png" alt="두개내압 상승 학습을 상징하는 뇌 이미지" loading="eager" />
+        <img class="premium-brain-image" src="./assets/iicp-brain-cover.png" alt="신경계 임상추론 학습을 상징하는 뇌 이미지" loading="eager" />
       </div>
-      <h2>신경계 임상추론 6편 패키지</h2>
+      <h2>신경계 임상추론 시리즈 6편</h2>
       <p class="premium-product-subtitle">GCS부터 TBI까지, 신경계 응급 케이스를 하나의 흐름으로 정리했습니다.</p>
       <div class="premium-product-meta">
-        <span>자료 공개 준비 중</span>
-        <span>다운로드 6회</span>
+        <span class="sale-live">판매중</span>
+        <span>자료 열람 ${formatCount(premiumSocialProof.accessCount)}회</span>
       </div>
       <div class="premium-spec-grid">
         <article><strong>DOCX 자료</strong><span>6편 · 96섹션</span></article>
@@ -1325,7 +1329,7 @@ function renderPremiumScreen() {
         <article><strong>임상 추론 중심</strong><span>실제 환자 상황 기반 사고 흐름 제시</span></article>
         <article><strong>핵심 수치 정리</strong><span>시험 및 임상에서 자주 쓰이는 수치 정리</span></article>
         <article><strong>간호중재 & 근거</strong><span>왜 이 간호를 하는지 근거까지 연결</span></article>
-        <article><strong>실전 적용 가능</strong><span>실습, 국시, 임상 모두 바로 적용</span></article>
+        <article><strong>실전 적용 가능</strong><span>실습과 국시 흐름에 맞춰 적용</span></article>
         <article><strong>도식·표·그림</strong><span>이해를 돕는 도식과 표 기반 구성</span></article>
         <article><strong>최신 기준 반영</strong><span>AHA/ASA, BTF 등 기준 반영</span></article>
       </div>
@@ -1357,14 +1361,14 @@ function renderPremiumScreen() {
       <h2>9,900원</h2>
       <ul>
         <li>결제 후 평생 소장</li>
-        <li>모바일/PC 다운로드 가능</li>
+        <li>모바일/PC 열람 가능</li>
         <li>무제한 열람</li>
         <li>업데이트 시 추가 비용 없음</li>
       </ul>
       ${purchased ? `
         <div class="premium-purchase-complete">
           <strong>구매완료</strong>
-          <span>신경계 시리즈 6편 자료가 열렸어요.</span>
+          <span>신경계 임상추론 시리즈 6편 자료가 열렸어요.</span>
         </div>
         <a class="premium-primary-link" href="#premiumAccess">자료 보러가기</a>
         <button type="button" class="premium-secondary-button" data-premium-test-reset="neuro-series-6">운영자 테스트 초기화</button>
@@ -1379,16 +1383,19 @@ function renderPremiumScreen() {
       <div class="premium-section-head">
         <div>
           <p class="eyebrow">Review</p>
-          <h2>구매자 리뷰</h2>
+          <h2>구매자 리뷰 ${formatCount(getPremiumReviews().length)}개</h2>
         </div>
         <a href="#premium">전체 보기</a>
       </div>
-      <p class="premium-review-note">구매 후 실제 학습 후기를 남길 수 있게 준비 중이에요.</p>
-      <form class="premium-review-form" data-premium-review-form>
-        <input type="text" name="name" placeholder="닉네임" maxlength="18" aria-label="리뷰 닉네임" />
-        <textarea name="review" placeholder="자료를 보고 도움이 된 점을 남겨주세요." maxlength="300" aria-label="리뷰 내용"></textarea>
-        <button type="submit">리뷰 남기기</button>
-      </form>
+      <p class="premium-review-note">구매 승인 후 자료를 열람한 사용자만 리뷰를 남길 수 있어요. 닉네임은 자동으로 표시됩니다.</p>
+      ${purchased ? `
+        <form class="premium-review-form" data-premium-review-form>
+          <textarea name="review" placeholder="자료를 보고 도움이 된 점을 남겨주세요." maxlength="300" aria-label="리뷰 내용"></textarea>
+          <button type="submit">리뷰 남기기</button>
+        </form>
+      ` : `
+        <div class="premium-review-locked">구매 승인 후 리뷰 작성이 열립니다.</div>
+      `}
       <div class="premium-review-list" id="premiumReviewList">
         ${renderPremiumReviews()}
       </div>
@@ -1402,7 +1409,7 @@ function renderPremiumScreen() {
         </div>
       </div>
       <article><strong>Q. 캐러셀과 유료 자료가 다른가요?</strong><span>캐러셀은 요약본이고, 유료 자료는 전체 DOCX 원고와 표·보고 기준까지 포함됩니다.</span></article>
-      <article><strong>Q. 결제 후 어떻게 받나요?</strong><span>초기에는 외부 결제 링크에서 파일을 제공하고, 이후 사이트 내부 결제로 확장할 예정입니다.</span></article>
+      <article><strong>Q. 결제 후 어떻게 받나요?</strong><span>계좌이체로 구매 신청을 남기면 승인 요청 상태가 됩니다. 입금 확인 후 운영자가 승인하면 주문번호로 확인할 수 있고, 구매완료 자료 영역에 열기 링크가 표시됩니다.</span></article>
     </section>
   `;
 }
@@ -1561,7 +1568,7 @@ function orderFromAnalyticsEvent(event) {
   return {
     id: orderId,
     productId: props.productId || "neuro-series-6",
-    productTitle: props.productTitle || "신경계 임상추론 6편 패키지",
+    productTitle: props.productTitle || "신경계 임상추론 시리즈 6편",
     amount: props.amount || getBankTransferAccount().amount,
     depositor: props.depositor || "입금자명 미기록",
     email: props.email || "이메일 미기록",
@@ -1632,7 +1639,7 @@ function submitBankTransferOrder(form) {
   const order = {
     id: createBankOrderCode(),
     productId,
-    productTitle: "신경계 임상추론 6편 패키지",
+    productTitle: "신경계 임상추론 시리즈 6편",
     amount: getBankTransferAccount().amount,
     depositor,
     email,
@@ -1855,7 +1862,6 @@ function renderPremiumAccessPanel(purchased) {
             </div>
             <div class="premium-download-actions">
               <a href="${escapeHtml(premiumFileHref(file))}" target="_blank" rel="noreferrer" data-premium-secure-file="${escapeHtml(file.number)}" data-premium-secure-action="open">열기</a>
-              <a href="${escapeHtml(premiumFileHref(file))}" download="${escapeHtml(file.fileName)}" data-premium-secure-file="${escapeHtml(file.number)}" data-premium-secure-action="download">다운로드</a>
             </div>
           </article>
         `).join("")}
@@ -1864,13 +1870,33 @@ function renderPremiumAccessPanel(purchased) {
   `;
 }
 
+function getPremiumReviews() {
+  return mergePremiumReviews(premiumSocialProof.reviews, readJsonArray("pym.premiumReviews"));
+}
+
+function mergePremiumReviews(...sources) {
+  const lookup = new Map();
+  sources.flat().forEach((review) => {
+    const body = String(review?.body || "").trim();
+    if (!body) return;
+    const key = review.id || [review.name, body, review.createdAt].join(":");
+    lookup.set(key, {
+      id: key,
+      name: review.name || randomPremiumReviewerName(),
+      body,
+      createdAt: review.createdAt || new Date().toISOString()
+    });
+  });
+  return Array.from(lookup.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
 function renderPremiumReviews() {
-  const reviews = readJsonArray("pym.premiumReviews");
+  const reviews = getPremiumReviews();
   if (!reviews.length) {
     return `<article class="premium-review-empty"><span>아직 등록된 리뷰가 없어요. 첫 구매자 후기를 받을 준비 중입니다.</span></article>`;
   }
 
-  return reviews.slice(-5).reverse().map((review) => `
+  return reviews.slice(0, 5).map((review) => `
     <article>
       <b>${escapeHtml(review.name || "익명 학습자")}</b>
       <span>${escapeHtml(review.body || "")}</span>
@@ -1878,25 +1904,65 @@ function renderPremiumReviews() {
   `).join("");
 }
 
+function randomPremiumReviewerName() {
+  const groups = ["간호학생", "예비간호사", "실습생", "학습자", "신규준비생"];
+  const group = groups[Math.floor(Math.random() * groups.length)];
+  const suffix = Math.floor(1000 + Math.random() * 9000);
+  return `${group}_${suffix}`;
+}
+
+async function loadPremiumSocialProof() {
+  const localEvents = readAnalyticsEvents().map(normalizeAdminEvent);
+  let events = localEvents;
+  if (supabaseConfig.enabled) {
+    try {
+      const rows = await supabaseRequest("analytics_events?select=event_id,event_name,created_at,properties&event_name=in.(premium_review_submit,premium_secure_file_click)&order=created_at.desc&limit=1000");
+      events = mergeAdminEvents(rows, localEvents);
+    } catch {
+      events = localEvents;
+    }
+  }
+
+  premiumSocialProof.accessCount = events.filter((event) => event.event_name === "premium_secure_file_click").length;
+  premiumSocialProof.reviews = events
+    .filter((event) => event.event_name === "premium_review_submit")
+    .map((event) => ({
+      id: event.event_id,
+      name: event.properties?.name,
+      body: event.properties?.body,
+      createdAt: event.created_at
+    }))
+    .filter((review) => review.body);
+  renderPremiumScreen();
+}
+
 function submitPremiumReview(form) {
+  const productId = "neuro-series-6";
+  if (!isPremiumPurchased(productId)) {
+    showToast("구매 승인 후 리뷰를 남길 수 있어요");
+    return;
+  }
+
   const formData = new FormData(form);
-  const name = String(formData.get("name") || "").trim() || "익명 학습자";
+  const name = randomPremiumReviewerName();
   const body = String(formData.get("review") || "").trim();
   if (body.length < 5) {
     showToast("리뷰 내용을 조금만 더 적어주세요");
     return;
   }
 
+  const review = { name, body, createdAt: new Date().toISOString() };
   const reviews = readJsonArray("pym.premiumReviews");
-  reviews.push({ name, body, createdAt: new Date().toISOString() });
+  reviews.push(review);
   safeStorageSet("pym.premiumReviews", JSON.stringify(reviews.slice(-30)));
+  premiumSocialProof.reviews = mergePremiumReviews([review], premiumSocialProof.reviews);
   form.reset();
   const list = document.querySelector("#premiumReviewList");
   if (list) list.innerHTML = renderPremiumReviews();
-  trackEvent("premium_review_submit", { productId: "neuro-series-6", bodyLength: body.length });
+  trackEvent("premium_review_submit", { productId, name, body, bodyLength: body.length });
+  flushRemoteAnalytics({ silent: true, limit: 20 });
   showToast("리뷰가 등록됐어요");
 }
-
 function openPremiumPreviewGallery(index = 0) {
   const cards = currentPremiumPreviewCards.filter((card) => card.image);
   if (!cards.length) return;
@@ -1940,6 +2006,7 @@ function openPremiumPreviewGallery(index = 0) {
 
 renderPremiumScreen();
 syncAdminRoute();
+loadPremiumSocialProof();
 
 function openPremiumPreviewModal() {
   previewModal.setAttribute("aria-labelledby", "premiumPreviewTitle");
@@ -4135,7 +4202,7 @@ function getPremiumFunnel(events) {
     { key: "bank_transfer_order_submit", label: "구매 신청 접수" },
     { key: "bank_transfer_order_approve", label: "입금 확인 승인" },
     { key: "bank_transfer_order_verified", label: "구매자 승인 확인" },
-    { key: "premium_secure_file_click", label: "자료 열기/다운로드" }
+    { key: "premium_secure_file_click", label: "자료 열기" }
   ];
   const counts = steps.map((step) => ({
     ...step,

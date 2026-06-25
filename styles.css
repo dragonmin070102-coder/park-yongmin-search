@@ -5866,3 +5866,19 @@ body.admin-mode .analytics-admin {
     grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
   }
 }
+
+.premium-product-meta .sale-live {
+  color: #12b76a !important;
+  background: #ecfdf3 !important;
+}
+
+.premium-review-locked {
+  display: grid;
+  min-height: 48px;
+  place-items: center;
+  border-radius: 8px;
+  background: #f7f8fa;
+  color: #6b7684;
+  font-size: 13px;
+  font-weight: 850;
+}
