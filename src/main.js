@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-12";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-11";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -33,8 +33,7 @@ function safeStorageRemove(key) {
 
 const FALLBACK_RESOURCE_DATA = {"updatedAt":"2026-06-22T23:35:00.000+09:00","resources":[{"id":"acs-ecg","title":"ACS + ECG","displayTitle":"ACS와 ECG","type":"심혈관","format":"PDF","source":"박용민 컨텐츠 정리본 PDF","url":"https://drive.google.com/file/d/1xfPlC4hBOCJJtfLiDMn3_9XrshpEjdHd/view?usp=drivesdk","tags":["ACS","ECG","STEMI","NSTEMI","협심증","심근경색","흉통","흉통 4단계","Troponin","ECG vector","심혈관","감별정리","핵심"],"summary":"급성관상동맥증후군을 ECG 변화와 연결해서 볼 수 있는 자료입니다.","points":["흉통 환자를 ACS 관점으로 분류할 때 유용합니다.","ECG 키워드로 같이 검색되도록 묶어두면 심근경색 자료와 연결성이 좋습니다.","영상에서 짧게 설명하고 자세한 판단 기준은 원본 PDF로 넘기기 좋은 자료입니다."],"useCase":"흉통, ACS, ECG 판독 흐름을 한 번에 찾게 하고 싶을 때","confidence":"파일 확인","system":"심혈관","intent":"감별정리","stage":"핵심","evidence":"본문에서 흉통 4단계 구조를 좁아짐, 터짐, 부분막힘, 완전막힘으로 정리하고 Stable angina, Unstable angina, NSTEMI, STEMI를 비교합니다.","related":["mi","acls"],"keywords":["흉통 4단계","Troponin","NSTEMI","STEMI","ECG vector"],"rank":0},{"id":"mi","title":"Myocardial ischemia and infarction","displayTitle":"심근허혈 vs 심근경색","type":"심혈관","format":"PDF","source":"박용민 컨텐츠 정리본 PDF","url":"https://drive.google.com/file/d/1aTqToxtbH1B9Sqr00j2nQ4Lx21ed6r1v/view?usp=drivesdk","tags":["MI","ischemia","infarction","ECG","ST elevation","ST depression","NTG","plaque","흉통","협심증","심근경색","ST 변화","plaque rupture","NTG 반응","심혈관","개념이해","심화"],"summary":"stable plaque와 unstable plaque의 차이에서 시작해 허혈과 경색이 왜 다르게 나타나는지 설명하는 자료입니다.","points":["허혈은 산소 공급이 수요보다 부족해지는 상태이며, 보통 휴식이나 NTG에 반응합니다.","경색은 plaque rupture와 혈전 형성으로 혈관이 막혀 심근 손상이 진행되는 상황입니다.","자료에서는 ischemia는 ST depression, infarction은 ST elevation으로 연결해 ECG 원리를 설명합니다."],"useCase":"협심증과 심근경색 차이, ST 변화 원리, 흉통 환자 설명 자료가 필요할 때","confidence":"본문 확인","system":"심혈관","intent":"개념이해","stage":"심화","evidence":"본문에서 stable plaque와 vulnerable plaque, ischemia와 infarction, ST depression/elevation의 차이를 연결해 설명합니다.","related":["acs-ecg","acls"],"keywords":["협심증","심근경색","ST 변화","plaque rupture","NTG 반응"],"rank":1},{"id":"iicp","title":"IICP management","displayTitle":"두개내압 상승 관리","type":"신경계","format":"PDF","source":"박용민 컨텐츠 정리본 PDF","url":"https://drive.google.com/file/d/1c0o7fDaGoYst9PbLAj83FG1zWXVH1cjq/view?usp=drivesdk","tags":["IICP","ICP","두개내압","신경계","뇌압","의식","간호중재","의식 변화","신경계 사정","중환자","핵심"],"summary":"두개내압 상승 상황에서 관찰해야 할 변화와 관리 방향을 찾기 좋은 자료입니다.","points":["신경계 환자 사정과 우선순위 간호를 연결하기 좋습니다.","의식 변화, 활력징후, 체위, 자극 최소화 같은 검색어와 함께 노출되면 좋습니다.","신경계 질환 폴더 자료와 묶어 추천하면 체류 시간이 늘어납니다."],"useCase":"IICP 간호중재, 신경계 중환자 사정, 케이스 스터디 보조","confidence":"파일 확인","system":"신경계","intent":"간호중재","stage":"핵심","evidence":"Drive에 IICP management PDF로 확인된 자료입니다. 신경계 사정과 두개내압 상승 관리 자료로 분류했습니다.","related":["gbs","als","ms"],"keywords":["두개내압","의식 변화","신경계 사정","중환자"],"rank":2},{"id":"ast-alt-ratio","title":"AST:ALT 수치비교 해석","displayTitle":"AST/ALT 수치 비교","type":"검사수치","format":"PDF","source":"박용민 컨텐츠 정리본 PDF","url":"https://drive.google.com/file/d/1JyQF5XsHs48UPl_GTM3SJpba5J1DDcMu/view?usp=drivesdk","tags":["AST","ALT","간수치","검사수치","liver","비교","AST/ALT ratio","미토콘드리아 손상","세포질 손상","검사해석","핵심"],"summary":"AST와 ALT를 따로 외우는 대신 수치 비교와 해석 흐름으로 볼 수 있는 자료입니다.","points":["검사수치 검색의 대표 입구로 두기 좋습니다.","AST 단독, ALT 단독 자료와 상호 추천되도록 묶었습니다.","간호학과 학생들이 케이스 lab data 해석할 때 바로 찾을 가능성이 큽니다."],"useCase":"lab 해석, 간수치 비교, 케이스 스터디 검사 결과 설명","confidence":"파일 확인","system":"검사수치","intent":"검사해석","stage":"핵심","evidence":"본문에서 AST/ALT 비율을 단순 간수치 상승이 아니라 간세포와 미토콘드리아 중 어디서부터 손상됐는지 읽는 지표로 설명합니다.","related":["ast","alt"],"keywords":["AST/ALT ratio","미토콘드리아 손상","세포질 손상","간수치"],"rank":3},{"id":"pneumothorax-cxr","title":"pneumothorax에서의 CXR","displayTitle":"기흉 CXR 읽기","type":"호흡기","format":"PDF","source":"박용민 컨텐츠 정리본 PDF","url":"https://drive.google.com/file/d/1Mx8exaX4IpWS7KvAR9EEvOSoLo3PFDYP/view?usp=drivesdk","tags":["pneumothorax","기흉","CXR","Chest X-ray","흉부","호흡곤란","흉부 영상","호흡기","영상판독","기초"],"summary":"기흉을 흉부 X-ray에서 어떻게 봐야 하는지 연결해 보여줄 수 있는 영상 보조 자료입니다.","points":["CXR 검색 시 ACS/ECG와 별도로 흉부 영상 자료로 노출되게 구성했습니다.","기흉의 임상 증상과 영상 소견을 연결하는 카드형 설명에 적합합니다.","학생들이 Chest PA/AP, CXR 같은 실무형 콘텐츠에서 같이 찾을 가능성이 큽니다."],"useCase":"기흉 영상 소견, 흉부 X-ray 기초 설명, 실습 전 빠른 확인","confidence":"파일 확인","system":"호흡기","intent":"영상판독","stage":"기초","evidence":"Drive에 pneumothorax에서의 CXR PDF로 확인된 자료입니다. 흉부 X-ray와 기흉 검색에 우선 노출되도록 분류했습니다.","related":["acs-ecg","pneumonia-case-study","abga"],"keywords":["기흉","CXR","Chest X-ray","흉부 영상"],"rank":4},{"id":"gbs","title":"GBS 임상추론 박용민","displayTitle":"길랭-바레 증후군 임상추론","type":"신경계","format":"PDF","source":"신경계 질환 폴더","url":"https://drive.google.com/file/d/1qI6H7NXcWDEIq5Hq8eGJSyYGWozFN9jp/view?usp=drivesdk","tags":["GBS","Guillain-Barre","길랭바레","신경계","상행성 마비","임상추론","호흡근","심화"],"summary":"GBS를 신경계 임상추론 콘텐츠로 연결하는 자료입니다.","points":["상행성 마비, 호흡근 침범, 신경계 감별 키워드와 잘 맞습니다.","콘텐츠 분석 문서에서 판단형 콘텐츠는 댓글 반응이 좋은 축으로 확인됐습니다.","학생들이 감별 포인트를 찾을 때 상세 PDF로 연결하기 좋습니다."],"useCase":"GBS 감별, 신경계 응급 사정, 호흡근 약화 포인트","confidence":"파일 확인","system":"신경계","intent":"임상추론","stage":"심화","evidence":"신경계 질환 폴더에서 GBS 임상추론 PDF로 확인된 자료입니다. 상행성 마비와 호흡근 침범 감별 키워드로 분류했습니다.","related":["mg","als","ms","khsim-simulation"],"keywords":["GBS","길랭바레","상행성 마비","호흡근"],"rank":5},{"id":"mg","title":"MG 임상추론 박용민","displayTitle":"중증근무력증 임상추론","type":"신경계","format":"PDF","source":"신경계 질환 폴더","url":"https://drive.google.com/file/d/1H4nkqNIevngtKMr56ajvp8TWRzKSGbJu/view?usp=drivesdk","tags":["MG","myasthenia gravis","중증근무력증","신경계","근력저하","임상추론","호흡근","심화"],"summary":"MG를 임상추론 방식으로 정리한 신경계 질환 자료입니다.","points":["근력저하, 피로, 호흡근 약화 같은 키워드와 연결되도록 설계했습니다.","GBS, ALS와 비교해 찾는 사용자를 고려해 신경계 묶음으로 배치했습니다.","간호학과 케이스에서 증상 변화와 우선순위 설명에 유용합니다."],"useCase":"중증근무력증 감별, 신경근 질환 정리","confidence":"파일 확인","system":"신경계","intent":"임상추론","stage":"심화","evidence":"신경계 질환 폴더에서 MG 임상추론 PDF로 확인된 자료입니다. 근력저하와 신경근 질환 감별로 분류했습니다.","related":["gbs","als","ms"],"keywords":["MG","중증근무력증","근력저하","호흡근"],"rank":6},{"id":"als","title":"ALS 임상추론 박용민","displayTitle":"ALS 임상추론","type":"신경계","format":"PDF","source":"신경계 질환 폴더","url":"https://drive.google.com/file/d/1GanISYp5A5b3zPlj0fY37zjlJ3VGdH6r/view?usp=drivesdk","tags":["ALS","amyotrophic lateral sclerosis","루게릭","신경계","운동신경원","임상추론","진행성 근력저하","심화"],"summary":"ALS를 신경계 임상추론 흐름으로 찾을 수 있는 자료입니다.","points":["운동신경원 질환과 진행성 근력저하 키워드로 검색되게 구성했습니다.","MS, MG, GBS와 비교 검색될 수 있게 신경계 카테고리에 묶었습니다.","긴 설명보다 원본 자료로 넘어가는 길을 분명하게 보여주는 카드가 좋습니다."],"useCase":"ALS 개념 정리, 신경계 질환 비교, 임상추론 학습","confidence":"파일 확인","system":"신경계","intent":"임상추론","stage":"심화","evidence":"신경계 질환 폴더에서 ALS 임상추론 PDF로 확인된 자료입니다. 운동신경원 질환과 진행성 근력저하로 분류했습니다.","related":["mg","gbs","ms"],"keywords":["ALS","루게릭","운동신경원","진행성 근력저하"],"rank":7},{"id":"ms","title":"MS 임상추론 박용민","displayTitle":"다발성경화증 임상추론","type":"신경계","format":"PDF","source":"신경계 질환 폴더","url":"https://drive.google.com/file/d/16RhNgiR8NTJI8bTgxJYpi-pihKDqZahY/view?usp=drivesdk","tags":["MS","multiple sclerosis","다발성경화증","신경계","임상추론","신경계 감별","심화"],"summary":"MS를 신경계 임상추론 관점에서 찾을 수 있는 자료입니다.","points":["신경계 감별 학습에서 MG, GBS, ALS, PD 자료와 같이 추천하기 좋습니다.","질환명 약어로 검색해도 나오도록 태그를 넣었습니다.","학생들이 헷갈리는 신경계 질환 묶음의 한 축으로 쓰기 좋습니다."],"useCase":"신경계 질환 감별, MS 케이스 정리, 임상추론 학습","confidence":"파일 확인","system":"신경계","intent":"임상추론","stage":"심화","evidence":"신경계 질환 폴더에서 MS 임상추론 PDF로 확인된 자료입니다. 신경계 질환 감별 묶음에 포함했습니다.","related":["mg","gbs","als","pd"],"keywords":["MS","다발성경화증","신경계 감별"],"rank":8},{"id":"pd","title":"PD 임상추론 박용민","displayTitle":"파킨슨병 임상추론","type":"신경계","format":"PDF","source":"신경계 질환 폴더","url":"https://drive.google.com/file/d/1wW1zdJ06-cJzHl6b1PkdQWKzmntl58tg/view?usp=drivesdk","tags":["PD","Parkinson disease","파킨슨병","신경계","운동증상","임상추론","서동","강직","심화"],"summary":"파킨슨병을 임상추론 관점에서 학습할 수 있는 자료입니다.","points":["떨림, 서동, 강직 등 운동증상 검색과 연결하기 좋습니다.","신경계 질환 폴더의 다른 임상추론 PDF와 함께 보여주면 좋습니다.","노인간호와 신경계 케이스 모두에서 찾을 수 있게 태그를 넓게 잡았습니다."],"useCase":"파킨슨병 증상 이해, 신경계 케이스 스터디","confidence":"파일 확인","system":"신경계","intent":"임상추론","stage":"심화","evidence":"신경계 질환 폴더에서 PD 임상추론 PDF로 확인된 자료입니다. 운동증상과 노인 신경계 케이스로 분류했습니다.","related":["ms","mg","gbs"],"keywords":["PD","파킨슨병","운동증상","서동","강직"],"rank":9},{"id":"thyroidectomy","title":"thyroidectomy","displayTitle":"갑상선절제술","type":"수술간호","format":"PDF","source":"박용민 컨텐츠 정리본 PDF","url":"https://drive.google.com/file/d/1zwkzOFX8v9nLOIs47W_kUJC9Sx5hKmAj/view?usp=drivesdk","tags":["thyroidectomy","갑상선절제술","수술간호","합병증","칼슘","기도","출혈","저칼슘혈증","간호중재","핵심"],"summary":"갑상선절제술 전후 간호와 합병증 포인트를 찾는 데 쓸 수 있는 자료입니다.","points":["수술간호 카테고리의 시작 자료로 좋습니다.","기도, 출혈, 저칼슘혈증 같은 핵심 키워드와 연결될 수 있습니다.","케이스 과제에서 수술 후 관찰 포인트를 찾는 사용자에게 적합합니다."],"useCase":"수술 전후 간호, 갑상선 수술 합병증 확인","confidence":"파일 확인","system":"수술간호","intent":"간호중재","stage":"핵심","evidence":"Drive에 thyroidectomy PDF로 확인된 자료입니다. 갑상선절제술 전후 관찰과 합병증 키워드로 분류했습니다.","related":[],"keywords":["갑상선절제술","기도","출혈","저칼슘혈증"],"rank":10},{"id":"ast","title":"Aspartate aminotransferase","displayTitle":"AST 설명","type":"검사수치","format":"PDF","source":"박용민 컨텐츠 정리본 PDF","url":"https://drive.google.com/file/d/1ukDpuad1OtJHQR2_4TjRwlZq8X5hk0-Z/view?usp=drivesdk","tags":["AST","Aspartate aminotransferase","간수치","검사","lab","검사수치","검사해석","기초"],"summary":"AST가 무엇을 반영하는지 따로 확인할 수 있는 검사수치 자료입니다.","points":["AST/ALT 비교 자료로 넘어가기 전 기초 설명 카드로 쓰기 좋습니다.","검사수치 카테고리에 묶어 두면 검색 경험이 깔끔합니다.","ALT 자료와 나란히 보여주면 학습자가 차이를 빠르게 잡을 수 있습니다."],"useCase":"AST 단독 개념 확인, 검사 결과 해석 보조","confidence":"파일 확인","system":"검사수치","intent":"검사해석","stage":"기초","evidence":"Drive에 Aspartate aminotransferase PDF로 확인된 자료입니다. AST 단독 개념과 AST/ALT 비교 전 기초 자료로 분류했습니다.","related":["ast-alt-ratio","alt"],"keywords":["AST","Aspartate aminotransferase","간수치"],"rank":11},{"id":"alt","title":"Alanine aminotransferase","displayTitle":"ALT 설명","type":"검사수치","format":"PDF","source":"박용민 컨텐츠 정리본 PDF","url":"https://drive.google.com/file/d/1sVakiSM1lqXKwiAvbaxGBXWds5d6zwKw/view?usp=drivesdk","tags":["ALT","Alanine aminotransferase","간수치","검사","lab","검사수치","검사해석","기초"],"summary":"ALT의 의미와 간 관련 검사 해석을 찾을 수 있는 자료입니다.","points":["AST 자료와 함께 검사수치 검색의 기본 묶음으로 좋습니다.","케이스 스터디에서 lab abnormality 설명으로 연결하기 좋습니다.","비교형 자료보다 먼저 보는 기초 카드로 배치할 수 있습니다."],"useCase":"ALT 단독 개념 확인, 간수치 해석 보조","confidence":"파일 확인","system":"검사수치","intent":"검사해석","stage":"기초","evidence":"Drive에 Alanine aminotransferase PDF로 확인된 자료입니다. ALT 단독 개념과 AST/ALT 비교 전 기초 자료로 분류했습니다.","related":["ast-alt-ratio","ast"],"keywords":["ALT","Alanine aminotransferase","간수치"],"rank":12},{"id":"siadh","title":"SIADH clinical reasoning","displayTitle":"SIADH 임상추론","type":"검사수치","format":"PDF","source":"박용민 임상추론 PDF","url":"https://drive.google.com/file/d/14E7UgDyYbJ6oTIbslcwLhhbku2SYn8qy/view?usp=drivesdk","tags":["SIADH","항이뇨호르몬 부적절분비 증후군","Syndrome of Inappropriate Antidiuretic Hormone secretion","저나트륨혈증","hyponatremia","ADH","소세포폐암","SCLC","혈장 삼투압","요 삼투압","농축뇨","수분제한","I/O","LOC","검사수치","임상추론","심화"],"summary":"ADH 과다분비로 수분 재흡수가 증가해 부종 없는 희석성 저나트륨혈증이 나타나는 SIADH 임상추론 자료입니다.","points":["소세포폐암 환자에서 부종 없이 체중이 늘고 Na가 낮아지며 소변이 농축되는 패턴을 SIADH로 연결합니다.","혈장 삼투압은 낮은데 요 삼투압은 높은 부조화가 핵심 단서이며, SIADH와 DI 감별에 유용합니다.","간호 우선순위는 의식수준 확인, 매일 체중, 정확한 I/O이며 Na < 120, 의식변화, 발작, 과교정은 즉시 보고해야 합니다."],"useCase":"저나트륨혈증 감별, SIADH/DI 비교, 소세포폐암 환자 전해질 이상, 실습 중 LOC·I/O 사정 포인트 확인","confidence":"본문 확인","system":"검사수치","intent":"임상추론","stage":"심화","evidence":"Drive에 새로 업로드된 SIADH_임상추론_박용민 PDF에서 ADH 과다분비, 희석성 저나트륨혈증, 부종 없는 체중 증가, 혈장/요 삼투압 부조화, 간호 사정과 보고 기준을 확인했습니다.","related":["iicp","pneumothorax-cxr","ast-alt-ratio"],"keywords":["SIADH","저나트륨혈증","hyponatremia","ADH","SCLC","소세포폐암","혈장 삼투압","요 삼투압","농축뇨","수분제한","LOC","I/O","삼투성 탈수초증후군","ODS"],"rank":13},{"id":"abga","title":"ABGA arterial blood gas analysis","displayTitle":"ABGA 동맥혈가스분석","type":"검사수치","format":"PDF","source":"박용민 임상추론 PDF","url":"./assets/pdfs/abga-arterial-blood-gas-analysis.pdf","tags":["ABGA","ABG","동맥혈가스분석","Arterial Blood Gas Analysis","pH","PaCO2","HCO3","PaO2","SaO2","Base Excess","BE","ROME","호흡성 산증","대사성 산증","보상","부분 보상","COPD","저산소혈증","CO2 narcosis","Allen test","검사수치","임상추론","핵심"],"summary":"pH, PaCO2, HCO3, PaO2로 산염기 불균형과 보상 여부를 추론하는 ABGA 임상추론 자료입니다.","points":["ROME 법칙으로 호흡성/대사성 문제를 구분하고 pH 정상범위 여부로 완전 보상과 부분 보상을 판단합니다.","COPD 사례에서 pH 7.32, PaCO2 58, HCO3 28, PaO2 56을 부분 보상된 호흡성 산증과 저산소혈증으로 연결합니다.","PaO2 60mmHg 미만, 의식수준 저하, 호흡양상 악화, 청색증은 ABGA 결과와 함께 즉시 보고해야 할 기준으로 정리합니다."],"useCase":"ABGA 해석 순서, 산염기 불균형 감별, COPD 호흡성 산증, 실습 중 ABGA 보고 기준 확인","confidence":"본문 확인","system":"검사수치","intent":"임상추론","stage":"핵심","evidence":"로컬로 제공된 ABGA_동맥혈가스분석 PDF에서 정상범위, ROME 법칙, Base Excess, COPD 사례, 부분 보상된 호흡성 산증, 저산소혈증, 간호 우선순위와 보고 기준을 확인했습니다.","related":["pneumothorax-cxr","gbs","siadh","ast-alt-ratio","acls","pneumonia-case-study","khsim-simulation"],"keywords":["ABGA","ABG","동맥혈가스분석","pH","PaCO2","HCO3","PaO2","Base Excess","BE","ROME","호흡성 산증","부분 보상","COPD","저산소혈증","CO2 narcosis","Allen test"],"rank":14},{"id":"acls","title":"ACLS clinical reasoning","displayTitle":"ACLS 임상추론","type":"심혈관","format":"PDF","source":"박용민 임상추론 PDF","url":"./assets/pdfs/acls-clinical-reasoning.pdf","image":"./assets/acls-clinical-reasoning.png","tags":["ACLS","Advanced Cardiovascular Life Support","심정지","CPR","BLS","고품질 CPR","리듬분석","제세동","비제세동","VF","pVT","Asystole","PEA","Epinephrine","Amiodarone","ROSC","응급간호","심혈관","임상추론","핵심"],"summary":"심정지 상황에서 고품질 CPR, 리듬 분석, 제세동·비제세동 알고리즘을 임상 흐름으로 연결하는 ACLS 임상추론 자료입니다.","points":["심정지 환자에서 의식·호흡·맥박 확인 후 고품질 CPR과 도움 요청으로 이어지는 초기 대응 흐름을 정리합니다.","VF/pVT처럼 제세동이 필요한 리듬과 Asystole/PEA처럼 비제세동 리듬을 구분해 ACLS 알고리즘으로 연결합니다.","Epinephrine, Amiodarone, ROSC 이후 사정처럼 신규간호사와 간호학생이 헷갈리기 쉬운 역할과 보고 포인트를 확인하기 좋습니다."],"useCase":"ACLS 알고리즘, 심정지 초기 대응, 제세동/비제세동 리듬 감별, 응급실·중환자실 실습 전 빠른 확인","confidence":"파일 확인","system":"심혈관","intent":"임상추론","stage":"핵심","evidence":"로컬로 제공된 ACLS_임상추론_박용민 PDF를 사이트 자료로 추가했습니다. 심정지 대응, CPR, 리듬 분석, ACLS 약물과 ROSC 이후 사정을 중심 키워드로 분류했습니다.","related":["acs-ecg","mi","abga","pneumonia-case-study","khsim-simulation"],"keywords":["ACLS","심정지","CPR","고품질 CPR","리듬분석","제세동","비제세동","VF","pVT","Asystole","PEA","Epinephrine","Amiodarone","ROSC"],"rank":15},{"id":"pneumonia-case-study","title":"Pneumonia case study clinical reasoning","displayTitle":"폐렴 케이스스터디 임상추론","type":"호흡기","format":"Google Doc","source":"박용민 임상추론 Google Doc","url":"https://docs.google.com/document/d/1Ok0jMz-Ik6OI0ePrd20sdxd1ITsM9JYt/edit","bannerTitle":"폐렴 케이스스터디, 이렇게 쓰면 망합니다","bannerDescription":"WBC 15,000을 적고 끝내면 검사 결과 정리예요. 수치 → 의미 → 병태생리 → 간호진단으로 연결해야 케이스가 살아납니다.","bannerAction":"망하지 않는 흐름 보기","bannerSourceLabel":"원본 문서","tags":["폐렴","Pneumonia","케이스스터디","임상추론","가스교환 장애","기도 청결","SpO2","ABGA","WBC","CRP","Procalcitonin","CURB-65","객담","항생제","반좌위","산소요법","패혈증","호흡기","핵심"],"summary":"폐렴 케이스를 단순 검사 결과 정리가 아니라 수치, 의미, 병태생리, 간호진단으로 연결하는 임상추론 자료입니다.","points":["폐렴의 핵심을 폐포 염증과 삼출액으로 인한 가스교환 장애로 잡고 SpO2, ABGA, WBC, CRP를 연결합니다.","실습생 케이스가 약해지는 지점인 수치 나열, 해석 누락, 병태생리 연결 부족을 피하는 흐름을 정리합니다.","산소요법, 반좌위, 객담 배출, 항생제 전 배양 채취, SpO2 저하와 의식변화 보고 기준까지 케이스에 바로 연결하기 좋습니다."],"useCase":"폐렴 케이스스터디, 호흡기 실습, SpO2/ABGA 해석, 가스교환 장애 간호진단, 보고 기준 정리","confidence":"본문 확인","system":"호흡기","intent":"임상추론","stage":"핵심","evidence":"Drive 문서 폐렴_케이스스터디_임상추론에서 WBC, CRP, SpO2, ABGA, CURB-65, 수치 해석, 병태생리 연결, 간호진단과 보고 기준을 확인했습니다.","related":["pneumothorax-cxr","abga","acls","khsim-simulation"],"keywords":["폐렴","Pneumonia","케이스스터디","WBC 15000","SpO2 89","CRP","ABGA","CURB-65","가스교환 장애","비효과적 기도청결","항생제","객담 배양","반좌위","산소요법","패혈증"],"rank":16},{"id":"khsim-simulation","title":"KHSIM nursing simulation","displayTitle":"KHSIM 간호 시뮬레이션","type":"시뮬레이션","format":"Web App","source":"PYM KHSIM GitHub Pages","url":"https://dragonmin070102-coder.github.io/KHSIM/","tags":["KHSIM","시뮬레이션","간호술기","환자 시나리오","실습","응급상황","PC 권장","태블릿 권장","임상추론"],"summary":"실제 환자 시나리오처럼 화면을 보며 간호 판단을 연습하는 KHSIM 시뮬레이션입니다. 모바일보다 태블릿이나 PC에서 체험하는 것을 권장합니다.","points":["KHSIM은 검색 자료를 읽고 끝나는 것이 아니라 환자 상태를 보며 판단을 연습하는 체험형 콘텐츠입니다.","모바일에서는 화면과 조작 영역이 좁아 제대로 체험하기 어렵기 때문에 태블릿 또는 PC 환경을 권장합니다.","ABGA, ACLS, 호흡기 케이스처럼 판단 흐름이 필요한 자료와 연결해 학습 루트로 확장하기 좋습니다."],"useCase":"실습 전 시뮬레이션 체험, 간호 판단 연습, 박용민 PDF 학습 후 적용 훈련","confidence":"서비스 연결","system":"시뮬레이션","intent":"실습훈련","stage":"체험","evidence":"PYM에서 연결 중인 KHSIM GitHub Pages 시뮬레이션 서비스입니다. 모바일보다 큰 화면에서 안정적으로 체험하도록 안내합니다.","related":["abga","acls","pneumonia-case-study","gbs"],"keywords":["KHSIM","간호 시뮬레이션","시뮬레이션","실습훈련","환자 시나리오","PC","태블릿"],"rank":17}]};
 
-const baseResourcePayload = await loadResourceData();
-let resources = mergeAdminResources(normalizeResourceData(baseResourcePayload));
+let resources = normalizeResourceData(await loadResourceData());
 
 async function loadResourceData() {
   try {
@@ -120,12 +119,7 @@ let adminDashboardState = {
   query: "",
   loading: false,
   data: null,
-  error: "",
-  section: "overview",
-  resourceQuery: "",
-  editingResourceId: "",
-  activeTagResourceId: "",
-  saving: false
+  error: ""
 };
 let adminSearchTimer = null;
 let analyticsFlushScheduled = false;
@@ -323,7 +317,7 @@ const trendArticles = [
   }
 ];
 
-resourceCount.textContent = `${visibleResources().length}개`;
+resourceCount.textContent = `${resources.length}개`;
 renderHomeNoticeCarousel();
 startNoticeRotation();
 renderHomeFeed();
@@ -342,7 +336,6 @@ trackEvent("page_view", {
   resourceCount: resources.length
 });
 flushRemoteAnalytics();
-loadAdminRemoteContent();
 syncAdminRoute();
 
 categoryGrid.addEventListener("click", (event) => {
@@ -714,100 +707,6 @@ document.addEventListener("click", (event) => {
   testSupabaseConnection();
 });
 
-
-document.addEventListener("click", (event) => {
-  const sectionButton = event.target.closest("[data-admin-section]");
-  if (!sectionButton) return;
-
-  adminDashboardState.section = sectionButton.dataset.adminSection || "overview";
-  renderAnalyticsAdmin();
-});
-
-document.addEventListener("input", (event) => {
-  const resourceSearch = event.target.closest("[data-admin-resource-search]");
-  if (!resourceSearch) return;
-
-  adminDashboardState.resourceQuery = resourceSearch.value;
-  renderAnalyticsAdmin();
-});
-
-document.addEventListener("click", (event) => {
-  const editButton = event.target.closest("[data-admin-resource-edit]");
-  if (!editButton) return;
-
-  adminDashboardState.editingResourceId = editButton.dataset.adminResourceEdit;
-  adminDashboardState.section = "resources";
-  renderAnalyticsAdmin();
-});
-
-document.addEventListener("click", (event) => {
-  const deleteButton = event.target.closest("[data-admin-resource-delete]");
-  if (!deleteButton) return;
-
-  const resource = resources.find((item) => item.id === deleteButton.dataset.adminResourceDelete);
-  if (!resource) return;
-  if (!window.confirm(`${resource.displayTitle} 자료를 운영 저장소에서 숨길까요?`)) return;
-  saveAdminResource({ ...resource, adminHidden: true });
-  showToast("자료를 운영 저장소에서 숨겼어요");
-  renderAnalyticsAdmin();
-});
-
-document.addEventListener("submit", async (event) => {
-  const form = event.target.closest("[data-admin-resource-form], [data-admin-new-resource-form]");
-  if (!form) return;
-
-  event.preventDefault();
-  await saveAdminResourceForm(form);
-});
-
-document.addEventListener("submit", (event) => {
-  const form = event.target.closest("[data-admin-banner-form]");
-  if (!form) return;
-
-  event.preventDefault();
-  saveAdminBannerForm(form);
-});
-
-document.addEventListener("click", (event) => {
-  const resetBanner = event.target.closest("[data-admin-banner-reset]");
-  if (!resetBanner) return;
-
-  safeStorageRemove("pym.admin.homeBanners");
-  renderHomeNoticeCarousel();
-  renderAnalyticsAdmin();
-  showToast("홈배너를 기본값으로 되돌렸어요");
-});
-
-document.addEventListener("submit", (event) => {
-  const form = event.target.closest("[data-admin-premium-form]");
-  if (!form) return;
-
-  event.preventDefault();
-  saveAdminPremiumForm(form);
-});
-
-document.addEventListener("click", (event) => {
-  const resourceButton = event.target.closest("[data-admin-tag-resource]");
-  if (!resourceButton) return;
-
-  adminDashboardState.activeTagResourceId = resourceButton.dataset.adminTagResource;
-  renderAnalyticsAdmin();
-});
-
-document.addEventListener("click", (event) => {
-  const addTagButton = event.target.closest("[data-admin-add-tag]");
-  if (!addTagButton) return;
-
-  const input = document.querySelector("[data-admin-new-tag]");
-  const tag = String(input?.value || "").trim();
-  if (!tag) {
-    showToast("추가할 해시태그를 입력해주세요");
-    return;
-  }
-  addAdminTagToActiveResource(tag);
-  if (input) input.value = "";
-});
-
 document.addEventListener("click", (event) => {
   const premiumNav = event.target.closest("[data-premium-nav]");
   if (!premiumNav) return;
@@ -887,14 +786,9 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-
-function visibleResources() {
-  return resources.filter((resource) => !resource.adminHidden);
-}
 function renderFilters() {
-  const visible = visibleResources();
-  const systems = ["전체", ...Array.from(new Set(visible.map((resource) => resource.system)))];
-  const intents = ["전체", ...Array.from(new Set(visible.map((resource) => resource.intent)))];
+  const systems = ["전체", ...Array.from(new Set(resources.map((resource) => resource.system)))];
+  const intents = ["전체", ...Array.from(new Set(resources.map((resource) => resource.intent)))];
   filters.innerHTML = `
     ${filterGroupTemplate("계통 분류", "type", systems, activeType)}
     ${filterGroupTemplate("사용 목적", "intent", intents, activeIntent)}
@@ -944,8 +838,7 @@ function renderCategoryHub() {
   ];
 
   categoryGrid.innerHTML = categoryMeta.map((item) => {
-    const visible = visibleResources();
-    const count = item.system === "전체" ? visible.length : visible.filter((resource) => resource.system === item.system).length;
+    const count = item.system === "전체" ? resources.length : resources.filter((resource) => resource.system === item.system).length;
     const active = activeType === item.system ? "active" : "";
     return `
       <button class="category-card ${active}" type="button" data-category="${escapeHtml(item.system)}">
@@ -975,8 +868,7 @@ function filterGroupTemplate(title, key, values, activeValue) {
       <h3>${escapeHtml(title)}</h3>
       <div class="filter-list">
         ${values.map((value) => {
-          const visible = visibleResources();
-          const count = value === "전체" ? visible.length : visible.filter((resource) => resource[key === "type" ? "system" : "intent"] === value).length;
+          const count = value === "전체" ? resources.length : resources.filter((resource) => resource[key === "type" ? "system" : "intent"] === value).length;
           return `
             <button type="button" class="${value === activeValue ? "active" : ""}" data-${key}="${escapeHtml(value)}">
               <i class="filter-icon ${escapeHtml(iconMap[value] || "all")}" aria-hidden="true"></i>
@@ -1132,8 +1024,49 @@ function renderHomeNoticeCarousel() {
 }
 
 function getHomeNotices() {
-  const custom = getStoredAdminBanners();
-  return custom.length ? custom : getDefaultHomeNotices();
+  const latest = resources.slice().sort((a, b) => b.rank - a.rank)[0] || resources[0];
+  const recommended = resources.find((resource) => resource.id === "gbs") || resources[0];
+  const trendArticle = trendArticles[0];
+
+  return [
+    {
+      label: "새 자료 업데이트",
+      badge: "NEW",
+      title: latest.bannerTitle || `${latest.displayTitle} 자료가 추가됐어요`,
+      description: latest.bannerDescription || latest.summary,
+      query: latest.keywords?.[0] || latest.displayTitle,
+      action: latest.bannerAction || "새 자료 보기",
+      sourceLabel: latest.bannerSourceLabel || "원본 자료",
+      sourceUrl: latest.url,
+      image: visualMeta(latest).image || "./assets/thumb-lab.png",
+      tone: "update"
+    },
+    {
+      label: "오늘의 추천 자료",
+      badge: "추천",
+      title: "SpO2가 괜찮아도 보고가 필요한 순간",
+      description: recommended.summary,
+      query: "GBS",
+      action: "답 보기",
+      sourceLabel: "관련 PDF",
+      sourceUrl: recommended.url,
+      image: "./assets/nurse-guide.png",
+      tone: "recommend"
+    },
+    {
+      label: "최근 간호 동향",
+      badge: "TREND",
+      title: trendArticle.hook || trendArticle.title,
+      description: trendArticle.summary,
+      query: trendArticle.tags?.[0] || trendArticle.title,
+      action: "관련 자료 보기",
+      sourceLabel: "요약 보기",
+      sourceUrl: trendArticle.sourceUrl,
+      articleId: trendArticle.id,
+      image: trendArticle.image || "./assets/thumb-lab.png",
+      tone: "trend"
+    }
+  ];
 }
 
 function handleHomeNoticeTouchStart(event) {
@@ -1242,7 +1175,6 @@ function renderPremiumScreen() {
 
   const featured = premiumNeuroModules[1];
   const purchased = isPremiumPurchased("neuro-series-6");
-  const premiumSettings = getAdminPremiumSettings();
   const previewCards = [
     { module: premiumNeuroModules[0], section: "p.01 왜 중요한가", image: "./assets/previews/neuro-assessment-p01.png", lines: ["시험·실습·임상 연결", "박용민 요점"] },
     { module: premiumNeuroModules[0], section: "p.02 임상 상황", image: "./assets/previews/neuro-assessment-p02.png", lines: ["GCS 변화", "동공 변화", "생각해보기"] },
@@ -1269,31 +1201,34 @@ function renderPremiumScreen() {
         <div class="premium-cover-copy">
           <span>BEST</span>
           <em>신경계 시리즈 01</em>
-          <h1 id="premium-title">${premiumSettings.heroTitle}</h1>
+          <h1 id="premium-title">두개내압 상승<br />(IICP)</h1>
           <p>병태생리 이해<br />핵심 요약 정리<br />임상추론 활용<br />간호중재 & 근거</p>
           <strong>BY PARK YONG MIN</strong>
         </div>
         <img class="premium-brain-image" src="./assets/iicp-brain-cover.png" alt="두개내압 상승 학습을 상징하는 뇌 이미지" loading="eager" />
       </div>
-      <h2>${escapeHtml(premiumSettings.productTitle)}</h2>
-      <p class="premium-product-subtitle">${escapeHtml(premiumSettings.subtitle)}</p>
+      <h2>신경계 임상추론 6편 패키지</h2>
+      <p class="premium-product-subtitle">GCS부터 TBI까지, 신경계 응급 케이스를 하나의 흐름으로 정리했습니다.</p>
       <div class="premium-product-meta">
         <span>자료 공개 준비 중</span>
-        <span>다운로드 ${escapeHtml(premiumSettings.downloadCount)}</span>
+        <span>다운로드 6회</span>
       </div>
       <div class="premium-spec-grid">
         <article><strong>DOCX 자료</strong><span>6편 · 96섹션</span></article>
-        <article><strong>최종 업데이트</strong><span>${escapeHtml(premiumSettings.updatedAt)}</span></article>
-        <article><strong>난이도</strong><span>${escapeHtml(premiumSettings.difficulty)}</span></article>
-        <article><strong>학습 시간</strong><span>${escapeHtml(premiumSettings.studyTime)}</span></article>
+        <article><strong>최종 업데이트</strong><span>2026.06</span></article>
+        <article><strong>난이도</strong><span>중급</span></article>
+        <article><strong>학습 시간</strong><span>30분</span></article>
       </div>
     </section>
 
     <section class="premium-purchase-card">
       <p>프리미엄 자료</p>
-      <h2>${escapeHtml(premiumSettings.price)}</h2>
+      <h2>9,900원</h2>
       <ul>
-        ${premiumSettings.benefits.map((benefit) => `<li>${escapeHtml(benefit)}</li>`).join("")}
+        <li>결제 후 평생 소장</li>
+        <li>모바일/PC 다운로드 가능</li>
+        <li>무제한 열람</li>
+        <li>업데이트 시 추가 비용 없음</li>
       </ul>
       ${purchased ? `
         <div class="premium-purchase-complete">
@@ -2287,7 +2222,7 @@ function renderResults() {
 
 function scoreResources(query) {
   const tokens = query.toLowerCase().split(/\s+/).filter(Boolean);
-  return visibleResources().map((resource) => {
+  return resources.map((resource) => {
     const haystack = [
       resource.title,
       resource.displayTitle,
@@ -3192,317 +3127,6 @@ function resourcePayload(resource) {
   };
 }
 
-
-
-async function loadAdminRemoteContent() {
-  if (!supabaseConfig.enabled) return;
-  try {
-    const [remoteResources, remoteSettings] = await Promise.all([
-      supabaseRequest("admin_resources?select=payload,updated_at&order=updated_at.desc&limit=500").catch(() => []),
-      supabaseRequest("admin_content_settings?select=key,payload,updated_at&limit=50").catch(() => [])
-    ]);
-
-    if (remoteResources.length) {
-      const local = readAdminResources();
-      const map = new Map(local.map((item) => [item.id, item]));
-      remoteResources.forEach((row) => {
-        if (row.payload?.id) map.set(row.payload.id, row.payload);
-      });
-      writeAdminResources(Array.from(map.values()));
-      resources = mergeAdminResources(normalizeResourceData(baseResourcePayload));
-      activeResource = resources.find((item) => item.id === activeResource?.id) || visibleResources()[0] || resources[0];
-    }
-
-    remoteSettings.forEach((row) => {
-      if (row.key === "homeBanners") safeStorageSet("pym.admin.homeBanners", JSON.stringify(row.payload || []));
-      if (row.key === "premiumSettings") safeStorageSet("pym.admin.premiumSettings", JSON.stringify(row.payload || {}));
-    });
-
-    if (remoteResources.length || remoteSettings.length) {
-      resourceCount.textContent = `${visibleResources().length}개`;
-      renderHomeNoticeCarousel();
-      renderHomeFeed();
-      renderCategoryHub();
-      renderFilters();
-      renderResults();
-      renderPremiumScreen();
-      if (!analyticsAdmin.hidden) renderAnalyticsAdmin();
-    }
-  } catch {
-    // Remote admin tables are optional during the static-site MVP.
-  }
-}
-
-async function pushAdminSettingToSupabase(key, payload) {
-  if (!supabaseConfig.enabled) return;
-  await supabaseRequest("admin_content_settings?on_conflict=key", {
-    method: "POST",
-    headers: { Prefer: "resolution=merge-duplicates" },
-    body: JSON.stringify({ key, payload, updated_at: new Date().toISOString() })
-  }).catch(() => null);
-}
-
-function mergeAdminResources(baseResources) {
-  const overrides = readJsonArray("pym.admin.resources");
-  if (!overrides.length) return baseResources;
-  const map = new Map(baseResources.map((resource) => [resource.id, resource]));
-  overrides.forEach((resource) => {
-    if (!resource?.id) return;
-    const merged = { ...(map.get(resource.id) || {}), ...resource, adminManaged: true };
-    map.set(resource.id, merged);
-  });
-  return normalizeResourceData(Array.from(map.values()).filter((resource) => !resource.adminDeleted));
-}
-
-function readAdminResources() {
-  return readJsonArray("pym.admin.resources");
-}
-
-function writeAdminResources(items) {
-  safeStorageSet("pym.admin.resources", JSON.stringify(items));
-}
-
-function saveAdminResource(resource) {
-  const existing = readAdminResources().filter((item) => item.id !== resource.id);
-  writeAdminResources([...existing, { ...resource, adminManaged: true, updatedAt: new Date().toISOString() }]);
-  resources = mergeAdminResources(normalizeResourceData(baseResourcePayload));
-  activeResource = resources.find((item) => item.id === activeResource?.id) || resources.find((item) => !item.adminHidden) || resources[0];
-  resourceCount.textContent = `${resources.filter((item) => !item.adminHidden).length}개`;
-  renderHomeNoticeCarousel();
-  renderCategoryHub();
-  renderFilters();
-  renderResults();
-  renderDetail(activeResource);
-  pushAdminResourceToSupabase(resource);
-}
-
-function createEmptyAdminResource() {
-  return {
-    id: "",
-    title: "",
-    displayTitle: "",
-    system: "신경계",
-    intent: "임상추론",
-    stage: "핵심",
-    format: "PDF",
-    source: "박용민 자료",
-    url: "",
-    image: "",
-    summary: "",
-    points: [],
-    useCase: "",
-    evidence: "",
-    tags: [],
-    keywords: [],
-    related: [],
-    confidence: "운영자 입력",
-    rank: resources.length
-  };
-}
-
-function adminField(name, label, value = "", placeholder = "") {
-  return `<label class="admin-field"><span>${escapeHtml(label)}</span><input name="${escapeHtml(name)}" value="${escapeHtml(value ?? "")}" placeholder="${escapeHtml(placeholder)}" /></label>`;
-}
-
-function adminTextarea(name, label, value = "", placeholder = "") {
-  return `<label class="admin-field wide"><span>${escapeHtml(label)}</span><textarea name="${escapeHtml(name)}" placeholder="${escapeHtml(placeholder)}">${escapeHtml(value ?? "")}</textarea></label>`;
-}
-
-async function saveAdminResourceForm(form) {
-  const formData = new FormData(form);
-  const originalId = String(formData.get("originalId") || "").trim();
-  const id = slugifyAdminId(String(formData.get("id") || "").trim() || String(formData.get("displayTitle") || "").trim());
-  if (!id) {
-    showToast("자료 ID 또는 제목을 입력해주세요");
-    return;
-  }
-
-  adminDashboardState.saving = true;
-  renderAnalyticsAdmin();
-
-  const previous = resources.find((item) => item.id === originalId || item.id === id) || {};
-  const file = formData.get("file");
-  let uploadedUrl = String(formData.get("url") || "").trim();
-  if (file && file.name && file.size) {
-    uploadedUrl = await resolveAdminFileUrl(file, id, uploadedUrl);
-  }
-
-  const resource = {
-    ...previous,
-    id,
-    title: String(formData.get("title") || "").trim() || String(formData.get("displayTitle") || "").trim(),
-    displayTitle: String(formData.get("displayTitle") || "").trim() || String(formData.get("title") || "").trim(),
-    system: String(formData.get("system") || "").trim() || "기타",
-    intent: String(formData.get("intent") || "").trim() || "자료정리",
-    stage: String(formData.get("stage") || "").trim() || "핵심",
-    format: String(formData.get("format") || "").trim() || "PDF",
-    source: String(formData.get("source") || "").trim() || "박용민 자료",
-    url: uploadedUrl,
-    image: String(formData.get("image") || "").trim(),
-    summary: String(formData.get("summary") || "").trim(),
-    points: splitLines(formData.get("points")),
-    useCase: String(formData.get("useCase") || "").trim(),
-    evidence: String(formData.get("evidence") || "").trim(),
-    tags: splitCsv(formData.get("tags")),
-    keywords: splitCsv(formData.get("keywords")),
-    related: splitCsv(formData.get("related")),
-    confidence: previous.confidence || "운영자 입력",
-    rank: Number.isFinite(previous.rank) ? previous.rank : resources.length
-  };
-
-  if (!resource.summary) resource.summary = `${resource.displayTitle} 자료입니다. 핵심 요약을 admin에서 보완해주세요.`;
-  if (!resource.points.length) resource.points = ["자료 추가 후 핵심 포인트를 보완해주세요."];
-
-  saveAdminResource(resource);
-  adminDashboardState.saving = false;
-  adminDashboardState.editingResourceId = resource.id;
-  adminDashboardState.section = "resources";
-  showToast("자료가 저장되고 현재 페이지에 반영됐어요");
-  renderAnalyticsAdmin();
-}
-
-async function resolveAdminFileUrl(file, resourceId, fallbackUrl) {
-  const uploaded = await uploadAdminFileToSupabase(file, resourceId).catch(() => "");
-  if (uploaded) return uploaded;
-  const objectUrl = URL.createObjectURL(file);
-  safeStorageSet(`pym.admin.file.${resourceId}`, JSON.stringify({ name: file.name, size: file.size, type: file.type, objectUrl }));
-  showToast("Supabase 업로드는 실패했지만 현재 브라우저에서 임시 연결했어요");
-  return fallbackUrl || objectUrl;
-}
-
-async function uploadAdminFileToSupabase(file, resourceId) {
-  if (!supabaseConfig.enabled || !file?.size) return "";
-  const ext = file.name.includes(".") ? file.name.split(".").pop() : "bin";
-  const path = `${resourceId}-${Date.now()}.${ext}`;
-  const bucket = "resources";
-  const response = await fetch(`${supabaseConfig.url}/storage/v1/object/${bucket}/${encodeURIComponent(path)}`, {
-    method: "POST",
-    headers: {
-      apikey: supabaseConfig.anonKey,
-      Authorization: `Bearer ${supabaseConfig.anonKey}`,
-      "x-upsert": "true",
-      "content-type": file.type || "application/octet-stream"
-    },
-    body: file
-  });
-  if (!response.ok) return "";
-  return `${supabaseConfig.url}/storage/v1/object/public/${bucket}/${encodeURIComponent(path)}`;
-}
-
-async function pushAdminResourceToSupabase(resource) {
-  if (!supabaseConfig.enabled) return;
-  await supabaseRequest("admin_resources?on_conflict=id", {
-    method: "POST",
-    headers: { Prefer: "resolution=merge-duplicates" },
-    body: JSON.stringify({ id: resource.id, payload: resource, updated_at: new Date().toISOString() })
-  }).catch(() => null);
-}
-
-function splitCsv(value) {
-  return String(value || "").split(",").map((item) => item.trim()).filter(Boolean);
-}
-
-function splitLines(value) {
-  return String(value || "").split(/\n+/).map((item) => item.trim()).filter(Boolean);
-}
-
-function slugifyAdminId(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9가-힣]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
-}
-
-function getDefaultHomeNotices() {
-  const latest = resources.slice().filter((item) => !item.adminHidden).sort((a, b) => b.rank - a.rank)[0] || resources[0];
-  const recommended = resources.find((resource) => resource.id === "gbs") || resources[0];
-  const trendArticle = trendArticles[0];
-  return [
-    { label: "새 자료 업데이트", badge: "NEW", title: latest.bannerTitle || `${latest.displayTitle} 자료가 추가됐어요`, description: latest.bannerDescription || latest.summary, query: latest.keywords?.[0] || latest.displayTitle, action: latest.bannerAction || "새 자료 보기", sourceLabel: latest.bannerSourceLabel || "원본 자료", sourceUrl: latest.url, image: visualMeta(latest).image || "./assets/thumb-lab.png", tone: "update" },
-    { label: "오늘의 추천 자료", badge: "추천", title: "SpO2가 괜찮아도 보고가 필요한 순간", description: recommended.summary, query: "GBS", action: "답 보기", sourceLabel: "관련 PDF", sourceUrl: recommended.url, image: "./assets/nurse-guide.png", tone: "recommend" },
-    { label: "최근 간호 동향", badge: "TREND", title: trendArticle.hook || trendArticle.title, description: trendArticle.summary, query: trendArticle.tags?.[0] || trendArticle.title, action: "관련 자료 보기", sourceLabel: "요약 보기", sourceUrl: trendArticle.sourceUrl, articleId: trendArticle.id, image: trendArticle.image || "./assets/thumb-lab.png", tone: "trend" }
-  ];
-}
-
-function getStoredAdminBanners() {
-  return readJsonArray("pym.admin.homeBanners");
-}
-
-function saveAdminBannerForm(form) {
-  const formData = new FormData(form);
-  const banners = [0, 1, 2].map((index) => ({
-    label: String(formData.get(`label_${index}`) || "").trim(),
-    badge: String(formData.get(`badge_${index}`) || "").trim(),
-    title: String(formData.get(`title_${index}`) || "").trim(),
-    description: String(formData.get(`description_${index}`) || "").trim(),
-    query: String(formData.get(`query_${index}`) || "").trim(),
-    action: String(formData.get(`action_${index}`) || "").trim(),
-    sourceLabel: String(formData.get(`sourceLabel_${index}`) || "").trim(),
-    sourceUrl: String(formData.get(`sourceUrl_${index}`) || "").trim(),
-    image: String(formData.get(`image_${index}`) || "").trim(),
-    tone: String(formData.get(`tone_${index}`) || "update").trim() || "update"
-  })).filter((item) => item.title);
-  safeStorageSet("pym.admin.homeBanners", JSON.stringify(banners));
-  pushAdminSettingToSupabase("homeBanners", banners);
-  renderHomeNoticeCarousel();
-  showToast("홈배너가 저장됐어요");
-  renderAnalyticsAdmin();
-}
-
-function getAdminPremiumSettings() {
-  return {
-    productTitle: "신경계 임상추론 6편 패키지",
-    heroTitle: "두개내압 상승<br />(IICP)",
-    subtitle: "GCS부터 TBI까지, 신경계 응급 케이스를 하나의 흐름으로 정리했습니다.",
-    price: "9,900원",
-    downloadCount: "6회",
-    studyTime: "30분",
-    updatedAt: "2026.06",
-    difficulty: "중급",
-    benefits: ["결제 후 평생 소장", "모바일/PC 다운로드 가능", "무제한 열람", "업데이트 시 추가 비용 없음"],
-    ...JSON.parse(safeStorageGet("pym.admin.premiumSettings") || "{}")
-  };
-}
-
-function saveAdminPremiumForm(form) {
-  const formData = new FormData(form);
-  const settings = {
-    productTitle: String(formData.get("productTitle") || "").trim(),
-    heroTitle: String(formData.get("heroTitle") || "").trim(),
-    subtitle: String(formData.get("subtitle") || "").trim(),
-    price: String(formData.get("price") || "").trim(),
-    downloadCount: String(formData.get("downloadCount") || "").trim(),
-    studyTime: String(formData.get("studyTime") || "").trim(),
-    updatedAt: String(formData.get("updatedAt") || "").trim(),
-    difficulty: String(formData.get("difficulty") || "").trim(),
-    benefits: splitLines(formData.get("benefits"))
-  };
-  safeStorageSet("pym.admin.premiumSettings", JSON.stringify(settings));
-  pushAdminSettingToSupabase("premiumSettings", settings);
-  renderPremiumScreen();
-  showToast("구매페이지 설정이 저장됐어요");
-  renderAnalyticsAdmin();
-}
-
-function getTagCounts() {
-  const counts = new Map();
-  resources.filter((resource) => !resource.adminHidden).forEach((resource) => {
-    (resource.tags || []).forEach((tag) => counts.set(tag, (counts.get(tag) || 0) + 1));
-  });
-  return Array.from(counts.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "ko"));
-}
-
-function addAdminTagToActiveResource(tag) {
-  const resource = resources.find((item) => item.id === adminDashboardState.activeTagResourceId);
-  if (!resource) return;
-  const tags = Array.from(new Set([...(resource.tags || []), tag]));
-  saveAdminResource({ ...resource, tags });
-  showToast(`#${tag} 태그를 추가했어요`);
-  renderAnalyticsAdmin();
-}
-
 function syncAdminRoute() {
   const hash = window.location.hash;
   const isAdmin = hash === "#admin";
@@ -3527,93 +3151,28 @@ function renderAnalyticsAdmin() {
   const data = adminDashboardState.data || buildEmptyAdminDashboardData();
   const filtered = filterAdminData(data);
   const kpis = getAdminKpis(filtered);
-  const section = adminDashboardState.section || "overview";
-  const sections = [
-    ["overview", "대시보드", "성과와 다음 액션"],
-    ["resources", "자료 관리", "기존 자료 수정"],
-    ["add", "자료 추가", "새 자료 등록"],
-    ["banners", "홈배너", "공지·추천 수정"],
-    ["premium", "구매페이지", "상품 문구 수정"],
-    ["hashtags", "해시태그", "검색 태그 운영"],
-    ["supabase", "Supabase", "이용자 데이터"],
-    ["settings", "배포 도구", "내보내기"],
-  ];
+  const insights = getAdminInsights(filtered);
+  const gaps = getContentGaps(filtered.noResults);
+  const demand = getDemandAnalysis(filtered.searchTerms, filtered.popularResources);
+  const periodLabel = adminPeriodLabel(adminDashboardState.period);
 
   analyticsContent.innerHTML = `
-    <div class="admin-console">
-      <aside class="admin-sidebar" aria-label="PYM 관리자 메뉴">
-        <a class="admin-sidebar-brand" href="#" data-admin-close>
-          <span class="brand-mark">P</span>
-          <strong>PYM Admin</strong>
-        </a>
-        <nav>
-          ${sections.map(([id, label, desc]) => `
-            <button type="button" class="${section === id ? "active" : ""}" data-admin-section="${id}">
-              <strong>${escapeHtml(label)}</strong>
-              <span>${escapeHtml(desc)}</span>
-            </button>
-          `).join("")}
-        </nav>
-        <div class="admin-sidebar-card">
-          <span>자료 ${resources.filter((item) => !item.adminHidden).length}개</span>
-          <strong>${supabaseConfig.enabled ? "Supabase 연결됨" : "로컬 운영 모드"}</strong>
-        </div>
-      </aside>
-      <section class="admin-workspace">
-        <header class="admin-workspace-top">
-          <div>
-            <p class="eyebrow">Content Operating Center</p>
-            <h1>박용민 콘텐츠 운영센터</h1>
-            <span>자료 추가, 홈배너, 유료 상품, 해시태그, 이용자 데이터를 한 곳에서 관리합니다.</span>
-          </div>
-          <div class="admin-top-actions">
-            <button type="button" data-admin-section="add">+ 자료 추가</button>
-            <button type="button" data-admin-close>사이트로 돌아가기</button>
-          </div>
-        </header>
-        ${adminDashboardState.loading ? `<p class="admin-status">Supabase 데이터를 불러오는 중이에요.</p>` : ""}
-        ${adminDashboardState.saving ? `<p class="admin-status">운영 데이터를 저장하는 중이에요.</p>` : ""}
-        ${adminDashboardState.error ? `<p class="admin-status error">${escapeHtml(adminDashboardState.error)}</p>` : ""}
-        ${renderAdminSection(section, filtered, kpis)}
-      </section>
-    </div>
-  `;
-
-  if (supabaseConfig.enabled && !adminDashboardState.data && !adminDashboardState.loading) {
-    loadAdminDashboardData();
-  }
-}
-
-function renderAdminSection(section, data, kpis) {
-  if (section === "resources") return renderAdminResourcesSection();
-  if (section === "add") return renderAdminAddSection();
-  if (section === "banners") return renderAdminBannersSection();
-  if (section === "premium") return renderAdminPremiumSection();
-  if (section === "hashtags") return renderAdminHashtagsSection();
-  if (section === "supabase") return renderAdminSupabaseSection(data, kpis);
-  if (section === "settings") return renderAdminSettingsSection();
-  return renderAdminOverviewSection(data, kpis);
-}
-
-function renderAdminOverviewSection(data, kpis) {
-  const insights = getAdminInsights(data);
-  const gaps = getContentGaps(data.noResults);
-  const demand = getDemandAnalysis(data.searchTerms, data.popularResources);
-  const visibleResources = resources.filter((resource) => !resource.adminHidden);
-  return `
-    <section class="admin-hero admin-hero-wide">
-      <div>
-        <p class="eyebrow">Today command</p>
-        <h2>오늘 뭘 만들지 데이터로 바로 결정하세요.</h2>
-        <p>검색 실패어는 새 자료 후보, 조회수는 검증된 수요, 댓글은 커뮤니티 반응입니다.</p>
-      </div>
-      <div class="admin-hero-metrics">
-        <article><strong>${formatCount(visibleResources.length)}</strong><span>운영 자료</span></article>
-        <article><strong>${formatCount(kpis.totalSearches)}</strong><span>검색</span></article>
-        <article><strong>${formatCount(kpis.totalResourceViews)}</strong><span>자료 조회</span></article>
-      </div>
+    <section class="admin-hero">
+      <p class="eyebrow">Content Operating Center</p>
+      <h2>박용민 콘텐츠 운영센터</h2>
+      <p>검색, 조회, 실패어, 댓글을 묶어서 다음 콘텐츠 우선순위를 판단합니다.</p>
     </section>
-    <div class="admin-summary dashboard-kpis wide">
+    <div class="admin-toolbar">
+      <div class="admin-period-tabs">
+        ${["today", "7d", "30d", "all"].map((period) => `
+          <button type="button" class="${adminDashboardState.period === period ? "active" : ""}" data-admin-period="${period}">${adminPeriodLabel(period)}</button>
+        `).join("")}
+      </div>
+      <input data-admin-search type="search" value="${escapeHtml(adminDashboardState.query)}" placeholder="검색어, 자료명 검색" />
+    </div>
+    ${adminDashboardState.loading ? `<p class="admin-status">Supabase 데이터를 불러오는 중이에요.</p>` : ""}
+    ${adminDashboardState.error ? `<p class="admin-status error">${escapeHtml(adminDashboardState.error)}</p>` : ""}
+    <div class="admin-summary dashboard-kpis">
       ${adminMetricTemplate("총 이벤트 수", kpis.totalEvents)}
       ${adminMetricTemplate("총 검색 수", kpis.totalSearches)}
       ${adminMetricTemplate("총 자료 조회 수", kpis.totalResourceViews)}
@@ -3621,211 +3180,94 @@ function renderAdminOverviewSection(data, kpis) {
       ${adminMetricTemplate("댓글 수", kpis.totalComments)}
       ${adminMetricTemplate("최근 7일 활성 사용자", kpis.activeUsers7d)}
     </div>
-    <div class="admin-grid-2">
-      <section class="admin-card insight-card">
-        <div class="admin-card-head"><h2>운영자 인사이트</h2><span>${adminPeriodLabel(adminDashboardState.period)} 기준</span></div>
-        <div class="admin-insights">${insights.map((insight) => `<article>${escapeHtml(insight)}</article>`).join("")}</div>
-      </section>
-      <section class="admin-card">
-        <div class="admin-card-head"><h2>콘텐츠 제작 추천</h2><span>실패 3회 이상</span></div>
-        <div class="gap-list">
-          ${gaps.length ? gaps.map((row) => `<article><strong>🔥 ${escapeHtml(row.query)}</strong><span>검색 실패 ${formatCount(row.no_result_count)}회 · 사용자 수요는 있으나 콘텐츠가 부족한 주제</span></article>`).join("") : `<p class="admin-empty">현재 기준 추천 항목이 없어요.</p>`}
-        </div>
-      </section>
-    </div>
-    <div class="admin-grid-2">
-      <section class="admin-card"><div class="admin-card-head"><h2>인기 검색어 TOP 10</h2><button type="button" data-admin-csv="searchTerms">CSV</button></div>${barChartTemplate(data.searchTerms.slice(0, 10), "query", "search_count")}</section>
-      <section class="admin-card"><div class="admin-card-head"><h2>인기 콘텐츠 TOP 10</h2><button type="button" data-admin-csv="popularResources">CSV</button></div>${barChartTemplate(data.popularResources.slice(0, 10), "resource_title", "open_count")}</section>
-    </div>
+    <section class="admin-card insight-card">
+      <div class="admin-card-head">
+        <h2>운영자 인사이트</h2>
+        <span>${periodLabel} 기준</span>
+      </div>
+      <div class="admin-insights">
+        ${insights.map((insight) => `<article>${escapeHtml(insight)}</article>`).join("")}
+      </div>
+    </section>
     <section class="admin-card">
-      <div class="admin-card-head"><h2>콘텐츠 수요 분석</h2><span>검색→조회 전환율</span></div>
-      ${adminDataTable(["주제", "검색량", "조회량", "전환율"], demand.slice(0, 20).map((row) => [row.topic, formatCount(row.searches), formatCount(row.views), `${row.conversion}%`]), "수요 분석 데이터가 부족해요")}
-    </section>
-  `;
-}
-
-function renderAdminResourcesSection() {
-  const query = adminDashboardState.resourceQuery.trim().toLowerCase();
-  const list = resources
-    .filter((resource) => !resource.adminHidden)
-    .filter((resource) => !query || [resource.displayTitle, resource.title, resource.system, resource.intent, ...(resource.tags || [])].join(" ").toLowerCase().includes(query));
-  const editing = resources.find((resource) => resource.id === adminDashboardState.editingResourceId) || list[0] || resources[0];
-  if (!adminDashboardState.editingResourceId && editing) adminDashboardState.editingResourceId = editing.id;
-
-  return `
-    <div class="admin-grid-resources">
-      <section class="admin-card admin-resource-list-panel">
-        <div class="admin-card-head"><h2>자료 목록</h2><span>${list.length}개</span></div>
-        <input class="admin-search-input" data-admin-resource-search type="search" value="${escapeHtml(adminDashboardState.resourceQuery)}" placeholder="자료명, 계통, 해시태그 검색" />
-        <div class="admin-resource-list">
-          ${list.map((resource) => `
-            <button type="button" class="${editing?.id === resource.id ? "active" : ""}" data-admin-resource-edit="${escapeHtml(resource.id)}">
-              <strong>${escapeHtml(resource.displayTitle)}</strong>
-              <span>${escapeHtml(resource.system)} · ${escapeHtml(resource.intent)} · ${escapeHtml(resource.format)}</span>
-            </button>
-          `).join("")}
-        </div>
-      </section>
-      <section class="admin-card admin-editor-panel">
-        <div class="admin-card-head"><h2>자료 수정</h2><span>저장 즉시 현재 사이트에 반영</span></div>
-        ${editing ? adminResourceForm(editing, "data-admin-resource-form") : `<p class="admin-empty">수정할 자료가 없어요.</p>`}
-      </section>
-    </div>
-  `;
-}
-
-function renderAdminAddSection() {
-  const draft = createEmptyAdminResource();
-  return `
-    <section class="admin-card admin-editor-panel full">
-      <div class="admin-card-head"><h2>새 자료 추가</h2><span>Drive 링크 또는 파일 업로드</span></div>
-      <p class="admin-note">파일을 선택하면 Supabase Storage 업로드를 먼저 시도합니다. Storage 정책이 준비되지 않은 경우 현재 브라우저에서만 즉시 확인되는 임시 링크로 연결됩니다.</p>
-      ${adminResourceForm(draft, "data-admin-new-resource-form")}
-    </section>
-  `;
-}
-
-function adminResourceForm(resource, attr) {
-  return `
-    <form class="admin-form" ${attr}>
-      <input type="hidden" name="originalId" value="${escapeHtml(resource.id || "")}" />
-      <div class="admin-form-grid">
-        ${adminField("id", "자료 ID", resource.id, "예: pneumonia-case-study")}
-        ${adminField("displayTitle", "사이트 표시 제목", resource.displayTitle)}
-        ${adminField("title", "원본/영문 제목", resource.title)}
-        ${adminField("system", "계통 분류", resource.system, "신경계, 호흡기, 검사수치")}
-        ${adminField("intent", "자료 목적", resource.intent, "임상추론, 검사해석, 간호중재")}
-        ${adminField("stage", "난이도/단계", resource.stage, "기초, 핵심, 심화")}
-        ${adminField("format", "형식", resource.format, "PDF, Google Doc, DOCX")}
-        ${adminField("source", "자료 출처명", resource.source)}
-        ${adminField("url", "원본/다운로드 URL", resource.url, "Drive, Docs, Supabase 공개 URL")}
-        ${adminField("image", "썸네일 이미지 URL", resource.image || "", "선택")}
+      <div class="admin-card-head">
+        <h2>인기 검색어 TOP 20</h2>
+        <button type="button" data-admin-csv="searchTerms">CSV</button>
       </div>
-      <label class="admin-field wide"><span>자료 파일 업로드</span><input type="file" name="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" /></label>
-      ${adminTextarea("summary", "핵심 요약", resource.summary)}
-      ${adminTextarea("points", "핵심 포인트", (resource.points || []).join("\n"), "한 줄에 하나씩 입력")}
-      ${adminTextarea("useCase", "활용 상황", resource.useCase)}
-      ${adminTextarea("evidence", "근거/확인 내용", resource.evidence)}
-      ${adminTextarea("tags", "해시태그", (resource.tags || []).join(", "), "쉼표로 구분")}
-      ${adminTextarea("keywords", "검색 키워드", (resource.keywords || []).join(", "), "쉼표로 구분")}
-      ${adminField("related", "관련 자료 ID", (resource.related || []).join(", "), "쉼표로 구분")}
-      <div class="admin-form-actions">
-        <button type="submit">저장하기</button>
-        ${resource.id ? `<button type="button" class="danger" data-admin-resource-delete="${escapeHtml(resource.id)}">숨기기</button>` : ""}
-      </div>
-    </form>
-  `;
-}
-
-function renderAdminBannersSection() {
-  const notices = getStoredAdminBanners();
-  const defaults = getDefaultHomeNotices();
-  const editable = notices.length ? notices : defaults;
-  return `
-    <section class="admin-card admin-editor-panel full">
-      <div class="admin-card-head"><h2>홈배너 편집</h2><button type="button" data-admin-banner-reset>기본값 복구</button></div>
-      <form class="admin-form" data-admin-banner-form>
-        <div class="admin-banner-editor">
-          ${editable.slice(0, 3).map((notice, index) => `
-            <article>
-              <h3>배너 ${index + 1}</h3>
-              ${adminField(`label_${index}`, "라벨", notice.label)}
-              ${adminField(`badge_${index}`, "배지", notice.badge)}
-              ${adminField(`title_${index}`, "제목", notice.title)}
-              ${adminTextarea(`description_${index}`, "설명", notice.description)}
-              ${adminField(`query_${index}`, "버튼 검색어", notice.query)}
-              ${adminField(`action_${index}`, "버튼 문구", notice.action)}
-              ${adminField(`sourceLabel_${index}`, "링크 문구", notice.sourceLabel)}
-              ${adminField(`sourceUrl_${index}`, "링크 URL", notice.sourceUrl)}
-              ${adminField(`image_${index}`, "이미지 URL", notice.image)}
-              ${adminField(`tone_${index}`, "톤", notice.tone || "update")}
-            </article>
-          `).join("")}
-        </div>
-        <div class="admin-form-actions"><button type="submit">홈배너 저장</button></div>
-      </form>
+      ${barChartTemplate(filtered.searchTerms.slice(0, 10), "query", "search_count")}
+      ${adminDataTable(["검색어", "검색 횟수", "최근 검색일"], filtered.searchTerms.slice(0, 20).map((row) => [
+        row.query,
+        formatCount(row.search_count),
+        formatAdminDate(row.last_searched_at)
+      ]), "검색어 데이터가 없어요")}
     </section>
-  `;
-}
-
-function renderAdminPremiumSection() {
-  const settings = getAdminPremiumSettings();
-  return `
-    <section class="admin-card admin-editor-panel full">
-      <div class="admin-card-head"><h2>구매페이지 편집</h2><span>현재 양식의 문구와 가격 조정</span></div>
-      <form class="admin-form" data-admin-premium-form>
-        <div class="admin-form-grid">
-          ${adminField("productTitle", "상품명", settings.productTitle)}
-          ${adminField("heroTitle", "표지 제목", settings.heroTitle)}
-          ${adminField("subtitle", "상세 설명", settings.subtitle)}
-          ${adminField("price", "가격", settings.price)}
-          ${adminField("downloadCount", "다운로드 수", settings.downloadCount)}
-          ${adminField("studyTime", "학습 시간", settings.studyTime)}
-          ${adminField("updatedAt", "최종 업데이트", settings.updatedAt)}
-          ${adminField("difficulty", "난이도", settings.difficulty)}
-        </div>
-        ${adminTextarea("benefits", "구매 혜택", settings.benefits.join("\n"), "한 줄에 하나씩 입력")}
-        <div class="admin-form-actions"><button type="submit">구매페이지 저장</button></div>
-      </form>
-    </section>
-  `;
-}
-
-function renderAdminHashtagsSection() {
-  const active = resources.find((resource) => resource.id === adminDashboardState.activeTagResourceId) || resources.find((resource) => !resource.adminHidden) || resources[0];
-  if (active && !adminDashboardState.activeTagResourceId) adminDashboardState.activeTagResourceId = active.id;
-  const tagCounts = getTagCounts();
-  return `
-    <div class="admin-grid-2 tag-admin-grid">
-      <section class="admin-card">
-        <div class="admin-card-head"><h2>해시태그 현황</h2><span>${tagCounts.length}개</span></div>
-        <div class="admin-tag-cloud">${tagCounts.slice(0, 80).map(([tag, count]) => `<span>#${escapeHtml(tag)} <b>${count}</b></span>`).join("")}</div>
-      </section>
-      <section class="admin-card">
-        <div class="admin-card-head"><h2>자료별 태그 추가</h2><span>${escapeHtml(active?.displayTitle || "")}</span></div>
-        <div class="admin-resource-picker">
-          ${resources.filter((item) => !item.adminHidden).slice(0, 40).map((resource) => `<button type="button" class="${active?.id === resource.id ? "active" : ""}" data-admin-tag-resource="${escapeHtml(resource.id)}">${escapeHtml(resource.displayTitle)}</button>`).join("")}
-        </div>
-        <div class="admin-tag-cloud selected">${(active?.tags || []).map((tag) => `<span>#${escapeHtml(tag)}</span>`).join("")}</div>
-        <div class="admin-inline-editor"><input data-admin-new-tag placeholder="추가할 해시태그" /><button type="button" data-admin-add-tag>추가</button></div>
-      </section>
-    </div>
-  `;
-}
-
-function renderAdminSupabaseSection(data, kpis) {
-  return `
     <section class="admin-card">
-      <div class="admin-card-head"><h2>Supabase 이용자 데이터</h2><span>${supabaseConfig.enabled ? "연결됨" : "미연결"}</span></div>
-      <div class="admin-toolbar compact">
-        <div class="admin-period-tabs">${["today", "7d", "30d", "all"].map((period) => `<button type="button" class="${adminDashboardState.period === period ? "active" : ""}" data-admin-period="${period}">${adminPeriodLabel(period)}</button>`).join("")}</div>
-        <input data-admin-search type="search" value="${escapeHtml(adminDashboardState.query)}" placeholder="검색어, 자료명 검색" />
+      <div class="admin-card-head">
+        <h2>검색 실패어 TOP 20</h2>
+        <button type="button" data-admin-csv="noResults">CSV</button>
       </div>
-      <div class="admin-summary dashboard-kpis wide">
-        ${adminMetricTemplate("총 이벤트 수", kpis.totalEvents)}${adminMetricTemplate("총 검색 수", kpis.totalSearches)}${adminMetricTemplate("자료 조회", kpis.totalResourceViews)}${adminMetricTemplate("검색 실패", kpis.totalFailures)}${adminMetricTemplate("댓글", kpis.totalComments)}${adminMetricTemplate("7일 활성 사용자", kpis.activeUsers7d)}
+      ${lineChartTemplate(filtered.noResults.slice(0, 20))}
+      ${adminDataTable(["검색어", "실패 횟수", "마지막 검색일", "운영 판단"], filtered.noResults.slice(0, 20).map((row) => [
+        row.query,
+        formatCount(row.no_result_count),
+        formatAdminDate(row.last_searched_at),
+        row.no_result_count >= 3 ? `<span class="admin-badge danger">콘텐츠 제작 후보</span>` : `<span class="admin-badge">관찰</span>`
+      ]), "검색 실패 데이터가 없어요")}
+    </section>
+    <section class="admin-card">
+      <div class="admin-card-head">
+        <h2>인기 콘텐츠 TOP 20</h2>
+        <button type="button" data-admin-csv="popularResources">CSV</button>
+      </div>
+      ${barChartTemplate(filtered.popularResources.slice(0, 10), "resource_title", "open_count")}
+      ${adminDataTable(["제목", "조회수", "최근 조회일"], filtered.popularResources.slice(0, 20).map((row) => [
+        row.resource_title || row.resource_id,
+        formatCount(row.open_count),
+        formatAdminDate(row.last_opened_at)
+      ]), "인기 콘텐츠 데이터가 없어요")}
+    </section>
+    <section class="admin-card">
+      <div class="admin-card-head">
+        <h2>콘텐츠 수요 분석</h2>
+        <span>검색→조회 전환율</span>
+      </div>
+      ${adminDataTable(["주제", "검색량", "조회량", "전환율"], demand.slice(0, 20).map((row) => [
+        row.topic,
+        formatCount(row.searches),
+        formatCount(row.views),
+        `${row.conversion}%`
+      ]), "수요 분석 데이터가 부족해요")}
+    </section>
+    <section class="admin-card">
+      <div class="admin-card-head">
+        <h2>콘텐츠 갭 분석</h2>
+        <span>실패 3회 이상</span>
+      </div>
+      <div class="gap-list">
+        ${gaps.length ? gaps.map((row) => `
+          <article>
+            <strong>🔥 ${escapeHtml(row.query)}</strong>
+            <span>검색 실패 ${formatCount(row.no_result_count)}회 · 사용자 수요는 있으나 콘텐츠가 부족한 주제</span>
+          </article>
+        `).join("") : `<p class="admin-empty">현재 기준 콘텐츠 제작 추천 항목이 없어요.</p>`}
       </div>
     </section>
-    <div class="admin-grid-2">
-      <section class="admin-card"><div class="admin-card-head"><h2>인기 검색어 TOP 20</h2><button type="button" data-admin-csv="searchTerms">CSV</button></div>${barChartTemplate(data.searchTerms.slice(0, 10), "query", "search_count")}${adminDataTable(["검색어", "검색 횟수", "최근 검색일"], data.searchTerms.slice(0,20).map((row)=>[row.query, formatCount(row.search_count), formatAdminDate(row.last_searched_at)]), "검색어 데이터가 없어요")}</section>
-      <section class="admin-card"><div class="admin-card-head"><h2>검색 실패어 TOP 20</h2><button type="button" data-admin-csv="noResults">CSV</button></div>${lineChartTemplate(data.noResults.slice(0,20))}${adminDataTable(["검색어", "실패 횟수", "마지막 검색일", "판단"], data.noResults.slice(0,20).map((row)=>[row.query, formatCount(row.no_result_count), formatAdminDate(row.last_searched_at), row.no_result_count >= 3 ? `<span class="admin-badge danger">콘텐츠 제작 후보</span>` : `<span class="admin-badge">관찰</span>`]), "검색 실패 데이터가 없어요")}</section>
+    <section class="admin-card">
+      <div class="admin-card-head">
+        <h2>데이터 연결</h2>
+        <span>${supabaseConfig.enabled ? "Supabase 연결됨" : "미연결"}</span>
+      </div>
+      <p class="admin-note">검색어 길이 2 이하의 노이즈는 기본 숨김 처리됩니다. 기간 필터는 각 집계 row의 최근 활동일 기준으로 적용됩니다.</p>
+    </section>
+    <div class="admin-actions">
+      <button type="button" data-admin-export>JSON 내보내기</button>
+      <button type="button" data-supabase-test>Supabase 테스트</button>
     </div>
-    <section class="admin-card"><div class="admin-card-head"><h2>인기 콘텐츠 TOP 20</h2><button type="button" data-admin-csv="popularResources">CSV</button></div>${barChartTemplate(data.popularResources.slice(0, 10), "resource_title", "open_count")}${adminDataTable(["제목", "조회수", "최근 조회일"], data.popularResources.slice(0,20).map((row)=>[row.resource_title || row.resource_id, formatCount(row.open_count), formatAdminDate(row.last_opened_at)]), "인기 콘텐츠 데이터가 없어요")}</section>
-    <section class="admin-card"><div class="admin-card-head"><h2>연결 테스트</h2><button type="button" data-supabase-test>Supabase 테스트</button></div><p class="admin-note">현재 공개 anon key로 읽을 수 있는 Analytics view를 기준으로 표시합니다. 운영 데이터 원격 저장은 admin_resources/admin_content_settings 테이블이 있으면 자동 시도합니다.</p></section>
   `;
-}
 
-function renderAdminSettingsSection() {
-  return `
-    <section class="admin-card admin-editor-panel full">
-      <div class="admin-card-head"><h2>배포 도구</h2><span>정적 사이트 운영 보조</span></div>
-      <div class="admin-actions wide-actions">
-        <button type="button" data-admin-export>Analytics JSON 내보내기</button>
-        <button type="button" data-supabase-test>Supabase 테스트</button>
-      </div>
-      <p class="admin-note">GitHub Pages는 브라우저에서 repo 파일을 직접 수정할 수 없습니다. 지금 admin 저장은 현재 사이트 런타임과 브라우저 운영 저장소에 즉시 반영됩니다. 모든 사용자에게 자동 배포하려면 Supabase 테이블/Storage 또는 GitHub API 배포 권한을 연결해야 합니다.</p>
-      <pre class="admin-code-block">권장 Supabase 테이블\n- admin_resources: 자료 메타데이터\n- admin_content_settings: 홈배너/구매페이지 설정\n- Storage bucket: premium-files 또는 resources</pre>
-    </section>
-  `;
+  if (supabaseConfig.enabled && !adminDashboardState.data && !adminDashboardState.loading) {
+    loadAdminDashboardData();
+  }
 }
 
 function adminMetricTemplate(label, value) {
