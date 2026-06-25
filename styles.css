@@ -5339,6 +5339,17 @@ body.search-mode .premium-screen {
   text-decoration: none;
 }
 
+.premium-secondary-button {
+  min-height: 48px;
+  border: 1px solid #dce3ea !important;
+  border-radius: 8px;
+  background: #ffffff !important;
+  color: #4e5968 !important;
+  box-shadow: none !important;
+  font-weight: 900;
+}
+
+
 .premium-access-card.locked {
   background: #fbfcfd;
 }

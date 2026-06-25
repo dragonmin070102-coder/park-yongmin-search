@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-19";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-21";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -644,6 +644,13 @@ document.addEventListener("click", (event) => {
 });
 
 document.addEventListener("click", (event) => {
+  const refreshButton = event.target.closest("[data-admin-refresh]");
+  if (!refreshButton) return;
+
+  loadAdminDashboardData();
+});
+
+document.addEventListener("click", (event) => {
   const periodButton = event.target.closest("[data-admin-period]");
   if (!periodButton) return;
 
@@ -739,6 +746,13 @@ document.addEventListener("click", (event) => {
   if (!checkout) return;
 
   openBankTransferOrderModal(checkout.dataset.premiumCheckout);
+});
+
+document.addEventListener("click", (event) => {
+  const reset = event.target.closest("[data-premium-test-reset]");
+  if (!reset) return;
+
+  resetPremiumPurchaseTest(reset.dataset.premiumTestReset || "neuro-series-6");
 });
 
 document.addEventListener("submit", (event) => {
@@ -1265,28 +1279,6 @@ function renderPremiumScreen() {
       </div>
     </section>
 
-    <section class="premium-purchase-card">
-      <p>프리미엄 자료</p>
-      <h2>9,900원</h2>
-      <ul>
-        <li>결제 후 평생 소장</li>
-        <li>모바일/PC 다운로드 가능</li>
-        <li>무제한 열람</li>
-        <li>업데이트 시 추가 비용 없음</li>
-      </ul>
-      ${purchased ? `
-        <div class="premium-purchase-complete">
-          <strong>구매완료</strong>
-          <span>신경계 시리즈 6편 자료가 열렸어요.</span>
-        </div>
-        <a class="premium-primary-link" href="#premiumAccess">자료 보러가기</a>
-      ` : `
-        <button type="button" data-premium-checkout="neuro-series-6">계좌이체로 구매 신청</button>
-        <button type="button" data-premium-preview="neuro-series-6">구성 미리보기</button>
-        <span>입금 확인 후 주문번호로 자료 열람이 열립니다.</span>
-      `}
-    </section>
-
     ${renderBankTransferStatusPanel(activeOrder)}
 
     ${renderPremiumAccessPanel(purchased)}
@@ -1344,6 +1336,29 @@ function renderPremiumScreen() {
           </article>
         `).join("")}
       </div>
+    </section>
+
+    <section class="premium-purchase-card">
+      <p>프리미엄 자료</p>
+      <h2>9,900원</h2>
+      <ul>
+        <li>결제 후 평생 소장</li>
+        <li>모바일/PC 다운로드 가능</li>
+        <li>무제한 열람</li>
+        <li>업데이트 시 추가 비용 없음</li>
+      </ul>
+      ${purchased ? `
+        <div class="premium-purchase-complete">
+          <strong>구매완료</strong>
+          <span>신경계 시리즈 6편 자료가 열렸어요.</span>
+        </div>
+        <a class="premium-primary-link" href="#premiumAccess">자료 보러가기</a>
+        <button type="button" class="premium-secondary-button" data-premium-test-reset="neuro-series-6">운영자 테스트 초기화</button>
+      ` : `
+        <button type="button" data-premium-checkout="neuro-series-6">계좌이체로 구매 신청</button>
+        <button type="button" data-premium-preview="neuro-series-6">구성 미리보기</button>
+        <span>입금 확인 후 주문번호로 자료 열람이 열립니다.</span>
+      `}
     </section>
 
     <section class="premium-section premium-social-proof">
@@ -1758,6 +1773,17 @@ function completePremiumPurchase(productId) {
   showToast("구매완료! 자료가 열렸어요");
   renderPremiumScreen();
   document.querySelector("#premiumAccess")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function resetPremiumPurchaseTest(productId) {
+  safeStorageRemove(`pym.premiumAccess.`);
+  safeStorageRemove(`pym.premiumAccessAt.`);
+  const remainingOrders = readBankTransferOrders().filter((order) => order.productId !== productId);
+  writeBankTransferOrders(remainingOrders);
+  trackEvent("premium_purchase_test_reset", { productId });
+  showToast("구매 테스트 상태를 초기화했어요");
+  renderPremiumScreen();
+  document.querySelector("#premium")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function premiumFileHref(file) {
@@ -3555,6 +3581,7 @@ function syncAdminRoute() {
   if (isAdmin) {
     renderAnalyticsAdmin();
     trackEvent("admin_view");
+    loadAdminDashboardData();
     window.scrollTo({ top: 0, behavior: "auto" });
     return;
   }
@@ -3680,6 +3707,7 @@ function renderAnalyticsAdmin() {
       <p class="admin-note">검색어 길이 2 이하의 노이즈는 기본 숨김 처리됩니다. 기간 필터는 analytics_events 원본 이벤트를 먼저 자른 뒤 다시 집계합니다.</p>
     </section>
     <div class="admin-actions">
+      <button type="button" data-admin-refresh>데이터 새로고침</button>
       <button type="button" data-admin-export>JSON 내보내기</button>
       <button type="button" data-supabase-test>Supabase 테스트</button>
     </div>
@@ -3721,7 +3749,7 @@ function premiumOperatingSettingsAdminTemplate() {
   `;
 }
 
-function savePremiumOperatingSettings(form) {
+async function savePremiumOperatingSettings(form) {
   const formData = new FormData(form);
   const account = {
     bank: String(formData.get("bank") || "").trim() || DEFAULT_BANK_TRANSFER_ACCOUNT.bank,
@@ -3738,8 +3766,19 @@ function savePremiumOperatingSettings(form) {
   safeStorageSet("pym.bankTransferAccount", JSON.stringify(account));
   safeStorageSet("pym.premiumFileLinks", JSON.stringify(fileLinks));
   trackEvent("premium_operating_settings_update", { account, fileLinks, updatedAt: new Date().toISOString() });
-  flushRemoteAnalytics({ silent: true, limit: 20 });
-  showToast("계좌와 자료 링크를 저장했어요");
+  const button = form.querySelector("button[type='submit']");
+  if (button) {
+    button.disabled = true;
+    button.textContent = "저장 중...";
+  }
+
+  const synced = await flushRemoteAnalytics({ silent: true, limit: 20 });
+  showToast(supabaseConfig.enabled && synced ? "계좌와 자료 링크를 서버에 저장했어요" : "이 기기에 저장했어요. Supabase 연결을 확인해주세요");
+
+  if (button) {
+    button.disabled = false;
+    button.textContent = "계좌/자료 링크 저장";
+  }
   renderAnalyticsAdmin();
   renderPremiumScreen();
 }
@@ -3785,7 +3824,8 @@ function adminMetricTemplate(label, value) {
 
 async function loadAdminDashboardData() {
   if (!supabaseConfig.enabled) {
-    adminDashboardState.error = "Supabase 연결 정보가 필요합니다.";
+    adminDashboardState.data = buildAdminDashboardDataFromEvents(readAnalyticsEvents(), []);
+    adminDashboardState.error = "Supabase 연결 전이라 이 브라우저의 로컬 기록을 표시 중이에요.";
     renderAnalyticsAdmin();
     return;
   }
@@ -3794,24 +3834,38 @@ async function loadAdminDashboardData() {
   adminDashboardState.error = "";
   renderAnalyticsAdmin();
 
+  await flushRemoteAnalytics({ silent: true, limit: 120 });
+
   try {
     const [rawEvents, trendComments, resourceComments, bankOrders] = await Promise.all([
-      supabaseRequest("analytics_events?select=event_name,anonymous_user_id,created_at,properties&order=created_at.desc&limit=5000"),
+      supabaseRequest("analytics_events?select=event_id,event_name,anonymous_user_id,created_at,properties&order=created_at.desc&limit=5000"),
       supabaseRequest("trend_comments?select=id,article_id,nickname,body,likes,created_at&hidden=eq.false&order=created_at.desc&limit=1000").catch(() => []),
       supabaseRequest("resource_comments?select=id,resource_id,nickname,body,likes,created_at&hidden=eq.false&order=created_at.desc&limit=1000").catch(() => []),
       supabaseRequest("bank_transfer_orders?select=*&order=created_at.desc&limit=300").catch(() => [])
     ]);
 
-    adminDashboardState.data = buildAdminDashboardDataFromEvents(rawEvents, [
+    const mergedRawEvents = mergeAdminEvents(rawEvents, readAnalyticsEvents());
+    adminDashboardState.data = buildAdminDashboardDataFromEvents(mergedRawEvents, [
       ...trendComments.map((row) => ({ ...row, comment_type: "trend" })),
       ...resourceComments.map((row) => ({ ...row, comment_type: "resource", article_id: row.resource_id }))
     ], bankOrders.map(fromBankTransferOrderRow));
   } catch {
-    adminDashboardState.error = "Supabase 원본 이벤트를 불러오지 못했어요. analytics_events select 정책과 SQL 실행 상태를 확인해 주세요.";
+    adminDashboardState.data = buildAdminDashboardDataFromEvents(readAnalyticsEvents(), []);
+    adminDashboardState.error = "Supabase 원본 이벤트를 불러오지 못해 이 브라우저의 로컬 기록을 표시 중이에요. Supabase 테스트를 눌러 연결을 확인해 주세요.";
   } finally {
     adminDashboardState.loading = false;
     renderAnalyticsAdmin();
   }
+}
+
+function mergeAdminEvents(...sources) {
+  const lookup = new Map();
+  sources.flat().map(normalizeAdminEvent).forEach((event) => {
+    if (!event.created_at) return;
+    const key = event.event_id || [event.event_name, event.created_at, JSON.stringify(event.properties || {})].join(":");
+    lookup.set(key, event);
+  });
+  return Array.from(lookup.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 }
 
 function normalizeAdminRows(rows, labelKey, countKey, dateKey) {
@@ -3845,6 +3899,7 @@ function buildAdminDashboardDataFromEvents(events, comments = [], bankOrders = [
 
 function normalizeAdminEvent(event) {
   return {
+    event_id: event.event_id || event.id || "",
     event_name: event.event_name || event.name || "",
     anonymous_user_id: event.anonymous_user_id || event.userId || "",
     created_at: event.created_at || event.createdAt || "",
