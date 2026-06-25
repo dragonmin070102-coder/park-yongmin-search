@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-17";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-19";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -336,6 +336,7 @@ trackEvent("page_view", {
   resourceCount: resources.length
 });
 flushRemoteAnalytics();
+loadRemotePremiumOperatingSettings();
 syncAdminRoute();
 
 categoryGrid.addEventListener("click", (event) => {
@@ -705,6 +706,15 @@ document.addEventListener("click", (event) => {
   if (!testButton) return;
 
   testSupabaseConnection();
+});
+
+
+document.addEventListener("submit", (event) => {
+  const form = event.target.closest("[data-premium-operating-form]");
+  if (!form) return;
+
+  event.preventDefault();
+  savePremiumOperatingSettings(form);
 });
 
 document.addEventListener("click", (event) => {
@@ -1386,12 +1396,47 @@ function premiumDocPreviewCard(card, index) {
 
 
 
-const BANK_TRANSFER_ACCOUNT = {
+const DEFAULT_BANK_TRANSFER_ACCOUNT = {
   bank: "입금 계좌 설정 필요",
   holder: "박용민",
   number: "계좌번호를 입력해주세요",
   amount: "9,900원"
 };
+
+
+function getBankTransferAccount() {
+  return { ...DEFAULT_BANK_TRANSFER_ACCOUNT, ...readJsonObject("pym.bankTransferAccount") };
+}
+
+function getPremiumFileLinks() {
+  return readJsonObject("pym.premiumFileLinks");
+}
+
+function premiumOperatingSettingsPayload() {
+  return {
+    account: getBankTransferAccount(),
+    fileLinks: getPremiumFileLinks(),
+    updatedAt: new Date().toISOString()
+  };
+}
+
+async function loadRemotePremiumOperatingSettings() {
+  if (!supabaseConfig.enabled) return;
+  try {
+    const rows = await supabaseRequest("analytics_events?select=event_name,created_at,properties&event_name=eq.premium_operating_settings_update&order=created_at.desc&limit=1");
+    const settings = rows[0]?.properties || null;
+    if (!settings) return;
+    applyPremiumOperatingSettings(settings);
+  } catch {
+    // Operating settings can still work locally if Supabase is unavailable.
+  }
+}
+
+function applyPremiumOperatingSettings(settings) {
+  if (settings.account) safeStorageSet("pym.bankTransferAccount", JSON.stringify(settings.account));
+  if (settings.fileLinks) safeStorageSet("pym.premiumFileLinks", JSON.stringify(settings.fileLinks));
+  renderPremiumScreen();
+}
 
 function readBankTransferOrders() {
   return readJsonArray("pym.bankTransferOrders");
@@ -1474,7 +1519,8 @@ function bankTransferOrderPayload(order) {
     memo: order.memo || "",
     status: order.status || "pending",
     createdAt: order.createdAt,
-    approvedAt: order.approvedAt || ""
+    approvedAt: order.approvedAt || "",
+    fileLinks: order.fileLinks || getPremiumFileLinks()
   };
 }
 
@@ -1487,7 +1533,7 @@ function orderFromAnalyticsEvent(event) {
     id: orderId,
     productId: props.productId || "neuro-series-6",
     productTitle: props.productTitle || "신경계 임상추론 6편 패키지",
-    amount: props.amount || BANK_TRANSFER_ACCOUNT.amount,
+    amount: props.amount || getBankTransferAccount().amount,
     depositor: props.depositor || "입금자명 미기록",
     email: props.email || "이메일 미기록",
     phoneLast4: props.phoneLast4 || "",
@@ -1495,7 +1541,8 @@ function orderFromAnalyticsEvent(event) {
     status: approved ? "approved" : "pending",
     createdAt: props.createdAt || event.created_at,
     approvedAt: approved ? (props.approvedAt || event.created_at) : "",
-    updatedAt: event.created_at
+    updatedAt: event.created_at,
+    fileLinks: props.fileLinks || {}
   };
 }
 
@@ -1521,10 +1568,10 @@ function openBankTransferOrderModal(productId) {
       <h2 id="bankTransferTitle">신경계 시리즈 구매 신청</h2>
       <p>입금자 정보를 남기고 아래 계좌로 이체하면 운영자가 입금 확인 후 자료 열람을 승인합니다.</p>
       <div class="bank-account-card">
-        <span>입금액</span><strong>${escapeHtml(BANK_TRANSFER_ACCOUNT.amount)}</strong>
-        <span>은행</span><strong>${escapeHtml(BANK_TRANSFER_ACCOUNT.bank)}</strong>
-        <span>계좌</span><strong>${escapeHtml(BANK_TRANSFER_ACCOUNT.number)}</strong>
-        <span>예금주</span><strong>${escapeHtml(BANK_TRANSFER_ACCOUNT.holder)}</strong>
+        <span>입금액</span><strong>${escapeHtml(getBankTransferAccount().amount)}</strong>
+        <span>은행</span><strong>${escapeHtml(getBankTransferAccount().bank)}</strong>
+        <span>계좌</span><strong>${escapeHtml(getBankTransferAccount().number)}</strong>
+        <span>예금주</span><strong>${escapeHtml(getBankTransferAccount().holder)}</strong>
       </div>
       <form class="bank-order-form" data-bank-order-form>
         <input type="hidden" name="productId" value="${escapeHtml(productId)}" />
@@ -1557,7 +1604,7 @@ function submitBankTransferOrder(form) {
     id: createBankOrderCode(),
     productId,
     productTitle: "신경계 임상추론 6편 패키지",
-    amount: BANK_TRANSFER_ACCOUNT.amount,
+    amount: getBankTransferAccount().amount,
     depositor,
     email,
     phoneLast4,
@@ -1583,9 +1630,9 @@ function renderBankOrderSubmitted(order) {
       <p>아래 정보로 입금 후 운영자가 승인하면, 이 주문번호로 자료 열람을 열 수 있습니다.</p>
       <div class="bank-account-card">
         <span>입금액</span><strong>${escapeHtml(order.amount)}</strong>
-        <span>은행</span><strong>${escapeHtml(BANK_TRANSFER_ACCOUNT.bank)}</strong>
-        <span>계좌</span><strong>${escapeHtml(BANK_TRANSFER_ACCOUNT.number)}</strong>
-        <span>예금주</span><strong>${escapeHtml(BANK_TRANSFER_ACCOUNT.holder)}</strong>
+        <span>은행</span><strong>${escapeHtml(getBankTransferAccount().bank)}</strong>
+        <span>계좌</span><strong>${escapeHtml(getBankTransferAccount().number)}</strong>
+        <span>예금주</span><strong>${escapeHtml(getBankTransferAccount().holder)}</strong>
       </div>
       <button type="button" data-close-modal>확인</button>
     </div>
@@ -1621,10 +1668,10 @@ function renderBankTransferStatusPanel(order) {
   `;
 }
 
-function verifyBankTransferOrder(form) {
+async function verifyBankTransferOrder(form) {
   const formData = new FormData(form);
   const orderCode = String(formData.get("orderCode") || "").trim().toUpperCase();
-  const order = readBankTransferOrders().find((item) => item.id.toUpperCase() === orderCode);
+  const order = await findBankTransferOrderByCode(orderCode);
   if (!order) {
     showToast("주문번호를 찾지 못했어요");
     return;
@@ -1633,12 +1680,31 @@ function verifyBankTransferOrder(form) {
     showToast("아직 입금 확인 대기 상태예요");
     return;
   }
+  if (order.fileLinks && Object.keys(order.fileLinks).length) {
+    safeStorageSet("pym.premiumFileLinks", JSON.stringify(order.fileLinks));
+  }
   safeStorageSet(`pym.premiumAccess.${order.productId}`, "true");
   safeStorageSet(`pym.premiumAccessAt.${order.productId}`, order.approvedAt || new Date().toISOString());
   trackEvent("bank_transfer_order_verified", { orderId: order.id, productId: order.productId });
   showToast("승인 확인 완료! 자료가 열렸어요");
   renderPremiumScreen();
   document.querySelector("#premiumAccess")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function findBankTransferOrderByCode(orderCode) {
+  if (!orderCode) return null;
+  const local = mergeBankTransferOrders(readBankTransferOrders(), adminDashboardState.data?.bankOrders || [])
+    .find((item) => String(item.id || "").toUpperCase() === orderCode);
+  if (local) return local;
+
+  if (!supabaseConfig.enabled) return null;
+  try {
+    const rows = await supabaseRequest("analytics_events?select=event_name,created_at,properties&event_name=in.(bank_transfer_order_submit,bank_transfer_order_approve)&order=created_at.desc&limit=1000");
+    return extractBankTransferOrdersFromEvents(rows.map(normalizeAdminEvent))
+      .find((item) => String(item.id || "").toUpperCase() === orderCode) || null;
+  } catch {
+    return null;
+  }
 }
 
 function approveBankTransferOrder(orderId) {
@@ -1649,7 +1715,7 @@ function approveBankTransferOrder(orderId) {
     return;
   }
 
-  const approvedOrder = { ...sourceOrder, status: "approved", approvedAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+  const approvedOrder = { ...sourceOrder, status: "approved", approvedAt: new Date().toISOString(), updatedAt: new Date().toISOString(), fileLinks: getPremiumFileLinks() };
   const updated = mergeBankTransferOrders(localOrders.filter((order) => order.id !== orderId), [approvedOrder]);
   writeBankTransferOrders(updated);
   safeStorageSet(`pym.premiumAccess.${approvedOrder.productId}`, "true");
@@ -1695,7 +1761,7 @@ function completePremiumPurchase(productId) {
 }
 
 function premiumFileHref(file) {
-  const overrideMap = readJsonObject("pym.premiumFileLinks");
+  const overrideMap = getPremiumFileLinks();
   const override = overrideMap[file.number] || overrideMap[file.fileName] || "";
   if (override) return override;
   return `./assets/premium/${file.fileName}`;
@@ -3604,6 +3670,7 @@ function renderAnalyticsAdmin() {
         `).join("") : `<p class="admin-empty">현재 기준 콘텐츠 제작 추천 항목이 없어요.</p>`}
       </div>
     </section>
+    ${premiumOperatingSettingsAdminTemplate()}
     ${bankTransferOrdersAdminTemplate()}
     <section class="admin-card">
       <div class="admin-card-head">
@@ -3621,6 +3688,60 @@ function renderAnalyticsAdmin() {
   if (supabaseConfig.enabled && !adminDashboardState.data && !adminDashboardState.loading) {
     loadAdminDashboardData();
   }
+}
+
+function premiumOperatingSettingsAdminTemplate() {
+  const account = getBankTransferAccount();
+  const links = getPremiumFileLinks();
+  return `
+    <section class="admin-card premium-operating-card">
+      <div class="admin-card-head">
+        <h2>계좌/자료 링크 설정</h2>
+        <span>실사용 필수</span>
+      </div>
+      <form class="premium-operating-form" data-premium-operating-form>
+        <div class="premium-operating-grid">
+          <label><span>은행</span><input name="bank" value="${escapeHtml(account.bank)}" placeholder="예: 카카오뱅크" /></label>
+          <label><span>예금주</span><input name="holder" value="${escapeHtml(account.holder)}" placeholder="예: 박용민" /></label>
+          <label><span>계좌번호</span><input name="number" value="${escapeHtml(account.number)}" placeholder="계좌번호" /></label>
+          <label><span>금액</span><input name="amount" value="${escapeHtml(account.amount)}" placeholder="9,900원" /></label>
+        </div>
+        <div class="premium-link-grid">
+          ${premiumDownloadFiles.map((file) => `
+            <label>
+              <span>${escapeHtml(file.number)}. ${escapeHtml(file.title)}</span>
+              <input name="file_${escapeHtml(file.number)}" value="${escapeHtml(links[file.number] || links[file.fileName] || "")}" placeholder="Drive 또는 Supabase 파일 링크" />
+            </label>
+          `).join("")}
+        </div>
+        <button type="submit">계좌/자료 링크 저장</button>
+      </form>
+      <p class="admin-note">저장하면 Supabase analytics 이벤트에도 남겨 구매자 화면에서 최신 계좌와 승인 후 파일 링크를 불러옵니다.</p>
+    </section>
+  `;
+}
+
+function savePremiumOperatingSettings(form) {
+  const formData = new FormData(form);
+  const account = {
+    bank: String(formData.get("bank") || "").trim() || DEFAULT_BANK_TRANSFER_ACCOUNT.bank,
+    holder: String(formData.get("holder") || "").trim() || DEFAULT_BANK_TRANSFER_ACCOUNT.holder,
+    number: String(formData.get("number") || "").trim() || DEFAULT_BANK_TRANSFER_ACCOUNT.number,
+    amount: String(formData.get("amount") || "").trim() || DEFAULT_BANK_TRANSFER_ACCOUNT.amount
+  };
+  const fileLinks = {};
+  premiumDownloadFiles.forEach((file) => {
+    const link = String(formData.get(`file_${file.number}`) || "").trim();
+    if (link) fileLinks[file.number] = link;
+  });
+
+  safeStorageSet("pym.bankTransferAccount", JSON.stringify(account));
+  safeStorageSet("pym.premiumFileLinks", JSON.stringify(fileLinks));
+  trackEvent("premium_operating_settings_update", { account, fileLinks, updatedAt: new Date().toISOString() });
+  flushRemoteAnalytics({ silent: true, limit: 20 });
+  showToast("계좌와 자료 링크를 저장했어요");
+  renderAnalyticsAdmin();
+  renderPremiumScreen();
 }
 
 function bankTransferOrdersAdminTemplate() {
