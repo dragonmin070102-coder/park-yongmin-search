@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-23";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-24";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -734,6 +734,12 @@ document.addEventListener("click", (event) => {
 });
 
 window.addEventListener("hashchange", syncAdminRoute);
+window.addEventListener("error", (event) => {
+  if (window.location.hash === "#admin") renderAdminFallback(event.error || new Error(event.message));
+});
+window.addEventListener("unhandledrejection", (event) => {
+  if (window.location.hash === "#admin") renderAdminFallback(event.reason instanceof Error ? event.reason : new Error(String(event.reason || "Promise rejection")));
+});
 window.addEventListener("pagehide", () => flushRemoteAnalytics({ silent: true, limit: 20 }));
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden") {
@@ -3593,9 +3599,13 @@ function syncAdminRoute() {
   document.body.classList.toggle("admin-mode", isAdmin);
 
   if (isAdmin) {
-    renderAnalyticsAdmin();
-    trackEvent("admin_view");
-    loadAdminDashboardData();
+    try {
+      renderAnalyticsAdmin();
+      trackEvent("admin_view");
+      loadAdminDashboardData();
+    } catch (error) {
+      renderAdminFallback(error);
+    }
     window.scrollTo({ top: 0, behavior: "auto" });
     return;
   }
@@ -3605,6 +3615,34 @@ function syncAdminRoute() {
     window.scrollTo({ top: 0, behavior: "auto" });
   }
 }
+
+
+function renderAdminFallback(error) {
+  analyticsAdmin.hidden = false;
+  document.body.classList.add("admin-mode");
+  const message = error?.message || "알 수 없는 오류";
+  analyticsContent.innerHTML = `
+    <section class="admin-hero">
+      <p class="eyebrow">Admin recovery</p>
+      <h2>어드민 화면을 복구했어요</h2>
+      <p>렌더 중 오류가 발생해서 안전 모드로 열었습니다. 아래 버튼으로 로컬 기록 기준 대시보드를 다시 불러올 수 있어요.</p>
+    </section>
+    <section class="admin-card">
+      <div class="admin-card-head">
+        <h2>오류 내용</h2>
+        <span>진단</span>
+      </div>
+      <p class="admin-note">${escapeHtml(message)}</p>
+      <div class="admin-actions inline">
+        <button type="button" data-admin-refresh>다시 불러오기</button>
+        <button type="button" data-supabase-test>Supabase 테스트</button>
+      </div>
+    </section>
+    ${premiumOperatingSettingsAdminTemplate()}
+    ${bankTransferOrdersAdminTemplate()}
+  `;
+}
+
 
 function renderAnalyticsAdmin() {
   const data = adminDashboardState.data || buildEmptyAdminDashboardData();
@@ -4362,6 +4400,17 @@ function escapeHtml(value) {
 }
 })().catch((error) => {
   console.error("PYM app failed to initialize", error);
+  if (window.location.hash === "#admin") {
+    document.body.classList.add("admin-mode");
+    const admin = document.querySelector("#analyticsAdmin");
+    const content = document.querySelector("#analyticsContent");
+    if (admin) admin.hidden = false;
+    if (content) {
+      content.innerHTML = `<section class="admin-hero"><p class="eyebrow">Admin recovery</p><h2>어드민 화면을 복구했어요</h2><p>앱 초기화 중 오류가 발생했습니다. 새로고침 후에도 반복되면 아래 오류 내용을 알려주세요.</p></section><section class="admin-card"><div class="admin-card-head"><h2>오류 내용</h2><span>진단</span></div><p class="admin-note"></p></section>`;
+      const note = content.querySelector(".admin-note");
+      if (note) note.textContent = error?.message || "알 수 없는 오류";
+    }
+  }
   const fallback = document.querySelector("#bottomTabs");
   if (fallback) {
     fallback.innerHTML = `
