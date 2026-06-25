@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-14";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-15";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -1399,6 +1399,66 @@ function writeBankTransferOrders(orders) {
   safeStorageSet("pym.bankTransferOrders", JSON.stringify(orders.slice(-200)));
 }
 
+
+function mergeBankTransferOrders(...groups) {
+  const map = new Map();
+  groups.flat().filter(Boolean).forEach((order) => {
+    if (!order.id) return;
+    const existing = map.get(order.id);
+    if (!existing || new Date(order.updatedAt || order.approvedAt || order.createdAt || 0) >= new Date(existing.updatedAt || existing.approvedAt || existing.createdAt || 0)) {
+      map.set(order.id, order);
+    }
+  });
+  return Array.from(map.values()).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+}
+
+function getAdminBankTransferOrders() {
+  return mergeBankTransferOrders(readBankTransferOrders(), adminDashboardState.data?.bankOrders || []);
+}
+
+async function pushBankTransferOrderToSupabase(order) {
+  if (!supabaseConfig.enabled) return;
+  await supabaseRequest("bank_transfer_orders?on_conflict=id", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates" },
+    body: JSON.stringify(toBankTransferOrderRow(order))
+  }).catch(() => null);
+}
+
+function toBankTransferOrderRow(order) {
+  return {
+    id: order.id,
+    product_id: order.productId,
+    product_title: order.productTitle,
+    amount: order.amount,
+    depositor: order.depositor,
+    email: order.email,
+    phone_last4: order.phoneLast4 || "",
+    memo: order.memo || "",
+    status: order.status || "pending",
+    created_at: order.createdAt,
+    approved_at: order.approvedAt || null,
+    updated_at: new Date().toISOString()
+  };
+}
+
+function fromBankTransferOrderRow(row) {
+  return {
+    id: row.id,
+    productId: row.product_id,
+    productTitle: row.product_title,
+    amount: row.amount,
+    depositor: row.depositor,
+    email: row.email,
+    phoneLast4: row.phone_last4 || "",
+    memo: row.memo || "",
+    status: row.status || "pending",
+    createdAt: row.created_at,
+    approvedAt: row.approved_at || "",
+    updatedAt: row.updated_at || row.approved_at || row.created_at
+  };
+}
+
 function getLatestBankTransferOrder(productId) {
   return readBankTransferOrders()
     .filter((order) => order.productId === productId)
@@ -1461,7 +1521,9 @@ function submitBankTransferOrder(form) {
   };
   const orders = [...readBankTransferOrders(), order];
   writeBankTransferOrders(orders);
+  pushBankTransferOrderToSupabase(order);
   trackEvent("bank_transfer_order_submit", { productId, orderId: order.id, amount: order.amount });
+  if (!analyticsAdmin.hidden) renderAnalyticsAdmin();
   renderBankOrderSubmitted(order);
 }
 
@@ -1540,6 +1602,7 @@ function approveBankTransferOrder(orderId) {
   if (order) {
     safeStorageSet(`pym.premiumAccess.${order.productId}`, "true");
     safeStorageSet(`pym.premiumAccessAt.${order.productId}`, order.approvedAt);
+    pushBankTransferOrderToSupabase(order);
   }
   trackEvent("bank_transfer_order_approve", { orderId });
   showToast("입금 확인 처리했어요");
@@ -3494,7 +3557,7 @@ function renderAnalyticsAdmin() {
 }
 
 function bankTransferOrdersAdminTemplate() {
-  const orders = readBankTransferOrders().slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const orders = getAdminBankTransferOrders();
   return `
     <section class="admin-card bank-admin-card">
       <div class="admin-card-head">
@@ -3544,16 +3607,17 @@ async function loadAdminDashboardData() {
   renderAnalyticsAdmin();
 
   try {
-    const [rawEvents, trendComments, resourceComments] = await Promise.all([
+    const [rawEvents, trendComments, resourceComments, bankOrders] = await Promise.all([
       supabaseRequest("analytics_events?select=event_name,anonymous_user_id,created_at,properties&order=created_at.desc&limit=5000"),
       supabaseRequest("trend_comments?select=id,article_id,nickname,body,likes,created_at&hidden=eq.false&order=created_at.desc&limit=1000").catch(() => []),
-      supabaseRequest("resource_comments?select=id,resource_id,nickname,body,likes,created_at&hidden=eq.false&order=created_at.desc&limit=1000").catch(() => [])
+      supabaseRequest("resource_comments?select=id,resource_id,nickname,body,likes,created_at&hidden=eq.false&order=created_at.desc&limit=1000").catch(() => []),
+      supabaseRequest("bank_transfer_orders?select=*&order=created_at.desc&limit=300").catch(() => [])
     ]);
 
     adminDashboardState.data = buildAdminDashboardDataFromEvents(rawEvents, [
       ...trendComments.map((row) => ({ ...row, comment_type: "trend" })),
       ...resourceComments.map((row) => ({ ...row, comment_type: "resource", article_id: row.resource_id }))
-    ]);
+    ], bankOrders.map(fromBankTransferOrderRow));
   } catch {
     adminDashboardState.error = "Supabase 원본 이벤트를 불러오지 못했어요. analytics_events select 정책과 SQL 실행 상태를 확인해 주세요.";
   } finally {
@@ -3577,12 +3641,13 @@ function buildEmptyAdminDashboardData() {
   return buildAdminDashboardDataFromEvents(readAnalyticsEvents(), []);
 }
 
-function buildAdminDashboardDataFromEvents(events, comments = []) {
+function buildAdminDashboardDataFromEvents(events, comments = [], bankOrders = []) {
   const rawEvents = events.map(normalizeAdminEvent).filter((event) => event.created_at);
   return {
     rawEvents,
     allRawEvents: rawEvents,
     comments,
+    bankOrders,
     searchTerms: aggregateSearchTerms(rawEvents),
     noResults: aggregateNoResultTerms(rawEvents),
     popularResources: aggregatePopularResources(rawEvents)
