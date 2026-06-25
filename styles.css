@@ -5697,13 +5697,18 @@ body.search-mode .premium-screen {
 
 /* Desktop admin operating center */
 body.admin-mode {
-  min-width: 1024px;
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
   background: #f7f8fa;
 }
 
 body.admin-mode .analytics-admin {
-  width: min(1180px, calc(100% - 48px));
+  display: block;
+  width: min(1180px, calc(100vw - 32px));
   max-width: none;
+  min-width: 0;
+  margin: 0 auto;
   padding: 0 0 56px;
 }
 
@@ -5791,4 +5796,33 @@ body.admin-mode .admin-card {
   color: #8b95a1;
   font-size: 11px;
   font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  body.admin-mode {
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  body.admin-mode .analytics-admin {
+    width: 100%;
+    padding: 0 14px 44px;
+  }
+
+  body.admin-mode #analyticsContent {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  body.admin-mode #analyticsContent > .admin-card,
+  body.admin-mode #analyticsContent > .premium-funnel-card,
+  body.admin-mode #analyticsContent > .insight-card,
+  body.admin-mode #analyticsContent > .premium-operating-card,
+  body.admin-mode #analyticsContent > .bank-admin-card {
+    grid-column: 1 / -1;
+  }
+
+  body.admin-mode .dashboard-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
