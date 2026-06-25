@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-21";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-22";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -1776,8 +1776,10 @@ function completePremiumPurchase(productId) {
 }
 
 function resetPremiumPurchaseTest(productId) {
-  safeStorageRemove(`pym.premiumAccess.`);
-  safeStorageRemove(`pym.premiumAccessAt.`);
+  safeStorageRemove("pym.premiumAccess." + productId);
+  safeStorageRemove("pym.premiumAccessAt." + productId);
+  safeStorageRemove("pym.premiumAccess.");
+  safeStorageRemove("pym.premiumAccessAt.");
   const remainingOrders = readBankTransferOrders().filter((order) => order.productId !== productId);
   writeBankTransferOrders(remainingOrders);
   trackEvent("premium_purchase_test_reset", { productId });
