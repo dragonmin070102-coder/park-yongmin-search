@@ -5826,3 +5826,43 @@ body.admin-mode .admin-card {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* Force admin to use a desktop canvas, not the mobile app frame */
+body.admin-mode::before,
+body.admin-mode::after {
+  display: none !important;
+}
+
+body.admin-mode .analytics-admin {
+  width: 1180px !important;
+  max-width: none !important;
+  min-width: 1180px !important;
+  margin: 0 auto !important;
+}
+
+@media (max-width: 1180px) {
+  body.admin-mode {
+    overflow-x: auto !important;
+  }
+
+  body.admin-mode .analytics-admin {
+    margin-left: 16px !important;
+    margin-right: 16px !important;
+  }
+
+  body.admin-mode #analyticsContent {
+    grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+  }
+
+  body.admin-mode #analyticsContent > .admin-card,
+  body.admin-mode #analyticsContent > .premium-funnel-card,
+  body.admin-mode #analyticsContent > .insight-card,
+  body.admin-mode #analyticsContent > .premium-operating-card,
+  body.admin-mode #analyticsContent > .bank-admin-card {
+    grid-column: span 6 !important;
+  }
+
+  body.admin-mode .dashboard-kpis {
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  }
+}
