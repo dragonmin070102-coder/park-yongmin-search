@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-11";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-13";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -3257,7 +3257,7 @@ function renderAnalyticsAdmin() {
         <h2>데이터 연결</h2>
         <span>${supabaseConfig.enabled ? "Supabase 연결됨" : "미연결"}</span>
       </div>
-      <p class="admin-note">검색어 길이 2 이하의 노이즈는 기본 숨김 처리됩니다. 기간 필터는 각 집계 row의 최근 활동일 기준으로 적용됩니다.</p>
+      <p class="admin-note">검색어 길이 2 이하의 노이즈는 기본 숨김 처리됩니다. 기간 필터는 analytics_events 원본 이벤트를 먼저 자른 뒤 다시 집계합니다.</p>
     </section>
     <div class="admin-actions">
       <button type="button" data-admin-export>JSON 내보내기</button>
@@ -3291,27 +3291,18 @@ async function loadAdminDashboardData() {
   renderAnalyticsAdmin();
 
   try {
-    const [searchTerms, noResults, popularResources, comments, rawEvents] = await Promise.all([
-      supabaseRequest("analytics_search_terms?select=query,search_count,last_searched_at&order=search_count.desc&limit=200"),
-      supabaseRequest("analytics_no_result_terms?select=query,no_result_count,last_searched_at&order=no_result_count.desc&limit=200"),
-      supabaseRequest("analytics_popular_resources?select=resource_id,resource_title,open_count,last_opened_at&order=open_count.desc&limit=200"),
-      supabaseRequest("trend_comments?select=id,article_id,nickname,body,likes,created_at&hidden=eq.false&order=created_at.desc&limit=500"),
-      supabaseRequest("analytics_events?select=event_name,anonymous_user_id,created_at&limit=1000")
-        .catch(() => [])
+    const [rawEvents, trendComments, resourceComments] = await Promise.all([
+      supabaseRequest("analytics_events?select=event_name,anonymous_user_id,created_at,properties&order=created_at.desc&limit=5000"),
+      supabaseRequest("trend_comments?select=id,article_id,nickname,body,likes,created_at&hidden=eq.false&order=created_at.desc&limit=1000").catch(() => []),
+      supabaseRequest("resource_comments?select=id,resource_id,nickname,body,likes,created_at&hidden=eq.false&order=created_at.desc&limit=1000").catch(() => [])
     ]);
 
-    adminDashboardState.data = {
-      searchTerms: normalizeAdminRows(searchTerms, "query", "search_count", "last_searched_at"),
-      noResults: normalizeAdminRows(noResults, "query", "no_result_count", "last_searched_at"),
-      popularResources: popularResources.map((row) => ({
-        ...row,
-        open_count: Number(row.open_count || 0)
-      })),
-      comments,
-      rawEvents
-    };
+    adminDashboardState.data = buildAdminDashboardDataFromEvents(rawEvents, [
+      ...trendComments.map((row) => ({ ...row, comment_type: "trend" })),
+      ...resourceComments.map((row) => ({ ...row, comment_type: "resource", article_id: row.resource_id }))
+    ]);
   } catch {
-    adminDashboardState.error = "Supabase 데이터를 불러오지 못했어요. view 권한과 SQL 실행 상태를 확인해 주세요.";
+    adminDashboardState.error = "Supabase 원본 이벤트를 불러오지 못했어요. analytics_events select 정책과 SQL 실행 상태를 확인해 주세요.";
   } finally {
     adminDashboardState.loading = false;
     renderAnalyticsAdmin();
@@ -3330,12 +3321,27 @@ function normalizeAdminRows(rows, labelKey, countKey, dateKey) {
 }
 
 function buildEmptyAdminDashboardData() {
+  return buildAdminDashboardDataFromEvents(readAnalyticsEvents(), []);
+}
+
+function buildAdminDashboardDataFromEvents(events, comments = []) {
+  const rawEvents = events.map(normalizeAdminEvent).filter((event) => event.created_at);
   return {
-    searchTerms: [],
-    noResults: [],
-    popularResources: [],
-    comments: [],
-    rawEvents: readAnalyticsEvents()
+    rawEvents,
+    allRawEvents: rawEvents,
+    comments,
+    searchTerms: aggregateSearchTerms(rawEvents),
+    noResults: aggregateNoResultTerms(rawEvents),
+    popularResources: aggregatePopularResources(rawEvents)
+  };
+}
+
+function normalizeAdminEvent(event) {
+  return {
+    event_name: event.event_name || event.name || "",
+    anonymous_user_id: event.anonymous_user_id || event.userId || "",
+    created_at: event.created_at || event.createdAt || "",
+    properties: event.properties || {}
   };
 }
 
@@ -3352,26 +3358,77 @@ function filterAdminData(data) {
     return values.some((value) => String(value || "").toLowerCase().includes(needle));
   };
 
+  const periodEvents = (data.rawEvents || [])
+    .map(normalizeAdminEvent)
+    .filter((row) => dateInRange(row.created_at));
+  const periodComments = (data.comments || [])
+    .filter((row) => dateInRange(row.created_at))
+    .filter((row) => matches(row.body, row.nickname, row.article_id, row.resource_id));
+
   return {
-    searchTerms: data.searchTerms
+    searchTerms: aggregateSearchTerms(periodEvents)
       .filter((row) => isMeaningfulQuery(row.query))
-      .filter((row) => dateInRange(row.last_searched_at))
       .filter((row) => matches(row.query))
-      .sort((a, b) => b.search_count - a.search_count),
-    noResults: data.noResults
+      .sort((a, b) => b.search_count - a.search_count || new Date(b.last_searched_at) - new Date(a.last_searched_at)),
+    noResults: aggregateNoResultTerms(periodEvents)
       .filter((row) => isMeaningfulQuery(row.query))
-      .filter((row) => dateInRange(row.last_searched_at))
       .filter((row) => matches(row.query))
-      .sort((a, b) => b.no_result_count - a.no_result_count),
-    popularResources: data.popularResources
-      .filter((row) => dateInRange(row.last_opened_at))
+      .sort((a, b) => b.no_result_count - a.no_result_count || new Date(b.last_searched_at) - new Date(a.last_searched_at)),
+    popularResources: aggregatePopularResources(periodEvents)
       .filter((row) => matches(row.resource_title, row.resource_id))
-      .sort((a, b) => b.open_count - a.open_count),
-    comments: data.comments
-      .filter((row) => dateInRange(row.created_at))
-      .filter((row) => matches(row.body, row.nickname, row.article_id)),
-    rawEvents: data.rawEvents.filter((row) => dateInRange(row.created_at))
+      .sort((a, b) => b.open_count - a.open_count || new Date(b.last_opened_at) - new Date(a.last_opened_at)),
+    comments: periodComments,
+    rawEvents: periodEvents,
+    allRawEvents: data.allRawEvents || data.rawEvents || []
   };
+}
+
+function aggregateSearchTerms(events) {
+  return aggregateBy(events.filter((event) => ["search", "search_no_result"].includes(event.event_name)), (event) => normalizeSearchQuery(event.properties?.query), {
+    countKey: "search_count",
+    dateKey: "last_searched_at"
+  });
+}
+
+function aggregateNoResultTerms(events) {
+  return aggregateBy(events.filter((event) => event.event_name === "search_no_result"), (event) => normalizeSearchQuery(event.properties?.query), {
+    countKey: "no_result_count",
+    dateKey: "last_searched_at"
+  });
+}
+
+function aggregatePopularResources(events) {
+  const grouped = new Map();
+  events
+    .filter((event) => ["resource_open", "drive_open", "trend_article_open"].includes(event.event_name))
+    .forEach((event) => {
+      const resourceId = event.properties?.resourceId || event.properties?.articleId || event.properties?.url || "unknown";
+      const title = event.properties?.resourceTitle || event.properties?.articleTitle || event.properties?.title || resourceId;
+      if (!resourceId || resourceId === "unknown") return;
+      const current = grouped.get(resourceId) || { resource_id: resourceId, resource_title: title, open_count: 0, last_opened_at: event.created_at };
+      current.open_count += 1;
+      current.resource_title = current.resource_title || title;
+      if (new Date(event.created_at).getTime() > new Date(current.last_opened_at).getTime()) {
+        current.last_opened_at = event.created_at;
+      }
+      grouped.set(resourceId, current);
+    });
+  return Array.from(grouped.values());
+}
+
+function aggregateBy(events, getKey, options) {
+  const grouped = new Map();
+  events.forEach((event) => {
+    const key = getKey(event);
+    if (!key) return;
+    const current = grouped.get(key) || { query: key, [options.countKey]: 0, [options.dateKey]: event.created_at };
+    current[options.countKey] += 1;
+    if (new Date(event.created_at).getTime() > new Date(current[options.dateKey]).getTime()) {
+      current[options.dateKey] = event.created_at;
+    }
+    grouped.set(key, current);
+  });
+  return Array.from(grouped.values());
 }
 
 function getAdminKpis(data) {
@@ -3380,16 +3437,14 @@ function getAdminKpis(data) {
   const totalResourceViews = sumBy(data.popularResources, "open_count");
   const totalComments = data.comments.length;
   const rawEvents = data.rawEvents || [];
-  const localEvents = readAnalyticsEvents();
-  const activeSource = rawEvents.length ? rawEvents : localEvents;
-  const activeUsers7d = new Set(activeSource
-    .filter((event) => new Date(event.created_at || event.createdAt).getTime() >= Date.now() - 7 * 24 * 60 * 60 * 1000)
-    .map((event) => event.anonymous_user_id || event.userId)
+  const allRawEvents = (data.allRawEvents || rawEvents).map(normalizeAdminEvent);
+  const activeUsers7d = new Set(allRawEvents
+    .filter((event) => new Date(event.created_at).getTime() >= Date.now() - 7 * 24 * 60 * 60 * 1000)
+    .map((event) => event.anonymous_user_id)
     .filter(Boolean)).size;
-  const totalEvents = rawEvents.length || totalSearches + totalFailures + totalResourceViews + totalComments;
 
   return {
-    totalEvents,
+    totalEvents: rawEvents.length,
     totalSearches,
     totalResourceViews,
     totalFailures,

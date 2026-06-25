@@ -33,6 +33,14 @@ create policy "Allow anonymous analytics insert"
   to anon
   with check (true);
 
+
+drop policy if exists "Allow anonymous analytics select" on public.analytics_events;
+create policy "Allow anonymous analytics select"
+  on public.analytics_events
+  for select
+  to anon
+  using (true);
+
 drop view if exists public.analytics_search_terms;
 create view public.analytics_search_terms as
 select
