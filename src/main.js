@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-11";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-12";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -1701,7 +1701,7 @@ function mergeBankTransferOrders(...groups) {
 }
 
 function readDeletedBankOrderIds() {
-  return new Set(readStoredIds("pym.deletedBankOrders"));
+  return new Set(readJsonArray("pym.deletedBankOrders").map((id) => String(id || "")).filter(Boolean));
 }
 
 function writeDeletedBankOrderIds(ids) {
@@ -2221,7 +2221,7 @@ function renderPremiumAccessPanel(purchased) {
             <h2>구매 후 제공 자료</h2>
           </div>
         </div>
-        <p>계좌이체 후 운영자 승인이 완료되면 주문번호로 DOCX 6편 열람 영역이 열립니다.</p>
+        <p>계좌이체 후 운영자 승인이 완료되면 주문번호로 PDF 6편 열람 영역이 열립니다.</p>
         <form class="bank-order-lookup" data-bank-order-lookup-form>
           <input name="orderCode" placeholder="주문번호 입력 (예: PYM-0625-AB12)" autocomplete="off" />
           <button type="submit">승인 확인</button>
@@ -2252,7 +2252,7 @@ function renderPremiumAccessPanel(purchased) {
           <article>
             <div>
               <strong>${escapeHtml(file.number)}. ${escapeHtml(file.title)}</strong>
-              <span>${Number(file.pages)}페이지 · DOCX</span>
+              <span>${Number(file.pages)}페이지 · PDF</span>
             </div>
             <div class="premium-download-actions">
               <a href="${escapeHtml(premiumFileHref(file))}" target="_blank" rel="noreferrer" data-premium-secure-file="${escapeHtml(file.number)}" data-premium-secure-action="open">열기</a>
