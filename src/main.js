@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260625-28";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-1";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -1613,7 +1613,7 @@ function openBankTransferOrderModal(productId) {
         <input type="hidden" name="productId" value="${escapeHtml(productId)}" />
         <label><span>입금자명</span><input name="depositor" required placeholder="계좌이체할 때 입력할 이름" /></label>
         <label><span>이메일</span><input name="email" type="email" required placeholder="자료 안내를 받을 이메일" /></label>
-        <label><span>휴대폰 뒤 4자리</span><input name="phoneLast4" inputmode="numeric" maxlength="4" placeholder="입금 확인 보조용" /></label>
+        <label><span>휴대폰 뒤 4자리</span><input name="phoneLast4" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required placeholder="입금 확인 보조용" /></label>
         <label><span>요청사항</span><textarea name="memo" maxlength="200" placeholder="남길 말이 있으면 적어주세요"></textarea></label>
         <button type="submit">구매 신청 접수</button>
       </form>
@@ -1631,8 +1631,13 @@ function submitBankTransferOrder(form) {
   const phoneLast4 = String(formData.get("phoneLast4") || "").trim();
   const memo = String(formData.get("memo") || "").trim();
 
-  if (!depositor || !email) {
-    showToast("입금자명과 이메일을 입력해주세요");
+  if (!depositor || !email || !phoneLast4) {
+    showToast("입금자명, 이메일, 휴대폰 뒤 4자리를 모두 입력해주세요");
+    return;
+  }
+
+  if (!/^\d{4}$/.test(phoneLast4)) {
+    showToast("휴대폰 뒤 4자리는 숫자 4자리로 입력해주세요");
     return;
   }
 
