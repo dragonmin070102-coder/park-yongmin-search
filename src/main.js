@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-13";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-14";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -4319,7 +4319,7 @@ function renderAnalyticsAdmin() {
         <h2>데이터 연결</h2>
         <span>${supabaseConfig.enabled ? "Supabase 연결됨" : "미연결"}</span>
       </div>
-      <p class="admin-note">검색어 길이 2 이하의 노이즈는 기본 숨김 처리됩니다. 기간 필터는 analytics_events 원본 이벤트를 먼저 자른 뒤 다시 집계합니다.</p>
+      <p class="admin-note">검색어 길이 2 이하의 노이즈는 기본 숨김 처리됩니다. 원본 이벤트 조회가 제한되어도 Supabase 집계 테이블을 우선 읽어 운영 숫자를 표시합니다.</p>
     </section>
     <div class="admin-actions">
       <button type="button" data-admin-refresh>데이터 새로고침</button>
@@ -4560,18 +4560,29 @@ async function loadAdminDashboardData() {
   await flushRemoteAnalytics({ silent: true, limit: 120 });
 
   try {
-    const [rawEvents, trendComments, resourceComments, bankOrders] = await Promise.all([
-      supabaseRequest("analytics_events?select=event_id,event_name,anonymous_user_id,created_at,properties&order=created_at.desc&limit=5000"),
+    const [rawEvents, trendComments, resourceComments, bankOrders, searchTermRows, noResultRows, popularResourceRows] = await Promise.all([
+      supabaseRequest("analytics_events?select=event_id,event_name,anonymous_user_id,created_at,properties&order=created_at.desc&limit=5000").catch(() => []),
       supabaseRequest("trend_comments?select=id,article_id,nickname,body,likes,created_at&hidden=eq.false&order=created_at.desc&limit=1000").catch(() => []),
       supabaseRequest("resource_comments?select=id,resource_id,nickname,body,likes,created_at&hidden=eq.false&order=created_at.desc&limit=1000").catch(() => []),
-      supabaseRequest("bank_transfer_orders?select=*&order=created_at.desc&limit=300").catch(() => { safeStorageSet("pym.bankOrdersTableMissing", "true"); return []; })
+      supabaseRequest("bank_transfer_orders?select=*&order=created_at.desc&limit=300").catch(() => { safeStorageSet("pym.bankOrdersTableMissing", "true"); return []; }),
+      supabaseRequest("analytics_search_terms?select=query,search_count,last_searched_at&order=search_count.desc&limit=500").catch(() => []),
+      supabaseRequest("analytics_no_result_terms?select=query,no_result_count,last_searched_at&order=no_result_count.desc&limit=500").catch(() => []),
+      supabaseRequest("analytics_popular_resources?select=resource_id,resource_title,open_count,last_opened_at&order=open_count.desc&limit=500").catch(() => [])
     ]);
 
     const mergedRawEvents = mergeAdminEvents(rawEvents, readAnalyticsEvents());
+    const aggregateRowsAvailable = searchTermRows.length || noResultRows.length || popularResourceRows.length;
+    if (!rawEvents.length && aggregateRowsAvailable) {
+      adminDashboardState.error = "원본 이벤트 조회 권한이 제한되어 집계 테이블 기준으로 표시 중이에요. 검색어·자료 조회수는 최신 집계값이고, 페이지뷰/배너 상세는 원본 이벤트 select 정책이 필요합니다.";
+    }
     adminDashboardState.data = buildAdminDashboardDataFromEvents(mergedRawEvents, [
       ...trendComments.map((row) => ({ ...row, comment_type: "trend" })),
       ...resourceComments.map((row) => ({ ...row, comment_type: "resource", article_id: row.resource_id }))
-    ], bankOrders.map(fromBankTransferOrderRow));
+    ], bankOrders.map(fromBankTransferOrderRow), {
+      searchTerms: normalizeAdminRows(searchTermRows, "query", "search_count", "last_searched_at"),
+      noResults: normalizeAdminRows(noResultRows, "query", "no_result_count", "last_searched_at"),
+      popularResources: normalizeAdminRows(popularResourceRows, "resource_title", "open_count", "last_opened_at")
+    });
   } catch {
     adminDashboardState.data = buildAdminDashboardDataFromEvents(readAnalyticsEvents(), []);
     adminDashboardState.error = "Supabase 원본 이벤트를 불러오지 못해 이 브라우저의 로컬 기록을 표시 중이에요. Supabase 테스트를 눌러 연결을 확인해 주세요.";
@@ -4606,18 +4617,21 @@ function buildEmptyAdminDashboardData() {
   return buildAdminDashboardDataFromEvents(readAnalyticsEvents(), []);
 }
 
-function buildAdminDashboardDataFromEvents(events, comments = [], bankOrders = []) {
+function buildAdminDashboardDataFromEvents(events, comments = [], bankOrders = [], aggregates = {}) {
   const rawEvents = events.map(normalizeAdminEvent).filter((event) => event.created_at);
   const eventOrders = extractBankTransferOrdersFromEvents(rawEvents);
+  const searchTerms = mergeSearchTermRows(aggregates.searchTerms || [], aggregateSearchTerms(rawEvents));
+  const noResults = mergeNoResultRows(aggregates.noResults || [], aggregateNoResultTerms(rawEvents));
+  const popularResources = mergePopularResourceRows(aggregates.popularResources || [], aggregatePopularResources(rawEvents));
   return {
     rawEvents,
     allRawEvents: rawEvents,
     comments,
     bankOrders: mergeBankTransferOrders(bankOrders, eventOrders),
-    searchTerms: aggregateSearchTerms(rawEvents),
-    noResults: aggregateNoResultTerms(rawEvents),
-    popularResources: aggregatePopularResources(rawEvents),
-    resourceViewDetails: aggregateResourceViewDetails(rawEvents),
+    searchTerms,
+    noResults,
+    popularResources,
+    resourceViewDetails: mergeResourceViewDetails(popularResources, aggregateResourceViewDetails(rawEvents)),
     pageViews: aggregatePageViews(rawEvents),
     eventCounts: aggregateOperatingEventCounts(rawEvents),
     premiumFileViews: aggregatePremiumFileViews(rawEvents)
@@ -4653,20 +4667,24 @@ function filterAdminData(data) {
   const periodComments = (data.comments || [])
     .filter((row) => dateInRange(row.created_at))
     .filter((row) => matches(row.body, row.nickname, row.article_id, row.resource_id));
+  const searchTerms = filterDatedRows(data.searchTerms || aggregateSearchTerms(periodEvents), "last_searched_at", dateInRange);
+  const noResults = filterDatedRows(data.noResults || aggregateNoResultTerms(periodEvents), "last_searched_at", dateInRange);
+  const popularResources = filterDatedRows(data.popularResources || aggregatePopularResources(periodEvents), "last_opened_at", dateInRange);
+  const resourceViewDetails = filterDatedRows(data.resourceViewDetails || mergeResourceViewDetails(popularResources, aggregateResourceViewDetails(periodEvents)), "last_viewed_at", dateInRange);
 
   return {
-    searchTerms: aggregateSearchTerms(periodEvents)
+    searchTerms: searchTerms
       .filter((row) => isMeaningfulQuery(row.query))
       .filter((row) => matches(row.query))
       .sort((a, b) => b.search_count - a.search_count || new Date(b.last_searched_at) - new Date(a.last_searched_at)),
-    noResults: aggregateNoResultTerms(periodEvents)
+    noResults: noResults
       .filter((row) => isMeaningfulQuery(row.query))
       .filter((row) => matches(row.query))
       .sort((a, b) => b.no_result_count - a.no_result_count || new Date(b.last_searched_at) - new Date(a.last_searched_at)),
-    popularResources: aggregatePopularResources(periodEvents)
+    popularResources: popularResources
       .filter((row) => matches(row.resource_title, row.resource_id))
       .sort((a, b) => b.open_count - a.open_count || new Date(b.last_opened_at) - new Date(a.last_opened_at)),
-    resourceViewDetails: aggregateResourceViewDetails(periodEvents)
+    resourceViewDetails: resourceViewDetails
       .filter((row) => matches(row.resource_title, row.resource_id))
       .sort((a, b) => b.total_count - a.total_count || new Date(b.last_viewed_at) - new Date(a.last_viewed_at)),
     pageViews: aggregatePageViews(periodEvents)
@@ -4682,6 +4700,78 @@ function filterAdminData(data) {
     rawEvents: periodEvents,
     allRawEvents: data.allRawEvents || data.rawEvents || []
   };
+}
+
+function filterDatedRows(rows, dateKeyName, dateInRange) {
+  return (rows || []).filter((row) => dateInRange(row[dateKeyName]));
+}
+
+function mergeSearchTermRows(...groups) {
+  const map = new Map();
+  groups.flat().filter(Boolean).forEach((row) => {
+    const query = normalizeSearchQuery(row.query);
+    if (!query) return;
+    const current = map.get(query) || { query, search_count: 0, last_searched_at: row.last_searched_at };
+    current.search_count = Math.max(Number(current.search_count || 0), Number(row.search_count || 0));
+    if (!current.last_searched_at || new Date(row.last_searched_at || 0) > new Date(current.last_searched_at || 0)) current.last_searched_at = row.last_searched_at;
+    map.set(query, current);
+  });
+  return Array.from(map.values());
+}
+
+function mergeNoResultRows(...groups) {
+  const map = new Map();
+  groups.flat().filter(Boolean).forEach((row) => {
+    const query = normalizeSearchQuery(row.query);
+    if (!query) return;
+    const current = map.get(query) || { query, no_result_count: 0, last_searched_at: row.last_searched_at };
+    current.no_result_count = Math.max(Number(current.no_result_count || 0), Number(row.no_result_count || 0));
+    if (!current.last_searched_at || new Date(row.last_searched_at || 0) > new Date(current.last_searched_at || 0)) current.last_searched_at = row.last_searched_at;
+    map.set(query, current);
+  });
+  return Array.from(map.values());
+}
+
+function mergePopularResourceRows(...groups) {
+  const map = new Map();
+  groups.flat().filter(Boolean).forEach((row) => {
+    const resourceId = String(row.resource_id || "").trim();
+    if (!resourceId) return;
+    const resource = resources.find((item) => item.id === resourceId);
+    const current = map.get(resourceId) || { resource_id: resourceId, resource_title: row.resource_title || resource?.displayTitle || resourceId, open_count: 0, last_opened_at: row.last_opened_at };
+    current.open_count = Math.max(Number(current.open_count || 0), Number(row.open_count || 0));
+    current.resource_title = row.resource_title || current.resource_title || resource?.displayTitle || resourceId;
+    if (!current.last_opened_at || new Date(row.last_opened_at || 0) > new Date(current.last_opened_at || 0)) current.last_opened_at = row.last_opened_at;
+    map.set(resourceId, current);
+  });
+  return Array.from(map.values());
+}
+
+function mergeResourceViewDetails(popularResources = [], detailRows = []) {
+  const map = new Map();
+  popularResources.forEach((row) => {
+    if (!row.resource_id) return;
+    map.set(row.resource_id, {
+      resource_id: row.resource_id,
+      resource_title: row.resource_title || row.resource_id,
+      preview_count: 0,
+      source_open_count: 0,
+      total_count: Number(row.open_count || 0),
+      last_viewed_at: row.last_opened_at
+    });
+  });
+  detailRows.forEach((row) => {
+    const current = map.get(row.resource_id) || row;
+    map.set(row.resource_id, {
+      ...current,
+      ...row,
+      total_count: Math.max(Number(current.total_count || 0), Number(row.total_count || 0)),
+      preview_count: Number(row.preview_count || current.preview_count || 0),
+      source_open_count: Number(row.source_open_count || current.source_open_count || 0),
+      last_viewed_at: new Date(row.last_viewed_at || 0) > new Date(current.last_viewed_at || 0) ? row.last_viewed_at : current.last_viewed_at
+    });
+  });
+  return Array.from(map.values());
 }
 
 function aggregateSearchTerms(events) {
