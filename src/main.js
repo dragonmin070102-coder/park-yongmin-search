@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-8";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-9";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -4065,6 +4065,7 @@ function renderAnalyticsAdmin() {
   const data = adminDashboardState.data || buildEmptyAdminDashboardData();
   const filtered = filterAdminData(data);
   const kpis = getAdminKpis(filtered);
+  const revenue = getRevenueKpis(data.bankOrders || []);
   const insights = getAdminInsights(filtered);
   const gaps = getContentGaps(filtered.noResults);
   const demand = getDemandAnalysis(filtered.searchTerms, filtered.popularResources);
@@ -4087,6 +4088,12 @@ function renderAnalyticsAdmin() {
     </div>
     ${adminDashboardState.loading ? `<p class="admin-status">Supabase 데이터를 불러오는 중이에요.</p>` : ""}
     ${adminDashboardState.error ? `<p class="admin-status error">${escapeHtml(adminDashboardState.error)}</p>` : ""}
+    <div class="admin-summary dashboard-kpis revenue-kpis">
+      ${adminMetricTemplate("오늘 수입", formatWon(revenue.todayRevenue))}
+      ${adminMetricTemplate("이번 달 수입", formatWon(revenue.monthRevenue))}
+      ${adminMetricTemplate("총 수입", formatWon(revenue.totalRevenue))}
+      ${adminMetricTemplate("승인 주문", revenue.approvedOrders)}
+    </div>
     <div class="admin-summary dashboard-kpis">
       ${adminMetricTemplate("총 이벤트 수", kpis.totalEvents)}
       ${adminMetricTemplate("총 검색 수", kpis.totalSearches)}
@@ -4337,6 +4344,7 @@ function bankTransferOrdersAdminTemplate() {
   const orders = getFilteredAdminBankTransferOrders();
   const pendingCount = allOrders.filter((order) => order.status !== "approved").length;
   const approvedCount = allOrders.filter((order) => order.status === "approved").length;
+  const orderRevenue = getRevenueKpis(allOrders);
   const visibleOrders = orders.slice(0, 100);
   return `
     <section class="admin-card bank-admin-card wide">
@@ -4344,7 +4352,10 @@ function bankTransferOrdersAdminTemplate() {
         <h2>계좌이체 구매 신청</h2>
         <span>${allOrders.length ? `전체 ${allOrders.length}건` : "신청 없음"}</span>
       </div>
-      <div class="bank-admin-summary">
+      <div class="bank-admin-summary revenue-summary">
+        <article><strong>${formatWon(orderRevenue.todayRevenue)}</strong><span>오늘 수입</span></article>
+        <article><strong>${formatWon(orderRevenue.monthRevenue)}</strong><span>이번 달 수입</span></article>
+        <article><strong>${formatWon(orderRevenue.totalRevenue)}</strong><span>총 수입</span></article>
         <article><strong>${formatCount(pendingCount)}</strong><span>입금 확인 대기</span></article>
         <article><strong>${formatCount(approvedCount)}</strong><span>승인완료</span></article>
         <article><strong>${formatCount(orders.length)}</strong><span>현재 표시</span></article>
@@ -4606,6 +4617,46 @@ function getAdminKpis(data) {
     totalComments,
     activeUsers7d
   };
+}
+
+function getRevenueKpis(orders) {
+  const approved = mergeBankTransferOrders(orders || []).filter((order) => order.status === "approved");
+  const now = new Date();
+  const todayKey = dateKey(now);
+  const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const revenueRows = approved.map((order) => ({
+    ...order,
+    amountValue: parseWonAmount(order.amount),
+    revenueAt: order.approvedAt || order.updatedAt || order.createdAt
+  }));
+
+  return {
+    approvedOrders: approved.length,
+    todayRevenue: sumRevenue(revenueRows.filter((order) => dateKey(new Date(order.revenueAt)) === todayKey)),
+    monthRevenue: sumRevenue(revenueRows.filter((order) => {
+      const date = new Date(order.revenueAt);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}` === monthKey;
+    })),
+    totalRevenue: sumRevenue(revenueRows)
+  };
+}
+
+function sumRevenue(rows) {
+  return rows.reduce((total, row) => total + Number(row.amountValue || 0), 0);
+}
+
+function parseWonAmount(value) {
+  const digits = String(value || "").replace(/[^0-9]/g, "");
+  return digits ? Number(digits) : 0;
+}
+
+function formatWon(value) {
+  return `${formatCount(Number(value || 0))}원`;
+}
+
+function dateKey(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
 function getDemandAnalysis(searchTerms, popularResources) {

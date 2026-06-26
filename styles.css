@@ -6205,3 +6205,36 @@ body.admin-mode .analytics-admin {
   font-weight: 800;
   line-height: 1.45;
 }
+
+body.admin-mode .revenue-kpis {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+body.admin-mode .revenue-kpis article {
+  border-color: #d7e8ff;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+}
+
+body.admin-mode .revenue-kpis article strong {
+  color: #1b64da;
+}
+
+.bank-admin-summary.revenue-summary {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.bank-admin-summary.revenue-summary article:nth-child(-n + 3) {
+  border-color: #d7e8ff;
+  background: #f7fbff;
+}
+
+.bank-admin-summary.revenue-summary article:nth-child(-n + 3) strong {
+  color: #1b64da;
+}
+
+@media (max-width: 960px) {
+  body.admin-mode .revenue-kpis,
+  .bank-admin-summary.revenue-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
