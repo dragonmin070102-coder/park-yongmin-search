@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-3";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-4";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -1907,16 +1907,33 @@ async function findBankTransferOrderByCode(orderCode) {
   if (!orderCode) return null;
   const local = mergeBankTransferOrders(readBankTransferOrders(), adminDashboardState.data?.bankOrders || [])
     .find((item) => String(item.id || "").toUpperCase() === orderCode);
-  if (local) return local;
 
-  if (!supabaseConfig.enabled) return null;
-  try {
-    const rows = await supabaseRequest("analytics_events?select=event_name,created_at,properties&event_name=in.(bank_transfer_order_submit,bank_transfer_order_approve)&order=created_at.desc&limit=1000");
-    return extractBankTransferOrdersFromEvents(rows.map(normalizeAdminEvent))
-      .find((item) => String(item.id || "").toUpperCase() === orderCode) || null;
-  } catch {
-    return null;
+  if (supabaseConfig.enabled) {
+    try {
+      const rows = await supabaseRequest(`bank_transfer_orders?select=*&id=eq.${encodeURIComponent(orderCode)}&limit=1`);
+      const remote = rows[0] ? fromBankTransferOrderRow(rows[0]) : null;
+      if (remote) {
+        const merged = mergeBankTransferOrders(local ? [local, remote] : [remote])[0];
+        if (merged.status === "approved") {
+          writeBankTransferOrders(mergeBankTransferOrders(readBankTransferOrders().filter((item) => item.id !== merged.id), [merged]));
+        }
+        return merged;
+      }
+    } catch {
+      safeStorageSet("pym.bankOrdersTableMissing", "true");
+    }
+
+    try {
+      const rows = await supabaseRequest("analytics_events?select=event_name,created_at,properties&event_name=in.(bank_transfer_order_submit,bank_transfer_order_approve)&order=created_at.desc&limit=1000");
+      const eventOrder = extractBankTransferOrdersFromEvents(rows.map(normalizeAdminEvent))
+        .find((item) => String(item.id || "").toUpperCase() === orderCode) || null;
+      if (eventOrder) return mergeBankTransferOrders(local ? [local, eventOrder] : [eventOrder])[0];
+    } catch {
+      // Fall back to the local pending receipt below.
+    }
   }
+
+  return local || null;
 }
 
 function approveBankTransferOrder(orderId) {
