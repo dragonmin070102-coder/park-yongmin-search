@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-9";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-10";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -1356,7 +1356,7 @@ function renderPremiumScreen() {
         <span class="sale-live">판매중</span>
       </div>
       <div class="premium-spec-grid">
-        <article><strong>DOCX 자료</strong><span>6편 · 96섹션</span></article>
+        <article><strong>PDF 자료</strong><span>6편 · 96섹션</span></article>
         <article><strong>최종 업데이트</strong><span>2026.06</span></article>
         <article><strong>난이도</strong><span>중급</span></article>
         <article><strong>학습 시간</strong><span>30분</span></article>
