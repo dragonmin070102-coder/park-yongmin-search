@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-14";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-15";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -4139,7 +4139,9 @@ function renderAnalyticsAdmin() {
   const gaps = getContentGaps(filtered.noResults);
   const demand = getDemandAnalysis(filtered.searchTerms, filtered.popularResources);
   const periodLabel = adminPeriodLabel(adminDashboardState.period);
-  const premiumFunnel = getPremiumFunnel(filtered.rawEvents);
+  const premiumFunnel = getPremiumFunnel(filtered.rawEvents, filtered.bankOrders || [], filtered.premiumFileViews || []);
+  const funnelFreshness = getFunnelFreshness(premiumFunnel);
+  const funnelLimited = !filtered.rawEvents.length && ((filtered.bankOrders || []).length || (filtered.popularResources || []).length || (filtered.searchTerms || []).length);
 
   analyticsContent.innerHTML = `
     <section class="admin-hero">
@@ -4178,14 +4180,15 @@ function renderAnalyticsAdmin() {
     <section class="admin-card premium-funnel-card admin-section-card">
       <div class="admin-card-head">
         <h2>결제 페이지 퍼널</h2>
-        <span>${periodLabel} 기준</span>
+        <span>${periodLabel} · 마지막 수집 ${escapeHtml(funnelFreshness)}</span>
       </div>
+      ${funnelLimited ? `<p class="admin-note funnel-warning">원본 이벤트 조회가 제한되어 방문/클릭 단계는 비어 보일 수 있어요. 접수·승인 단계는 구매 신청 DB 기준으로 보정해서 표시합니다.</p>` : ""}
       <div class="premium-funnel-list">
         ${premiumFunnel.map((step) => `
           <article>
             <div>
               <strong>${escapeHtml(step.label)}</strong>
-              <span>이전 단계 대비 ${step.dropOff}% 이탈</span>
+              <span>이전 단계 대비 ${step.dropOff}% 이탈 · 최근 ${escapeHtml(formatAdminDate(step.lastAt))}</span>
             </div>
             <b>${formatCount(step.count)}</b>
             <em style="width: ${step.rate}%"></em>
@@ -4696,6 +4699,9 @@ function filterAdminData(data) {
     premiumFileViews: aggregatePremiumFileViews(periodEvents)
       .filter((row) => matches(row.file_label, row.file_number))
       .sort((a, b) => b.open_count - a.open_count || new Date(b.last_opened_at) - new Date(a.last_opened_at)),
+    bankOrders: (data.bankOrders || [])
+      .filter((row) => dateInRange(row.createdAt || row.approvedAt || row.updatedAt))
+      .filter((row) => matches(row.id, row.depositor, row.email, row.phoneLast4, row.status)),
     comments: periodComments,
     rawEvents: periodEvents,
     allRawEvents: data.allRawEvents || data.rawEvents || []
@@ -5022,28 +5028,59 @@ function getContentGaps(noResults) {
 }
 
 
-function getPremiumFunnel(events) {
+function getPremiumFunnel(events, orders = [], premiumFileViews = []) {
   const normalized = (events || []).map(normalizeAdminEvent);
+  const eventSummary = summarizeEventsByName(normalized);
+  const submittedOrders = mergeBankTransferOrders(orders || []);
+  const approvedOrders = submittedOrders.filter((order) => order.status === "approved");
+  const fileOpenCount = sumBy(premiumFileViews || [], "open_count");
+  const latestFileOpenAt = latestDate((premiumFileViews || []).map((row) => row.last_opened_at));
   const steps = [
     { key: "premium_view", label: "프리미엄 페이지 방문" },
     { key: "premium_checkout_click", label: "구매 신청 클릭" },
     { key: "bank_transfer_order_open", label: "계좌이체 창 열림" },
     { key: "bank_transfer_form_start", label: "신청서 작성 시작" },
-    { key: "bank_transfer_order_submit", label: "구매 신청 접수" },
-    { key: "bank_transfer_order_approve", label: "입금 확인 승인" },
+    { key: "bank_transfer_order_submit", label: "구매 신청 접수", fallbackCount: submittedOrders.length, fallbackLastAt: latestDate(submittedOrders.map((order) => order.createdAt)) },
+    { key: "bank_transfer_order_approve", label: "입금 확인 승인", fallbackCount: approvedOrders.length, fallbackLastAt: latestDate(approvedOrders.map((order) => order.approvedAt || order.updatedAt)) },
     { key: "bank_transfer_order_verified", label: "구매자 승인 확인" },
-    { key: "premium_secure_file_click", label: "자료 열기" }
+    { key: "premium_secure_file_click", label: "자료 열기", fallbackCount: fileOpenCount, fallbackLastAt: latestFileOpenAt }
   ];
-  const counts = steps.map((step) => ({
-    ...step,
-    count: normalized.filter((event) => event.event_name === step.key).length
-  }));
+  const counts = steps.map((step) => {
+    const summary = eventSummary.get(step.key) || { count: 0, lastAt: "" };
+    const count = Math.max(Number(summary.count || 0), Number(step.fallbackCount || 0));
+    const lastAt = latestDate([summary.lastAt, step.fallbackLastAt]);
+    return { ...step, count, lastAt };
+  });
   const max = Math.max(1, counts[0]?.count || 0, ...counts.map((step) => step.count));
   return counts.map((step, index) => {
     const prev = index === 0 ? step.count : counts[index - 1].count;
     const dropOff = prev > 0 ? Math.max(0, Math.round(((prev - step.count) / prev) * 100)) : 0;
     return { ...step, rate: Math.max(4, Math.round((step.count / max) * 100)), dropOff };
   });
+}
+
+function summarizeEventsByName(events) {
+  const map = new Map();
+  events.forEach((event) => {
+    const current = map.get(event.event_name) || { count: 0, lastAt: event.created_at };
+    current.count += 1;
+    current.lastAt = latestDate([current.lastAt, event.created_at]);
+    map.set(event.event_name, current);
+  });
+  return map;
+}
+
+function getFunnelFreshness(steps) {
+  const latest = latestDate((steps || []).map((step) => step.lastAt));
+  return latest ? formatAdminDate(latest) : "없음";
+}
+
+function latestDate(values) {
+  return (values || [])
+    .filter(Boolean)
+    .map((value) => new Date(value))
+    .filter((date) => !Number.isNaN(date.getTime()))
+    .sort((a, b) => b.getTime() - a.getTime())[0]?.toISOString() || "";
 }
 
 
