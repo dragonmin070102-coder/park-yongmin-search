@@ -6062,3 +6062,77 @@ body.admin-mode .analytics-admin {
   font-weight: 850;
   line-height: 1.5;
 }
+
+.bank-privacy-check {
+  display: grid !important;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px !important;
+  padding: 10px 12px;
+  border: 1px solid #e5e8eb;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.bank-privacy-check input {
+  width: 16px !important;
+  min-height: 16px !important;
+  margin-top: 2px;
+  accent-color: #3182f6;
+}
+
+.bank-privacy-check span,
+.bank-order-privacy-note {
+  color: #6b7684;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.bank-order-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 4px;
+  color: #8b95a1;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.bank-order-divider::before,
+.bank-order-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #edf0f3;
+}
+
+.bank-order-identity-lookup {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.bank-order-identity-lookup input {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid #e5e8eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #191f28;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  outline: 0;
+}
+
+.bank-order-identity-lookup button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 8px;
+  background: #eef6ff;
+  color: #1b64da;
+  font-size: 13px;
+  font-weight: 950;
+}

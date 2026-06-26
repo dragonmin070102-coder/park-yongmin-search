@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-5";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-6";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -806,6 +806,14 @@ document.addEventListener("submit", (event) => {
   verifyBankTransferOrder(form);
 });
 
+document.addEventListener("submit", (event) => {
+  const form = event.target.closest("[data-bank-order-identity-lookup-form]");
+  if (!form) return;
+
+  event.preventDefault();
+  lookupBankTransferOrderByIdentity(form);
+});
+
 document.addEventListener("click", (event) => {
   const approve = event.target.closest("[data-bank-order-approve]");
   if (!approve) return;
@@ -1328,7 +1336,6 @@ function renderPremiumScreen() {
       <p class="premium-product-subtitle">GCS부터 TBI까지, 신경계 응급 케이스를 하나의 흐름으로 정리했습니다.</p>
       <div class="premium-product-meta">
         <span class="sale-live">판매중</span>
-        <span>자료 열람 ${formatCount(premiumSocialProof.accessCount)}회</span>
       </div>
       <div class="premium-spec-grid">
         <article><strong>DOCX 자료</strong><span>6편 · 96섹션</span></article>
@@ -1408,7 +1415,6 @@ function renderPremiumScreen() {
           <span>신경계 임상추론 시리즈 6편 자료가 열렸어요.</span>
         </div>
         <a class="premium-primary-link" href="#premiumAccess">자료 보러가기</a>
-        <button type="button" class="premium-secondary-button" data-premium-test-reset="neuro-series-6">운영자 테스트 초기화</button>
       ` : `
         <button type="button" data-premium-checkout="neuro-series-6">계좌이체로 구매 신청</button>
         <button type="button" data-premium-preview="neuro-series-6">구성 미리보기</button>
@@ -1779,9 +1785,10 @@ function openBankTransferOrderModal(productId) {
         <label><span>이메일</span><input name="email" type="email" required placeholder="자료 안내를 받을 이메일" /></label>
         <label><span>휴대폰 뒤 4자리</span><input name="phoneLast4" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required placeholder="입금 확인 보조용" /></label>
         <label><span>요청사항</span><textarea name="memo" maxlength="200" placeholder="남길 말이 있으면 적어주세요"></textarea></label>
+        <label class="bank-privacy-check"><input type="checkbox" name="privacyConsent" required /> <span>입금 확인과 주문 조회를 위해 입금자명, 이메일, 휴대폰 뒤 4자리를 수집·이용하는 데 동의합니다.</span></label>
         <button type="submit">구매 신청 접수</button>
       </form>
-      <p class="bank-order-help">입금자명은 신청한 이름과 같게 보내주세요. 운영자 테스트는 #admin에서 승인할 수 있어요.</p>
+      <p class="bank-order-help">입금자명은 신청한 이름과 같게 보내주세요. 입력한 정보는 구매 확인과 자료 열람 안내 목적으로만 사용됩니다.</p>
     </div>
   `;
   trackEvent("bank_transfer_order_open", { productId });
@@ -1794,6 +1801,7 @@ async function submitBankTransferOrder(form) {
   const email = String(formData.get("email") || "").trim();
   const phoneLast4 = String(formData.get("phoneLast4") || "").trim();
   const memo = String(formData.get("memo") || "").trim();
+  const privacyConsent = formData.get("privacyConsent") === "on";
 
   if (!depositor || !email || !phoneLast4) {
     showToast("입금자명, 이메일, 휴대폰 뒤 4자리를 모두 입력해주세요");
@@ -1802,6 +1810,11 @@ async function submitBankTransferOrder(form) {
 
   if (!/^\d{4}$/.test(phoneLast4)) {
     showToast("휴대폰 뒤 4자리는 숫자 4자리로 입력해주세요");
+    return;
+  }
+
+  if (!privacyConsent) {
+    showToast("개인정보 수집·이용 동의가 필요해요");
     return;
   }
 
@@ -1901,6 +1914,94 @@ async function verifyBankTransferOrder(form) {
   showToast("승인 확인 완료! 자료가 열렸어요");
   renderPremiumScreen();
   document.querySelector("#premiumAccess")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function lookupBankTransferOrderByIdentity(form) {
+  const formData = new FormData(form);
+  const depositor = String(formData.get("depositor") || "").trim();
+  const email = String(formData.get("email") || "").trim();
+  const phoneLast4 = String(formData.get("phoneLast4") || "").trim();
+
+  if (!depositor || !email || !phoneLast4) {
+    showToast("입금자명, 이메일, 휴대폰 뒤 4자리를 모두 입력해주세요");
+    return;
+  }
+
+  if (!/^\d{4}$/.test(phoneLast4)) {
+    showToast("휴대폰 뒤 4자리는 숫자 4자리로 입력해주세요");
+    return;
+  }
+
+  const button = form.querySelector("button[type='submit']");
+  if (button) {
+    button.disabled = true;
+    button.textContent = "조회 중...";
+  }
+
+  const orders = await findBankTransferOrdersByIdentity({ depositor, email, phoneLast4 });
+  if (button) {
+    button.disabled = false;
+    button.textContent = "주문번호 조회";
+  }
+
+  const order = orders[0] || null;
+  if (!order) {
+    showToast("일치하는 구매 신청을 찾지 못했어요");
+    return;
+  }
+
+  writeBankTransferOrders(mergeBankTransferOrders(readBankTransferOrders().filter((item) => item.id !== order.id), [order]));
+  trackEvent("bank_transfer_order_identity_lookup", { orderId: order.id, productId: order.productId, status: order.status });
+
+  if (order.status === "approved") {
+    if (order.fileLinks && Object.keys(order.fileLinks).length) {
+      safeStorageSet("pym.premiumFileLinks", JSON.stringify(order.fileLinks));
+    }
+    safeStorageSet(`pym.premiumAccess.${order.productId}`, "true");
+    safeStorageSet(`pym.premiumAccessAt.${order.productId}`, order.approvedAt || new Date().toISOString());
+    showToast(`주문번호 ${order.id} 승인완료. 자료가 열렸어요`);
+  } else {
+    showToast(`주문번호는 ${order.id} 입니다. 아직 입금 확인 대기 상태예요`);
+  }
+
+  renderPremiumScreen();
+  document.querySelector(order.status === "approved" ? "#premiumAccess" : ".bank-status-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function findBankTransferOrdersByIdentity({ depositor, email, phoneLast4 }) {
+  const localMatches = readBankTransferOrders().filter((order) =>
+    normalizeOrderField(order.depositor) === normalizeOrderField(depositor) &&
+    normalizeOrderField(order.email) === normalizeOrderField(email) &&
+    String(order.phoneLast4 || "") === phoneLast4
+  );
+
+  let remoteMatches = [];
+  if (supabaseConfig.enabled) {
+    try {
+      const query = [
+        "select=*",
+        `phone_last4=eq.${encodeURIComponent(phoneLast4)}`,
+        "order=created_at.desc",
+        "limit=50"
+      ].join("&");
+      const rows = await supabaseRequest(`bank_transfer_orders?${query}`);
+      remoteMatches = rows
+        .map(fromBankTransferOrderRow)
+        .filter((order) =>
+          normalizeOrderField(order.depositor) === normalizeOrderField(depositor) &&
+          normalizeOrderField(order.email) === normalizeOrderField(email)
+        );
+      safeStorageRemove("pym.bankOrdersTableMissing");
+    } catch {
+      safeStorageSet("pym.bankOrdersTableMissing", "true");
+    }
+  }
+
+  return mergeBankTransferOrders(remoteMatches, localMatches);
+}
+
+function normalizeOrderField(value) {
+  return String(value || "").trim().toLowerCase();
 }
 
 async function findBankTransferOrderByCode(orderCode) {
@@ -2062,6 +2163,14 @@ function renderPremiumAccessPanel(purchased) {
           <input name="orderCode" placeholder="주문번호 입력 (예: PYM-0625-AB12)" autocomplete="off" />
           <button type="submit">승인 확인</button>
         </form>
+        <div class="bank-order-divider"><span>주문번호를 잊었나요?</span></div>
+        <form class="bank-order-identity-lookup" data-bank-order-identity-lookup-form>
+          <input name="depositor" placeholder="입금자명" autocomplete="name" />
+          <input name="email" type="email" placeholder="이메일 주소" autocomplete="email" />
+          <input name="phoneLast4" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="휴대폰 뒤 4자리" />
+          <button type="submit">주문번호 조회</button>
+        </form>
+        <p class="bank-order-privacy-note">주문 조회를 위해 입력한 정보는 기존 신청 내역 확인에만 사용됩니다.</p>
       </section>
     `;
   }
