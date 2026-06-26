@@ -6136,3 +6136,64 @@ body.admin-mode .analytics-admin {
   font-size: 13px;
   font-weight: 950;
 }
+
+.premium-test-card {
+  background: #ffffff;
+}
+
+.premium-test-state {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.premium-test-state article {
+  padding: 12px;
+  border: 1px solid #edf0f3;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.premium-test-state strong {
+  display: block;
+  color: #191f28;
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.premium-test-state span {
+  color: #6b7684;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.premium-test-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.premium-test-actions button {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid #d7e8ff;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1b64da;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.premium-test-actions button:first-child {
+  border-color: #3182f6;
+  background: #3182f6;
+  color: #ffffff;
+}
+
+@media (max-width: 720px) {
+  .premium-test-state,
+  .premium-test-actions {
+    grid-template-columns: 1fr;
+  }
+}

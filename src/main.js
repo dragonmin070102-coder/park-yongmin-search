@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-6";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-7";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -779,6 +779,24 @@ document.addEventListener("click", (event) => {
   if (!reset) return;
 
   resetPremiumPurchaseTest(reset.dataset.premiumTestReset || "neuro-series-6");
+  if (window.location.hash === "#admin") renderAnalyticsAdmin();
+});
+
+document.addEventListener("click", (event) => {
+  const complete = event.target.closest("[data-premium-test-complete]");
+  if (!complete) return;
+
+  completePremiumPurchase(complete.dataset.premiumTestComplete || "neuro-series-6");
+  renderAnalyticsAdmin();
+});
+
+document.addEventListener("click", (event) => {
+  const open = event.target.closest("[data-premium-test-open]");
+  if (!open) return;
+
+  window.location.hash = "premium";
+  setPremiumMode();
+  window.setTimeout(() => document.querySelector("#premiumAccess")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
 });
 
 document.addEventListener("submit", (event) => {
@@ -4036,6 +4054,7 @@ function renderAdminFallback(error) {
       </div>
     </section>
     ${premiumOperatingSettingsAdminTemplate()}
+    ${premiumTestToolsAdminTemplate()}
     ${bankTransferOrdersAdminTemplate()}
   `;
 }
@@ -4166,6 +4185,7 @@ function renderAnalyticsAdmin() {
       </div>
     </section>
     ${premiumOperatingSettingsAdminTemplate()}
+    ${premiumTestToolsAdminTemplate()}
     ${bankTransferOrdersAdminTemplate()}
     <section class="admin-card">
       <div class="admin-card-head">
@@ -4179,6 +4199,30 @@ function renderAnalyticsAdmin() {
       <button type="button" data-admin-export>JSON 내보내기</button>
       <button type="button" data-supabase-test>Supabase 테스트</button>
     </div>
+  `;
+}
+
+function premiumTestToolsAdminTemplate() {
+  const productId = "neuro-series-6";
+  const purchased = isPremiumPurchased(productId);
+  const accessAt = safeStorageGet(`pym.premiumAccessAt.${productId}`) || "";
+  return `
+    <section class="admin-card premium-test-card">
+      <div class="admin-card-head">
+        <h2>프리미엄 테스트 도구</h2>
+        <span>${purchased ? "현재 브라우저 구매완료" : "현재 브라우저 미구매"}</span>
+      </div>
+      <p class="admin-note">이 도구는 이 브라우저에서만 작동합니다. 공개 판매 페이지에는 테스트 버튼이 보이지 않습니다.</p>
+      <div class="premium-test-state">
+        <article><strong>${purchased ? "OPEN" : "LOCKED"}</strong><span>열람 상태</span></article>
+        <article><strong>${accessAt ? escapeHtml(formatAdminDate(accessAt)) : "-"}</strong><span>열림 시각</span></article>
+      </div>
+      <div class="premium-test-actions">
+        <button type="button" data-premium-test-complete="${productId}">내 브라우저 구매완료로 열기</button>
+        <button type="button" data-premium-test-reset="${productId}">내 브라우저 구매상태 초기화</button>
+        <button type="button" data-premium-test-open>프리미엄 페이지에서 확인</button>
+      </div>
+    </section>
   `;
 }
 
