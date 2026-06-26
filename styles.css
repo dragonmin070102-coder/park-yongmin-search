@@ -5882,3 +5882,171 @@ body.admin-mode .analytics-admin {
   font-size: 13px;
   font-weight: 850;
 }
+
+/* Stable premium settings + scalable bank order admin */
+.premium-settings-warning {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #ffd8a8;
+  border-radius: 8px;
+  background: #fff8ee;
+  color: #191f28;
+}
+
+.premium-settings-warning strong {
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.premium-settings-warning span {
+  color: #6b7684;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.premium-settings-warning button {
+  width: fit-content;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: #191f28;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.premium-settings-warning pre {
+  max-height: 220px;
+  overflow: auto;
+  margin: 0;
+  padding: 10px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #333d4b;
+  font-size: 11px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.bank-admin-card.wide {
+  grid-column: 1 / -1 !important;
+}
+
+.bank-admin-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.bank-admin-summary article {
+  padding: 12px;
+  border: 1px solid #edf0f3;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.bank-admin-summary strong {
+  display: block;
+  color: #191f28;
+  font-size: 20px;
+  font-weight: 950;
+}
+
+.bank-admin-summary span {
+  color: #6b7684;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.bank-admin-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 160px;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.bank-admin-toolbar input,
+.bank-admin-toolbar select {
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid #e5e8eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #191f28;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.bank-admin-table-wrap {
+  max-height: 520px;
+  overflow: auto;
+  border: 1px solid #edf0f3;
+  border-radius: 8px;
+}
+
+.bank-admin-table {
+  width: 100%;
+  min-width: 920px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.bank-admin-table th,
+.bank-admin-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid #edf0f3;
+  text-align: left;
+  vertical-align: top;
+}
+
+.bank-admin-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f9fafb;
+  color: #4e5968;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.bank-admin-table td strong,
+.bank-admin-table td span,
+.bank-admin-table td em {
+  display: block;
+}
+
+.bank-admin-table td strong {
+  color: #191f28;
+  font-weight: 950;
+}
+
+.bank-admin-table td span,
+.bank-admin-table td em {
+  color: #6b7684;
+  font-style: normal;
+  font-weight: 750;
+}
+
+.bank-admin-actions.compact {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 6px;
+}
+
+.bank-admin-actions button.danger {
+  border-color: #ffd6d6;
+  color: #e03131;
+}
+
+@media (max-width: 720px) {
+  .bank-admin-summary,
+  .bank-admin-toolbar {
+    grid-template-columns: 1fr;
+  }
+}

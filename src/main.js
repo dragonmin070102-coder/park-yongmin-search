@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-1";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-2";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -120,6 +120,10 @@ let adminDashboardState = {
   loading: false,
   data: null,
   error: ""
+};
+let adminOrderState = {
+  query: "",
+  status: "all"
 };
 let adminSearchTimer = null;
 let analyticsFlushScheduled = false;
@@ -667,6 +671,22 @@ document.addEventListener("input", (event) => {
   adminSearchTimer = window.setTimeout(renderAnalyticsAdmin, 220);
 });
 
+document.addEventListener("input", (event) => {
+  const orderSearch = event.target.closest("[data-admin-order-search]");
+  if (!orderSearch) return;
+
+  adminOrderState.query = orderSearch.value;
+  renderAnalyticsAdmin();
+});
+
+document.addEventListener("change", (event) => {
+  const orderStatus = event.target.closest("[data-admin-order-status]");
+  if (!orderStatus) return;
+
+  adminOrderState.status = orderStatus.value || "all";
+  renderAnalyticsAdmin();
+});
+
 document.addEventListener("click", (event) => {
   const csvButton = event.target.closest("[data-admin-csv]");
   if (!csvButton) return;
@@ -798,6 +818,20 @@ document.addEventListener("click", (event) => {
   if (!copy) return;
 
   copyBankTransferOrder(copy.dataset.bankOrderCopy);
+});
+
+document.addEventListener("click", (event) => {
+  const remove = event.target.closest("[data-bank-order-delete]");
+  if (!remove) return;
+
+  deleteBankTransferOrder(remove.dataset.bankOrderDelete);
+});
+
+document.addEventListener("click", (event) => {
+  const copySql = event.target.closest("[data-premium-settings-sql-copy]");
+  if (!copySql) return;
+
+  writeClipboardText(getPremiumSettingsSql()).then(() => showToast("premium_settings SQL을 복사했어요")).catch(() => { showCopyFallback(getPremiumSettingsSql()); showToast("복사 권한이 막혀 SQL을 열어뒀어요"); });
 });
 
 document.addEventListener("click", (event) => {
@@ -1458,6 +1492,24 @@ function premiumOperatingSettingsPayload() {
 
 async function loadRemotePremiumOperatingSettings() {
   if (!supabaseConfig.enabled) return;
+
+  try {
+    const rows = await supabaseRequest("premium_settings?select=setting_key,account,file_links,updated_at&setting_key=eq.neuro-series-6&limit=1");
+    const row = rows[0];
+    if (row) {
+      safeStorageRemove("pym.premiumSettingsTableMissing");
+      applyPremiumOperatingSettings({
+        account: row.account || {},
+        fileLinks: row.file_links || {},
+        updatedAt: row.updated_at || new Date().toISOString()
+      });
+      return;
+    }
+    safeStorageRemove("pym.premiumSettingsTableMissing");
+  } catch {
+    safeStorageSet("pym.premiumSettingsTableMissing", "true");
+  }
+
   try {
     const rows = await supabaseRequest("analytics_events?select=event_name,created_at,properties&event_name=eq.premium_operating_settings_update&order=created_at.desc&limit=1");
     const settings = rows[0]?.properties || null;
@@ -1472,6 +1524,42 @@ function applyPremiumOperatingSettings(settings) {
   if (settings.account) safeStorageSet("pym.bankTransferAccount", JSON.stringify(settings.account));
   if (settings.fileLinks) safeStorageSet("pym.premiumFileLinks", JSON.stringify(settings.fileLinks));
   renderPremiumScreen();
+}
+
+function premiumSettingsTableReady() {
+  return safeStorageGet("pym.premiumSettingsTableMissing") !== "true";
+}
+
+function getPremiumSettingsSql() {
+  return [
+    "create table if not exists public.premium_settings (",
+    "  setting_key text primary key,",
+    "  account jsonb not null default '{}'::jsonb,",
+    "  file_links jsonb not null default '{}'::jsonb,",
+    "  updated_at timestamptz not null default now()",
+    ");",
+    "",
+    "alter table public.premium_settings enable row level security;",
+    "",
+    "drop policy if exists \"premium_settings_public_read\" on public.premium_settings;",
+    "create policy \"premium_settings_public_read\"",
+    "on public.premium_settings for select",
+    "to anon",
+    "using (true);",
+    "",
+    "drop policy if exists \"premium_settings_public_write\" on public.premium_settings;",
+    "create policy \"premium_settings_public_write\"",
+    "on public.premium_settings for insert",
+    "to anon",
+    "with check (true);",
+    "",
+    "drop policy if exists \"premium_settings_public_update\" on public.premium_settings;",
+    "create policy \"premium_settings_public_update\"",
+    "on public.premium_settings for update",
+    "to anon",
+    "using (true)",
+    "with check (true);"
+  ].join("\n");
 }
 
 function readBankTransferOrders() {
@@ -1495,8 +1583,29 @@ function mergeBankTransferOrders(...groups) {
   return Array.from(map.values()).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 }
 
+function readDeletedBankOrderIds() {
+  return new Set(readStoredIds("pym.deletedBankOrders"));
+}
+
+function writeDeletedBankOrderIds(ids) {
+  safeStorageSet("pym.deletedBankOrders", JSON.stringify(Array.from(ids).slice(-500)));
+}
+
 function getAdminBankTransferOrders() {
-  return mergeBankTransferOrders(readBankTransferOrders(), adminDashboardState.data?.bankOrders || []);
+  const deleted = readDeletedBankOrderIds();
+  return mergeBankTransferOrders(readBankTransferOrders(), adminDashboardState.data?.bankOrders || [])
+    .filter((order) => !deleted.has(order.id));
+}
+
+function getFilteredAdminBankTransferOrders() {
+  const needle = adminOrderState.query.trim().toLowerCase();
+  return getAdminBankTransferOrders().filter((order) => {
+    const statusMatches = adminOrderState.status === "all" || order.status === adminOrderState.status;
+    if (!statusMatches) return false;
+    if (!needle) return true;
+    return [order.id, order.depositor, order.email, order.phoneLast4, order.memo, order.amount, order.status]
+      .some((value) => String(value || "").toLowerCase().includes(needle));
+  });
 }
 
 async function pushBankTransferOrderToSupabase(order) {
@@ -1766,6 +1875,35 @@ function approveBankTransferOrder(orderId) {
   showToast("입금 확인 처리했어요");
   renderAnalyticsAdmin();
   renderPremiumScreen();
+}
+
+async function deleteBankTransferOrder(orderId) {
+  if (!orderId) return;
+  const order = getAdminBankTransferOrders().find((item) => item.id === orderId);
+  if (!order) return;
+  if (!window.confirm(`${order.id} 구매 신청을 목록에서 삭제할까요? 테스트 데이터 정리에만 사용하세요.`)) return;
+
+  const deleted = readDeletedBankOrderIds();
+  deleted.add(orderId);
+  writeDeletedBankOrderIds(deleted);
+  safeStorageSet("pym.bankTransferOrders", JSON.stringify(readBankTransferOrders().filter((item) => item.id !== orderId)));
+  if (adminDashboardState.data?.bankOrders) {
+    adminDashboardState.data.bankOrders = adminDashboardState.data.bankOrders.filter((item) => item.id !== orderId);
+  }
+  trackEvent("bank_transfer_order_delete", { orderId });
+
+  let remoteDeleted = false;
+  if (supabaseConfig.enabled) {
+    try {
+      await supabaseRequest(`bank_transfer_orders?id=eq.${encodeURIComponent(orderId)}`, { method: "DELETE" });
+      remoteDeleted = true;
+    } catch {
+      remoteDeleted = false;
+    }
+  }
+
+  renderAnalyticsAdmin();
+  showToast(remoteDeleted ? "구매 신청을 서버와 목록에서 삭제했어요" : "이 기기 목록에서 숨겼어요. 서버 삭제 권한은 Supabase 정책을 확인해주세요");
 }
 
 async function copyBankTransferOrder(orderId) {
@@ -3882,7 +4020,15 @@ function premiumOperatingSettingsAdminTemplate() {
         </div>
         <button type="submit">계좌/자료 링크 저장</button>
       </form>
-      <p class="admin-note">저장하면 Supabase analytics 이벤트에도 남겨 구매자 화면에서 최신 계좌와 승인 후 파일 링크를 불러옵니다.</p>
+      <p class="admin-note">저장하면 Supabase premium_settings 전용 테이블에 우선 저장하고, 테이블이 없을 때만 이벤트 로그를 백업으로 사용합니다.</p>
+      ${premiumSettingsTableReady() ? "" : `
+        <div class="premium-settings-warning">
+          <strong>premium_settings 테이블이 아직 없거나 권한이 막혀 있어요.</strong>
+          <span>Supabase SQL Editor에서 아래 SQL을 한 번 실행하면 계좌/자료 링크가 안정적으로 저장됩니다.</span>
+          <button type="button" data-premium-settings-sql-copy>SQL 복사</button>
+          <pre>${escapeHtml(getPremiumSettingsSql())}</pre>
+        </div>
+      `}
     </section>
   `;
 }
@@ -3911,7 +4057,25 @@ async function savePremiumOperatingSettings(form) {
   }
 
   let synced = 0;
+  let settingsSynced = false;
   if (supabaseConfig.enabled) {
+    try {
+      await supabaseRequest("premium_settings?on_conflict=setting_key", {
+        method: "POST",
+        headers: { Prefer: "resolution=merge-duplicates" },
+        body: JSON.stringify({
+          setting_key: "neuro-series-6",
+          account,
+          file_links: fileLinks,
+          updated_at: new Date().toISOString()
+        })
+      });
+      safeStorageRemove("pym.premiumSettingsTableMissing");
+      settingsSynced = true;
+    } catch {
+      safeStorageSet("pym.premiumSettingsTableMissing", "true");
+    }
+
     try {
       await postSupabaseEvents([settingsEvent]);
       markSupabaseSent([settingsEvent.id]);
@@ -3925,7 +4089,7 @@ async function savePremiumOperatingSettings(form) {
       }
     }
   }
-  showToast(synced ? "계좌와 자료 링크를 서버에 저장했어요" : "이 기기에 저장했어요. Supabase 연결을 확인해주세요");
+  showToast(settingsSynced ? "계좌와 자료 링크를 premium_settings에 저장했어요" : synced ? "이벤트 로그에 저장했어요. premium_settings 테이블을 확인해주세요" : "이 기기에 저장했어요. Supabase 연결을 확인해주세요");
 
   if (button) {
     button.disabled = false;
@@ -3936,31 +4100,67 @@ async function savePremiumOperatingSettings(form) {
 }
 
 function bankTransferOrdersAdminTemplate() {
-  const orders = getAdminBankTransferOrders();
+  const allOrders = getAdminBankTransferOrders();
+  const orders = getFilteredAdminBankTransferOrders();
+  const pendingCount = allOrders.filter((order) => order.status !== "approved").length;
+  const approvedCount = allOrders.filter((order) => order.status === "approved").length;
+  const visibleOrders = orders.slice(0, 100);
   return `
-    <section class="admin-card bank-admin-card">
+    <section class="admin-card bank-admin-card wide">
       <div class="admin-card-head">
         <h2>계좌이체 구매 신청</h2>
-        <span>${orders.length ? `${orders.length}건` : "신청 없음"}</span>
+        <span>${allOrders.length ? `전체 ${allOrders.length}건` : "신청 없음"}</span>
       </div>
-      ${orders.length ? `
-        <div class="bank-admin-list">
-          ${orders.slice(0, 20).map((order) => `
-            <article>
-              <div>
-                <strong>${escapeHtml(order.id)}</strong>
-                <span>${escapeHtml(order.depositor)} · ${escapeHtml(order.email)} · ${escapeHtml(order.amount)}</span>
-                <em>${escapeHtml(formatAdminDate(order.createdAt))}</em>
-              </div>
-              <div class="bank-admin-actions">
-                <span class="bank-status ${escapeHtml(order.status)}">${order.status === "approved" ? "승인완료" : "대기"}</span>
-                <button type="button" data-bank-order-copy="${escapeHtml(order.id)}">복사</button>
-                ${order.status === "approved" ? "" : `<button type="button" data-bank-order-approve="${escapeHtml(order.id)}">입금 확인</button>`}
-              </div>
-            </article>
-          `).join("")}
+      <div class="bank-admin-summary">
+        <article><strong>${formatCount(pendingCount)}</strong><span>입금 확인 대기</span></article>
+        <article><strong>${formatCount(approvedCount)}</strong><span>승인완료</span></article>
+        <article><strong>${formatCount(orders.length)}</strong><span>현재 표시</span></article>
+      </div>
+      <div class="bank-admin-toolbar">
+        <input data-admin-order-search type="search" value="${escapeHtml(adminOrderState.query)}" placeholder="주문번호, 입금자명, 이메일, 휴대폰 뒤 4자리 검색" />
+        <select data-admin-order-status>
+          <option value="all" ${adminOrderState.status === "all" ? "selected" : ""}>전체 상태</option>
+          <option value="pending" ${adminOrderState.status === "pending" ? "selected" : ""}>대기</option>
+          <option value="approved" ${adminOrderState.status === "approved" ? "selected" : ""}>승인완료</option>
+        </select>
+      </div>
+      ${visibleOrders.length ? `
+        <div class="bank-admin-table-wrap">
+          <table class="bank-admin-table">
+            <thead>
+              <tr>
+                <th>주문번호</th>
+                <th>입금자</th>
+                <th>연락</th>
+                <th>금액</th>
+                <th>상태</th>
+                <th>신청일</th>
+                <th>관리</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${visibleOrders.map((order) => `
+                <tr>
+                  <td><strong>${escapeHtml(order.id)}</strong>${order.memo ? `<span>${escapeHtml(order.memo)}</span>` : ""}</td>
+                  <td>${escapeHtml(order.depositor)}</td>
+                  <td><span>${escapeHtml(order.email)}</span><em>휴대폰 뒤 ${escapeHtml(order.phoneLast4 || "----")}</em></td>
+                  <td>${escapeHtml(order.amount)}</td>
+                  <td><span class="bank-status ${escapeHtml(order.status)}">${order.status === "approved" ? "승인완료" : "대기"}</span></td>
+                  <td>${escapeHtml(formatAdminDate(order.createdAt))}</td>
+                  <td>
+                    <div class="bank-admin-actions compact">
+                      <button type="button" data-bank-order-copy="${escapeHtml(order.id)}">복사</button>
+                      ${order.status === "approved" ? "" : `<button type="button" data-bank-order-approve="${escapeHtml(order.id)}">승인</button>`}
+                      <button type="button" class="danger" data-bank-order-delete="${escapeHtml(order.id)}">삭제</button>
+                    </div>
+                  </td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
         </div>
-      ` : `<p class="admin-empty">아직 구매 신청이 없어요. 프리미엄 페이지에서 테스트 신청을 넣어볼 수 있습니다.</p>`}
+        ${orders.length > visibleOrders.length ? `<p class="admin-note">검색 결과가 많아 최근 100건만 표시 중이에요. 검색어 또는 상태 필터로 좁혀보세요.</p>` : ""}
+      ` : `<p class="admin-empty">조건에 맞는 구매 신청이 없어요.</p>`}
     </section>
   `;
 }
