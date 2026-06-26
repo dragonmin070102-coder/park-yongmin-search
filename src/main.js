@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-10";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-11";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -114,6 +114,7 @@ let resourceStats = new Map();
 let trendStats = new Map();
 let resourceDiscussionStats = new Map();
 let noticeTouchStart = null;
+let lastNoticeImpression = "";
 let adminDashboardState = {
   period: "all",
   query: "",
@@ -499,6 +500,19 @@ document.addEventListener("click", (event) => {
     label: source.dataset.noticeSource,
     url: source.getAttribute("href")
   });
+});
+
+document.addEventListener("click", (event) => {
+  const premiumBanner = event.target.closest("[data-home-premium-banner]");
+  if (!premiumBanner) return;
+
+  event.preventDefault();
+  trackEvent("home_premium_banner_click", {
+    placement: premiumBanner.dataset.homePremiumBanner || "home_notice",
+    productId: "neuro-series-6"
+  });
+  window.location.hash = "premium";
+  setPremiumMode();
 });
 
 document.addEventListener("click", (event) => {
@@ -1142,6 +1156,12 @@ function renderHomeNoticeCarousel() {
   const notice = notices[activeNoticeIndex];
 
   homeNoticeCarousel.className = `clinical-card notice-${escapeHtml(notice.tone)}`;
+  const primaryAction = notice.target === "premium"
+    ? `<button type="button" data-home-premium-banner="primary">${escapeHtml(notice.action)}</button>`
+    : `<button type="button" data-query="${escapeHtml(notice.query)}">${escapeHtml(notice.action)}</button>`;
+  const sourceAction = notice.target === "premium"
+    ? `<a href="#premium" data-home-premium-banner="secondary">${escapeHtml(notice.sourceLabel)}</a>`
+    : `<a href="${escapeHtml(notice.sourceUrl)}" target="_blank" rel="noreferrer" data-notice-source="${escapeHtml(notice.label)}" ${notice.articleId ? `data-article-open="${escapeHtml(notice.articleId)}"` : ""}>${escapeHtml(notice.sourceLabel)}</a>`;
   homeNoticeCarousel.innerHTML = `
     <div class="clinical-copy">
       <p>
@@ -1151,8 +1171,8 @@ function renderHomeNoticeCarousel() {
       <h2>${escapeHtml(notice.title)}</h2>
       <span class="notice-description">${escapeHtml(notice.description)}</span>
       <div class="notice-actions">
-        <button type="button" data-query="${escapeHtml(notice.query)}">${escapeHtml(notice.action)}</button>
-        <a href="${escapeHtml(notice.sourceUrl)}" target="_blank" rel="noreferrer" data-notice-source="${escapeHtml(notice.label)}" ${notice.articleId ? `data-article-open="${escapeHtml(notice.articleId)}"` : ""}>${escapeHtml(notice.sourceLabel)}</a>
+        ${primaryAction}
+        ${sourceAction}
       </div>
     </div>
     <img src="${escapeHtml(notice.image)}" alt="" loading="eager" />
@@ -1162,6 +1182,17 @@ function renderHomeNoticeCarousel() {
       `).join("")}
     </div>
   `;
+
+  const impressionKey = `${activeNoticeIndex}:${notice.id || notice.label}`;
+  if (lastNoticeImpression !== impressionKey) {
+    lastNoticeImpression = impressionKey;
+    trackEvent("home_notice_impression", {
+      id: notice.id || "",
+      label: notice.label,
+      index: activeNoticeIndex,
+      tone: notice.tone
+    });
+  }
 }
 
 function getHomeNotices() {
@@ -1170,6 +1201,19 @@ function getHomeNotices() {
   const trendArticle = trendArticles[0];
 
   return [
+    {
+      id: "premium-neuro-series-6",
+      label: "유료 자료 오픈",
+      badge: "판매중",
+      title: "신경계 임상추론 6편, 지금 바로 열렸어요",
+      description: "GCS, IICP, 뇌졸중, 경련, TBI까지 시험과 실습 흐름으로 묶은 PDF 시리즈입니다.",
+      action: "구매 페이지 보기",
+      sourceLabel: "구성 확인",
+      sourceUrl: "#premium",
+      image: "./assets/iicp-brain-cover.png",
+      tone: "premium",
+      target: "premium"
+    },
     {
       label: "새 자료 업데이트",
       badge: "NEW",

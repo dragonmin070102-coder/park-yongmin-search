@@ -1731,6 +1731,15 @@ input[type="search"] {
   background: linear-gradient(135deg, #ffffff 0%, #f6fbf4 100%);
 }
 
+.clinical-card.notice-premium {
+  border-color: #dceaff;
+  background: linear-gradient(135deg, #ffffff 0%, #eef5ff 100%);
+}
+
+.clinical-card.notice-premium .clinical-copy p strong {
+  background: #00a86b;
+}
+
 .clinical-copy {
   position: relative;
   z-index: 1;
@@ -1826,7 +1835,8 @@ input[type="search"] {
 }
 
 .clinical-card.notice-update img,
-.clinical-card.notice-trend img {
+.clinical-card.notice-trend img,
+.clinical-card.notice-premium img {
   right: 6px;
   bottom: 14px;
   width: 92px;
