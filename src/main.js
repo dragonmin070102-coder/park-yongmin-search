@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-7";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-8";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -1363,40 +1363,6 @@ function renderPremiumScreen() {
       </div>
     </section>
 
-    <section class="premium-section premium-preview-strip">
-      <div class="premium-section-head">
-        <div>
-          <p class="eyebrow">Preview</p>
-          <h2>실제 자료 미리보기</h2>
-        </div>
-        <button type="button" data-premium-preview-gallery="0">전체 보기</button>
-      </div>
-      <div class="premium-doc-strip">
-        ${previewCards.map((card, index) => premiumDocPreviewCard(card, index)).join("")}
-        <article class="premium-doc-card locked">
-          <div class="doc-page-mini"><strong>전체 내용은<br />구매 후 확인 가능</strong></div>
-          <span>🔒</span>
-        </article>
-      </div>
-    </section>
-
-    <section class="premium-section premium-special-grid">
-      <div class="premium-section-head">
-        <div>
-          <p class="eyebrow">Why premium</p>
-          <h2>이 자료가 특별한 이유</h2>
-        </div>
-      </div>
-      <div class="premium-reason-grid">
-        <article><strong>임상 추론 중심</strong><span>실제 환자 상황 기반 사고 흐름 제시</span></article>
-        <article><strong>핵심 수치 정리</strong><span>시험 및 임상에서 자주 쓰이는 수치 정리</span></article>
-        <article><strong>간호중재 & 근거</strong><span>왜 이 간호를 하는지 근거까지 연결</span></article>
-        <article><strong>실전 적용 가능</strong><span>실습과 국시 흐름에 맞춰 적용</span></article>
-        <article><strong>도식·표·그림</strong><span>이해를 돕는 도식과 표 기반 구성</span></article>
-        <article><strong>최신 기준 반영</strong><span>AHA/ASA, BTF 등 기준 반영</span></article>
-      </div>
-    </section>
-
     <section class="premium-section">
       <div class="premium-section-head">
         <div>
@@ -1415,6 +1381,41 @@ function renderPremiumScreen() {
             <em>${Number(module.pages || 0)}페이지</em>
           </article>
         `).join("")}
+      </div>
+    </section>
+
+    <section class="premium-section premium-preview-strip">
+      <div class="premium-section-head">
+        <div>
+          <p class="eyebrow">Preview</p>
+          <h2>실제 자료 미리보기</h2>
+        </div>
+        <button type="button" data-premium-preview-gallery="0">전체 보기</button>
+      </div>
+      <div class="premium-doc-strip">
+        ${previewCards.map((card, index) => premiumDocPreviewCard(card, index)).join("")}
+        <article class="premium-doc-card locked">
+          <div class="doc-page-mini"><strong>전체 내용은<br />구매 후 확인 가능</strong></div>
+          <span>🔒</span>
+        </article>
+      </div>
+      <p class="premium-preview-caption">01_신경학적 사정의 일부 내용입니다</p>
+    </section>
+
+    <section class="premium-section premium-special-grid">
+      <div class="premium-section-head">
+        <div>
+          <p class="eyebrow">Why premium</p>
+          <h2>이 자료가 특별한 이유</h2>
+        </div>
+      </div>
+      <div class="premium-reason-grid">
+        <article><strong>임상 추론 중심</strong><span>실제 환자 상황 기반 사고 흐름 제시</span></article>
+        <article><strong>핵심 수치 정리</strong><span>시험 및 임상에서 자주 쓰이는 수치 정리</span></article>
+        <article><strong>간호중재 & 근거</strong><span>왜 이 간호를 하는지 근거까지 연결</span></article>
+        <article><strong>실전 적용 가능</strong><span>실습과 국시 흐름에 맞춰 적용</span></article>
+        <article><strong>도식·표·그림</strong><span>이해를 돕는 도식과 표 기반 구성</span></article>
+        <article><strong>최신 기준 반영</strong><span>AHA/ASA, BTF 등 기준 반영</span></article>
       </div>
     </section>
 

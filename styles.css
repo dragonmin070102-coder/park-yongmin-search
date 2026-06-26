@@ -6197,3 +6197,11 @@ body.admin-mode .analytics-admin {
     grid-template-columns: 1fr;
   }
 }
+
+.premium-preview-caption {
+  margin: 10px 2px 0;
+  color: #8b95a1;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.45;
+}
