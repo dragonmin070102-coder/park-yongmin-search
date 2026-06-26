@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-12";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-13";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -885,9 +885,11 @@ document.addEventListener("click", (event) => {
   const secureFile = event.target.closest("[data-premium-secure-file]");
   if (!secureFile) return;
 
+  const file = premiumDownloadFiles.find((item) => String(item.number) === String(secureFile.dataset.premiumSecureFile));
   trackEvent("premium_secure_file_click", {
     productId: "neuro-series-6",
     fileNumber: secureFile.dataset.premiumSecureFile,
+    fileTitle: file?.title || "",
     action: secureFile.dataset.premiumSecureAction || "open"
   });
   premiumSocialProof.accessCount += 1;
@@ -3511,6 +3513,7 @@ function showCopyFallback(text) {
 }
 
 async function loadContentStats() {
+  mergeLocalResourceViewStats();
   mergeLocalTrendViewStats();
   renderTrendScreen();
 
@@ -3521,10 +3524,13 @@ async function loadContentStats() {
     resourceStats = new Map(resourceRows
       .filter((row) => row.resource_id)
       .map((row) => [row.resource_id, { views: Number(row.open_count || 0) }]));
+    mergeLocalResourceViewStats();
     renderResults();
     renderDetail(activeResource);
   } catch {
-    // Stats are a display enhancement; keep the app usable if views are missing.
+    mergeLocalResourceViewStats();
+    renderResults();
+    renderDetail(activeResource);
   }
 
   try {
@@ -3592,6 +3598,25 @@ function getResourceViews(resourceId) {
 function bumpResourceView(resourceId) {
   const current = resourceStats.get(resourceId) || { views: 0 };
   resourceStats.set(resourceId, { ...current, views: Number(current.views || 0) + 1 });
+}
+
+function getLocalResourceViewCounts() {
+  const counts = new Map();
+  readAnalyticsEvents()
+    .filter((event) => ["resource_open", "drive_open"].includes(event.name))
+    .forEach((event) => {
+      const resourceId = event.properties?.resourceId;
+      if (!resourceId) return;
+      counts.set(resourceId, Number(counts.get(resourceId) || 0) + 1);
+    });
+  return counts;
+}
+
+function mergeLocalResourceViewStats() {
+  getLocalResourceViewCounts().forEach((views, resourceId) => {
+    const current = resourceStats.get(resourceId) || { views: 0 };
+    resourceStats.set(resourceId, { ...current, views: Math.max(Number(current.views || 0), views) });
+  });
 }
 
 function getResourceDiscussionStats(resourceId) {
@@ -4140,13 +4165,17 @@ function renderAnalyticsAdmin() {
     </div>
     <div class="admin-summary dashboard-kpis">
       ${adminMetricTemplate("총 이벤트 수", kpis.totalEvents)}
-      ${adminMetricTemplate("총 검색 수", kpis.totalSearches)}
+      ${adminMetricTemplate("페이지 조회 수", kpis.totalPageViews)}
       ${adminMetricTemplate("총 자료 조회 수", kpis.totalResourceViews)}
+      ${adminMetricTemplate("프리미엄 방문", kpis.premiumViews)}
+      ${adminMetricTemplate("홈배너 클릭", kpis.bannerClicks)}
+      ${adminMetricTemplate("구매자료 열기", kpis.fileOpens)}
+      ${adminMetricTemplate("총 검색 수", kpis.totalSearches)}
       ${adminMetricTemplate("검색 실패 수", kpis.totalFailures)}
       ${adminMetricTemplate("댓글 수", kpis.totalComments)}
       ${adminMetricTemplate("최근 7일 활성 사용자", kpis.activeUsers7d)}
     </div>
-    <section class="admin-card premium-funnel-card">
+    <section class="admin-card premium-funnel-card admin-section-card">
       <div class="admin-card-head">
         <h2>결제 페이지 퍼널</h2>
         <span>${periodLabel} 기준</span>
@@ -4164,7 +4193,7 @@ function renderAnalyticsAdmin() {
         `).join("")}
       </div>
     </section>
-    <section class="admin-card insight-card">
+    <section class="admin-card insight-card admin-section-card">
       <div class="admin-card-head">
         <h2>운영자 인사이트</h2>
         <span>${periodLabel} 기준</span>
@@ -4173,7 +4202,7 @@ function renderAnalyticsAdmin() {
         ${insights.map((insight) => `<article>${escapeHtml(insight)}</article>`).join("")}
       </div>
     </section>
-    <section class="admin-card">
+    <section class="admin-card admin-section-card">
       <div class="admin-card-head">
         <h2>인기 검색어 TOP 20</h2>
         <button type="button" data-admin-csv="searchTerms">CSV</button>
@@ -4185,7 +4214,7 @@ function renderAnalyticsAdmin() {
         formatAdminDate(row.last_searched_at)
       ]), "검색어 데이터가 없어요")}
     </section>
-    <section class="admin-card">
+    <section class="admin-card admin-section-card">
       <div class="admin-card-head">
         <h2>검색 실패어 TOP 20</h2>
         <button type="button" data-admin-csv="noResults">CSV</button>
@@ -4198,7 +4227,7 @@ function renderAnalyticsAdmin() {
         row.no_result_count >= 3 ? `<span class="admin-badge danger">콘텐츠 제작 후보</span>` : `<span class="admin-badge">관찰</span>`
       ]), "검색 실패 데이터가 없어요")}
     </section>
-    <section class="admin-card">
+    <section class="admin-card admin-section-card wide">
       <div class="admin-card-head">
         <h2>인기 콘텐츠 TOP 20</h2>
         <button type="button" data-admin-csv="popularResources">CSV</button>
@@ -4210,7 +4239,53 @@ function renderAnalyticsAdmin() {
         formatAdminDate(row.last_opened_at)
       ]), "인기 콘텐츠 데이터가 없어요")}
     </section>
-    <section class="admin-card">
+    <section class="admin-card admin-section-card wide">
+      <div class="admin-card-head">
+        <h2>자료별 조회 상세</h2>
+        <span>미리보기와 원본 열기 분리</span>
+      </div>
+      ${adminDataTable(["자료", "미리보기", "원본 열기", "합계", "최근 조회"], filtered.resourceViewDetails.slice(0, 30).map((row) => [
+        row.resource_title || row.resource_id,
+        formatCount(row.preview_count),
+        formatCount(row.source_open_count),
+        formatCount(row.total_count),
+        formatAdminDate(row.last_viewed_at)
+      ]), "자료별 조회 데이터가 아직 없어요")}
+    </section>
+    <section class="admin-card admin-section-card">
+      <div class="admin-card-head">
+        <h2>화면별 조회수</h2>
+        <span>${periodLabel} 기준</span>
+      </div>
+      ${adminDataTable(["화면", "조회수", "최근 조회"], filtered.pageViews.slice(0, 20).map((row) => [
+        row.page_label,
+        formatCount(row.view_count),
+        formatAdminDate(row.last_viewed_at)
+      ]), "페이지 조회 데이터가 아직 없어요")}
+    </section>
+    <section class="admin-card admin-section-card">
+      <div class="admin-card-head">
+        <h2>운영 이벤트 조회수</h2>
+        <span>배너·구매·자료 행동</span>
+      </div>
+      ${adminDataTable(["이벤트", "횟수", "최근 발생"], filtered.eventCounts.slice(0, 24).map((row) => [
+        row.event_label,
+        formatCount(row.event_count),
+        formatAdminDate(row.last_event_at)
+      ]), "운영 이벤트 데이터가 아직 없어요")}
+    </section>
+    <section class="admin-card admin-section-card">
+      <div class="admin-card-head">
+        <h2>프리미엄 파일 열람</h2>
+        <span>구매완료 이후</span>
+      </div>
+      ${adminDataTable(["파일", "열기", "최근 열람"], filtered.premiumFileViews.slice(0, 20).map((row) => [
+        row.file_label,
+        formatCount(row.open_count),
+        formatAdminDate(row.last_opened_at)
+      ]), "프리미엄 파일 열람 데이터가 아직 없어요")}
+    </section>
+    <section class="admin-card admin-section-card">
       <div class="admin-card-head">
         <h2>콘텐츠 수요 분석</h2>
         <span>검색→조회 전환율</span>
@@ -4222,7 +4297,7 @@ function renderAnalyticsAdmin() {
         `${row.conversion}%`
       ]), "수요 분석 데이터가 부족해요")}
     </section>
-    <section class="admin-card">
+    <section class="admin-card admin-section-card">
       <div class="admin-card-head">
         <h2>콘텐츠 갭 분석</h2>
         <span>실패 3회 이상</span>
@@ -4239,7 +4314,7 @@ function renderAnalyticsAdmin() {
     ${premiumOperatingSettingsAdminTemplate()}
     ${premiumTestToolsAdminTemplate()}
     ${bankTransferOrdersAdminTemplate()}
-    <section class="admin-card">
+    <section class="admin-card admin-section-card wide">
       <div class="admin-card-head">
         <h2>데이터 연결</h2>
         <span>${supabaseConfig.enabled ? "Supabase 연결됨" : "미연결"}</span>
@@ -4541,7 +4616,11 @@ function buildAdminDashboardDataFromEvents(events, comments = [], bankOrders = [
     bankOrders: mergeBankTransferOrders(bankOrders, eventOrders),
     searchTerms: aggregateSearchTerms(rawEvents),
     noResults: aggregateNoResultTerms(rawEvents),
-    popularResources: aggregatePopularResources(rawEvents)
+    popularResources: aggregatePopularResources(rawEvents),
+    resourceViewDetails: aggregateResourceViewDetails(rawEvents),
+    pageViews: aggregatePageViews(rawEvents),
+    eventCounts: aggregateOperatingEventCounts(rawEvents),
+    premiumFileViews: aggregatePremiumFileViews(rawEvents)
   };
 }
 
@@ -4587,6 +4666,18 @@ function filterAdminData(data) {
     popularResources: aggregatePopularResources(periodEvents)
       .filter((row) => matches(row.resource_title, row.resource_id))
       .sort((a, b) => b.open_count - a.open_count || new Date(b.last_opened_at) - new Date(a.last_opened_at)),
+    resourceViewDetails: aggregateResourceViewDetails(periodEvents)
+      .filter((row) => matches(row.resource_title, row.resource_id))
+      .sort((a, b) => b.total_count - a.total_count || new Date(b.last_viewed_at) - new Date(a.last_viewed_at)),
+    pageViews: aggregatePageViews(periodEvents)
+      .filter((row) => matches(row.page_label, row.page_key))
+      .sort((a, b) => b.view_count - a.view_count || new Date(b.last_viewed_at) - new Date(a.last_viewed_at)),
+    eventCounts: aggregateOperatingEventCounts(periodEvents)
+      .filter((row) => matches(row.event_label, row.event_name))
+      .sort((a, b) => b.event_count - a.event_count || new Date(b.last_event_at) - new Date(a.last_event_at)),
+    premiumFileViews: aggregatePremiumFileViews(periodEvents)
+      .filter((row) => matches(row.file_label, row.file_number))
+      .sort((a, b) => b.open_count - a.open_count || new Date(b.last_opened_at) - new Date(a.last_opened_at)),
     comments: periodComments,
     rawEvents: periodEvents,
     allRawEvents: data.allRawEvents || data.rawEvents || []
@@ -4610,10 +4701,10 @@ function aggregateNoResultTerms(events) {
 function aggregatePopularResources(events) {
   const grouped = new Map();
   events
-    .filter((event) => ["resource_open", "drive_open", "trend_article_open"].includes(event.event_name))
+    .filter((event) => ["resource_open", "drive_open", "trend_article_open", "premium_secure_file_click"].includes(event.event_name))
     .forEach((event) => {
-      const resourceId = event.properties?.resourceId || event.properties?.articleId || event.properties?.url || "unknown";
-      const title = event.properties?.resourceTitle || event.properties?.articleTitle || event.properties?.title || resourceId;
+      const resourceId = event.properties?.resourceId || event.properties?.articleId || event.properties?.fileNumber || event.properties?.url || "unknown";
+      const title = event.properties?.resourceTitle || event.properties?.articleTitle || event.properties?.title || event.properties?.fileTitle || (event.event_name === "premium_secure_file_click" ? `프리미엄 자료 ${resourceId}` : resourceId);
       if (!resourceId || resourceId === "unknown") return;
       const current = grouped.get(resourceId) || { resource_id: resourceId, resource_title: title, open_count: 0, last_opened_at: event.created_at };
       current.open_count += 1;
@@ -4626,12 +4717,112 @@ function aggregatePopularResources(events) {
   return Array.from(grouped.values());
 }
 
+function aggregateResourceViewDetails(events) {
+  const grouped = new Map();
+  events
+    .filter((event) => ["resource_open", "drive_open"].includes(event.event_name))
+    .forEach((event) => {
+      const resourceId = event.properties?.resourceId;
+      if (!resourceId) return;
+      const resource = resources.find((item) => item.id === resourceId);
+      const title = event.properties?.resourceTitle || resource?.displayTitle || resourceId;
+      const current = grouped.get(resourceId) || {
+        resource_id: resourceId,
+        resource_title: title,
+        preview_count: 0,
+        source_open_count: 0,
+        total_count: 0,
+        last_viewed_at: event.created_at
+      };
+      if (event.event_name === "resource_open") current.preview_count += 1;
+      if (event.event_name === "drive_open") current.source_open_count += 1;
+      current.total_count += 1;
+      current.resource_title = title;
+      if (new Date(event.created_at).getTime() > new Date(current.last_viewed_at).getTime()) {
+        current.last_viewed_at = event.created_at;
+      }
+      grouped.set(resourceId, current);
+    });
+  return Array.from(grouped.values());
+}
+
+function aggregatePageViews(events) {
+  return aggregateBy(events.filter((event) => event.event_name === "page_view"), (event) => normalizePageKey(event.properties?.hash || event.hash || "#home"), {
+    countKey: "view_count",
+    dateKey: "last_viewed_at",
+    labelKey: "page_key"
+  }).map((row) => ({ ...row, page_key: row.page_key || row.query, page_label: pageLabel(row.page_key || row.query) }));
+}
+
+function aggregateOperatingEventCounts(events) {
+  const labels = operatingEventLabels();
+  const grouped = aggregateBy(events.filter((event) => labels[event.event_name]), (event) => event.event_name, {
+    countKey: "event_count",
+    dateKey: "last_event_at",
+    labelKey: "event_name"
+  });
+  return grouped.map((row) => ({ ...row, event_name: row.event_name || row.query, event_label: labels[row.event_name || row.query] || row.event_name || row.query }));
+}
+
+function aggregatePremiumFileViews(events) {
+  return aggregateBy(events.filter((event) => event.event_name === "premium_secure_file_click"), (event) => String(event.properties?.fileNumber || "unknown"), {
+    countKey: "open_count",
+    dateKey: "last_opened_at",
+    labelKey: "file_number"
+  }).map((row) => {
+    const number = row.file_number || row.query;
+    const file = premiumDownloadFiles.find((item) => String(item.number) === String(number));
+    return { ...row, file_number: number, file_label: file ? `${file.number}. ${file.title}` : `프리미엄 자료 ${number}` };
+  });
+}
+
+function normalizePageKey(value) {
+  const hash = String(value || "#home").trim();
+  if (!hash || hash === "#") return "#home";
+  if (hash.startsWith("#")) return hash;
+  return `#${hash}`;
+}
+
+function pageLabel(key) {
+  const normalized = normalizePageKey(key);
+  const map = {
+    "#home": "홈",
+    "#search": "검색",
+    "#trend": "최근 간호 동향",
+    "#premium": "유료 구매 페이지",
+    "#premiumAccess": "구매완료 자료",
+    "#admin": "어드민"
+  };
+  return map[normalized] || normalized.replace(/^#/, "") || "홈";
+}
+
+function operatingEventLabels() {
+  return {
+    page_view: "페이지 조회",
+    premium_view: "유료 페이지 방문",
+    home_notice_impression: "홈배너 노출",
+    home_premium_banner_click: "홈배너 구매 클릭",
+    premium_checkout_click: "구매 신청 클릭",
+    bank_transfer_order_open: "계좌이체 창 열림",
+    bank_transfer_form_start: "신청서 작성 시작",
+    bank_transfer_order_submit: "구매 신청 접수",
+    bank_transfer_order_approve: "입금 확인 승인",
+    bank_transfer_order_verified: "구매자 승인 확인",
+    premium_secure_file_click: "구매완료 자료 열기",
+    resource_open: "자료 미리보기",
+    drive_open: "원본 자료 열기",
+    trend_article_open: "동향 상세 보기",
+    search: "검색 성공",
+    search_no_result: "검색 실패"
+  };
+}
+
 function aggregateBy(events, getKey, options) {
   const grouped = new Map();
   events.forEach((event) => {
     const key = getKey(event);
     if (!key) return;
-    const current = grouped.get(key) || { query: key, [options.countKey]: 0, [options.dateKey]: event.created_at };
+    const current = grouped.get(key) || { query: key, [options.labelKey || "query"]: key, [options.countKey]: 0, [options.dateKey]: event.created_at };
     current[options.countKey] += 1;
     if (new Date(event.created_at).getTime() > new Date(current[options.dateKey]).getTime()) {
       current[options.dateKey] = event.created_at;
@@ -4646,6 +4837,10 @@ function getAdminKpis(data) {
   const totalFailures = sumBy(data.noResults, "no_result_count");
   const totalResourceViews = sumBy(data.popularResources, "open_count");
   const totalComments = data.comments.length;
+  const totalPageViews = (data.rawEvents || []).filter((event) => event.event_name === "page_view").length;
+  const premiumViews = (data.rawEvents || []).filter((event) => event.event_name === "premium_view").length;
+  const bannerClicks = (data.rawEvents || []).filter((event) => event.event_name === "home_premium_banner_click").length;
+  const fileOpens = (data.rawEvents || []).filter((event) => event.event_name === "premium_secure_file_click").length;
   const rawEvents = data.rawEvents || [];
   const allRawEvents = (data.allRawEvents || rawEvents).map(normalizeAdminEvent);
   const activeUsers7d = new Set(allRawEvents
@@ -4659,7 +4854,11 @@ function getAdminKpis(data) {
     totalResourceViews,
     totalFailures,
     totalComments,
-    activeUsers7d
+    activeUsers7d,
+    totalPageViews,
+    premiumViews,
+    bannerClicks,
+    fileOpens
   };
 }
 
