@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-2";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-3";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -835,6 +835,13 @@ document.addEventListener("click", (event) => {
 });
 
 document.addEventListener("click", (event) => {
+  const copySql = event.target.closest("[data-bank-orders-sql-copy]");
+  if (!copySql) return;
+
+  writeClipboardText(getBankOrdersSql()).then(() => showToast("bank_transfer_orders SQL을 복사했어요")).catch(() => { showCopyFallback(getBankOrdersSql()); showToast("복사 권한이 막혀 SQL을 열어뒀어요"); });
+});
+
+document.addEventListener("click", (event) => {
   const secureFile = event.target.closest("[data-premium-secure-file]");
   if (!secureFile) return;
 
@@ -1562,6 +1569,47 @@ function getPremiumSettingsSql() {
   ].join("\n");
 }
 
+function bankOrdersTableReady() {
+  return safeStorageGet("pym.bankOrdersTableMissing") !== "true";
+}
+
+function getBankOrdersSql() {
+  return [
+    "create table if not exists public.bank_transfer_orders (",
+    "  id text primary key,",
+    "  product_id text not null,",
+    "  product_title text not null,",
+    "  amount text not null,",
+    "  depositor text not null,",
+    "  email text not null,",
+    "  phone_last4 text,",
+    "  memo text,",
+    "  status text not null default 'pending',",
+    "  created_at timestamptz not null default now(),",
+    "  approved_at timestamptz,",
+    "  updated_at timestamptz not null default now()",
+    ");",
+    "",
+    "create index if not exists bank_transfer_orders_created_at_idx on public.bank_transfer_orders (created_at desc);",
+    "create index if not exists bank_transfer_orders_status_idx on public.bank_transfer_orders (status, created_at desc);",
+    "",
+    "alter table public.bank_transfer_orders enable row level security;",
+    "grant select, insert, update, delete on public.bank_transfer_orders to anon;",
+    "",
+    "drop policy if exists \"Allow anonymous bank order insert\" on public.bank_transfer_orders;",
+    "create policy \"Allow anonymous bank order insert\" on public.bank_transfer_orders for insert to anon with check (true);",
+    "",
+    "drop policy if exists \"Allow anonymous bank order select\" on public.bank_transfer_orders;",
+    "create policy \"Allow anonymous bank order select\" on public.bank_transfer_orders for select to anon using (true);",
+    "",
+    "drop policy if exists \"Allow anonymous bank order update\" on public.bank_transfer_orders;",
+    "create policy \"Allow anonymous bank order update\" on public.bank_transfer_orders for update to anon using (true) with check (true);",
+    "",
+    "drop policy if exists \"Allow anonymous bank order delete\" on public.bank_transfer_orders;",
+    "create policy \"Allow anonymous bank order delete\" on public.bank_transfer_orders for delete to anon using (true);"
+  ].join("\n");
+}
+
 function readBankTransferOrders() {
   return readJsonArray("pym.bankTransferOrders");
 }
@@ -1609,12 +1657,19 @@ function getFilteredAdminBankTransferOrders() {
 }
 
 async function pushBankTransferOrderToSupabase(order) {
-  if (!supabaseConfig.enabled) return;
-  await supabaseRequest("bank_transfer_orders?on_conflict=id", {
-    method: "POST",
-    headers: { Prefer: "resolution=merge-duplicates" },
-    body: JSON.stringify(toBankTransferOrderRow(order))
-  }).catch(() => null);
+  if (!supabaseConfig.enabled) return { ok: false, reason: "Supabase 연결 없음" };
+  try {
+    await supabaseRequest("bank_transfer_orders?on_conflict=id", {
+      method: "POST",
+      headers: { Prefer: "resolution=merge-duplicates" },
+      body: JSON.stringify(toBankTransferOrderRow(order))
+    });
+    safeStorageRemove("pym.bankOrdersTableMissing");
+    return { ok: true };
+  } catch (error) {
+    safeStorageSet("pym.bankOrdersTableMissing", "true");
+    return { ok: false, reason: error.message || "Supabase 저장 실패" };
+  }
 }
 
 function toBankTransferOrderRow(order) {
@@ -1732,7 +1787,7 @@ function openBankTransferOrderModal(productId) {
   trackEvent("bank_transfer_order_open", { productId });
 }
 
-function submitBankTransferOrder(form) {
+async function submitBankTransferOrder(form) {
   const formData = new FormData(form);
   const productId = String(formData.get("productId") || "neuro-series-6");
   const depositor = String(formData.get("depositor") || "").trim();
@@ -1763,21 +1818,28 @@ function submitBankTransferOrder(form) {
     createdAt: new Date().toISOString(),
     approvedAt: ""
   };
+  const button = form.querySelector("button[type='submit']");
+  if (button) {
+    button.disabled = true;
+    button.textContent = "접수 중...";
+  }
+
   const orders = [...readBankTransferOrders(), order];
   writeBankTransferOrders(orders);
-  pushBankTransferOrderToSupabase(order);
-  trackEvent("bank_transfer_order_submit", bankTransferOrderPayload(order));
+  const remoteResult = await pushBankTransferOrderToSupabase(order);
+  trackEvent("bank_transfer_order_submit", { ...bankTransferOrderPayload(order), remoteSaved: remoteResult.ok });
   if (!analyticsAdmin.hidden) renderAnalyticsAdmin();
-  renderBankOrderSubmitted(order);
+  renderBankOrderSubmitted(order, remoteResult);
 }
 
-function renderBankOrderSubmitted(order) {
+function renderBankOrderSubmitted(order, remoteResult = { ok: true }) {
   modalContent.innerHTML = `
     <div class="bank-order-modal submitted">
       <p class="eyebrow">Order received</p>
       <h2>구매 신청이 접수됐어요</h2>
       <div class="bank-order-code">${escapeHtml(order.id)}</div>
       <p>아래 정보로 입금 후 운영자가 승인하면, 이 주문번호로 자료 열람을 열 수 있습니다.</p>
+      ${remoteResult.ok ? "" : `<p class="bank-order-warning-text">서버 저장이 막혀 이 기기에만 접수됐어요. 운영자에게 주문번호를 보내주세요.</p>`}
       <div class="bank-account-card">
         <span>입금액</span><strong>${escapeHtml(order.amount)}</strong>
         <span>은행</span><strong>${escapeHtml(getBankTransferAccount().bank)}</strong>
@@ -4124,6 +4186,14 @@ function bankTransferOrdersAdminTemplate() {
           <option value="approved" ${adminOrderState.status === "approved" ? "selected" : ""}>승인완료</option>
         </select>
       </div>
+      ${bankOrdersTableReady() ? "" : `
+        <div class="premium-settings-warning bank-order-warning">
+          <strong>핸드폰 구매 신청이 어드민에 안 뜨면 이 SQL이 필요해요.</strong>
+          <span>Supabase SQL Editor에서 bank_transfer_orders 테이블과 권한을 먼저 만들어야 모든 기기 신청이 같은 목록에 모입니다.</span>
+          <button type="button" data-bank-orders-sql-copy>bank_transfer_orders SQL 복사</button>
+          <pre>${escapeHtml(getBankOrdersSql())}</pre>
+        </div>
+      `}
       ${visibleOrders.length ? `
         <div class="bank-admin-table-wrap">
           <table class="bank-admin-table">
@@ -4193,7 +4263,7 @@ async function loadAdminDashboardData() {
       supabaseRequest("analytics_events?select=event_id,event_name,anonymous_user_id,created_at,properties&order=created_at.desc&limit=5000"),
       supabaseRequest("trend_comments?select=id,article_id,nickname,body,likes,created_at&hidden=eq.false&order=created_at.desc&limit=1000").catch(() => []),
       supabaseRequest("resource_comments?select=id,resource_id,nickname,body,likes,created_at&hidden=eq.false&order=created_at.desc&limit=1000").catch(() => []),
-      supabaseRequest("bank_transfer_orders?select=*&order=created_at.desc&limit=300").catch(() => [])
+      supabaseRequest("bank_transfer_orders?select=*&order=created_at.desc&limit=300").catch(() => { safeStorageSet("pym.bankOrdersTableMissing", "true"); return []; })
     ]);
 
     const mergedRawEvents = mergeAdminEvents(rawEvents, readAnalyticsEvents());

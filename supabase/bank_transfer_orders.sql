@@ -24,7 +24,7 @@ create index if not exists bank_transfer_orders_status_idx
 
 alter table public.bank_transfer_orders enable row level security;
 
-grant select, insert, update on public.bank_transfer_orders to anon;
+grant select, insert, update, delete on public.bank_transfer_orders to anon;
 
 -- MVP policy: the hidden admin route can read/update orders with the public anon key.
 -- Before public launch, replace update/select with authenticated admin-only policies.
@@ -49,3 +49,11 @@ create policy "Allow anonymous bank order update"
   to anon
   using (true)
   with check (true);
+
+
+drop policy if exists "Allow anonymous bank order delete" on public.bank_transfer_orders;
+create policy "Allow anonymous bank order delete"
+  on public.bank_transfer_orders
+  for delete
+  to anon
+  using (true);
