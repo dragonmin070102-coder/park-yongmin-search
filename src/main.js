@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-4";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-5";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -1338,10 +1338,6 @@ function renderPremiumScreen() {
       </div>
     </section>
 
-    ${renderBankTransferStatusPanel(activeOrder)}
-
-    ${renderPremiumAccessPanel(purchased)}
-
     <section class="premium-section premium-preview-strip">
       <div class="premium-section-head">
         <div>
@@ -1419,6 +1415,10 @@ function renderPremiumScreen() {
         <span>입금 확인 후 주문번호로 자료 열람이 열립니다.</span>
       `}
     </section>
+
+    ${renderPremiumAccessPanel(purchased)}
+
+    ${renderBankTransferStatusPanel(activeOrder)}
 
     <section class="premium-section premium-social-proof">
       <div class="premium-section-head">
