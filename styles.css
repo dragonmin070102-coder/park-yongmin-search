@@ -6299,3 +6299,42 @@ body.admin-mode .dashboard-kpis article {
 body.admin-mode .dashboard-kpis article span {
   word-break: keep-all;
 }
+
+body.admin-mode .admin-freshness-card {
+  grid-column: 1 / -1 !important;
+}
+
+.admin-freshness-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-freshness-grid article {
+  display: grid;
+  gap: 5px;
+  min-height: 74px;
+  padding: 14px;
+  border: 1px solid #edf0f3;
+  border-radius: 8px;
+  background: #f7f8fa;
+}
+
+.admin-freshness-grid strong {
+  color: #191f28;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.admin-freshness-grid span {
+  color: #6b7684;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+@media (max-width: 900px) {
+  .admin-freshness-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

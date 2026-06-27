@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260626-15";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260627-1";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const memoryStorage = new Map();
 
@@ -4141,6 +4141,7 @@ function renderAnalyticsAdmin() {
   const periodLabel = adminPeriodLabel(adminDashboardState.period);
   const premiumFunnel = getPremiumFunnel(filtered.rawEvents, filtered.bankOrders || [], filtered.premiumFileViews || []);
   const funnelFreshness = getFunnelFreshness(premiumFunnel);
+  const dataFreshness = getAdminDataFreshness(filtered);
   const funnelLimited = !filtered.rawEvents.length && ((filtered.bankOrders || []).length || (filtered.popularResources || []).length || (filtered.searchTerms || []).length);
 
   analyticsContent.innerHTML = `
@@ -4159,6 +4160,19 @@ function renderAnalyticsAdmin() {
     </div>
     ${adminDashboardState.loading ? `<p class="admin-status">Supabase 데이터를 불러오는 중이에요.</p>` : ""}
     ${adminDashboardState.error ? `<p class="admin-status error">${escapeHtml(adminDashboardState.error)}</p>` : ""}
+    <section class="admin-card admin-freshness-card admin-section-card wide">
+      <div class="admin-card-head">
+        <h2>데이터 최신 상태</h2>
+        <span>${periodLabel} 기준</span>
+      </div>
+      <div class="admin-freshness-grid">
+        <article><strong>${escapeHtml(dataFreshness.overall)}</strong><span>전체 데이터 최신</span></article>
+        <article><strong>${escapeHtml(dataFreshness.resource)}</strong><span>자료 조회 최신</span></article>
+        <article><strong>${escapeHtml(dataFreshness.search)}</strong><span>검색 최신</span></article>
+        <article><strong>${escapeHtml(funnelFreshness)}</strong><span>결제 퍼널 최신 활동</span></article>
+      </div>
+      <p class="admin-note">결제 퍼널 시간은 구매 여정 안의 마지막 활동만 뜻합니다. 사이트 전체 수집 상태는 전체 데이터 최신/자료 조회 최신을 기준으로 보세요.</p>
+    </section>
     <div class="admin-summary dashboard-kpis revenue-kpis">
       ${adminMetricTemplate("오늘 수입", formatWon(revenue.todayRevenue))}
       ${adminMetricTemplate("이번 달 수입", formatWon(revenue.monthRevenue))}
@@ -4180,7 +4194,7 @@ function renderAnalyticsAdmin() {
     <section class="admin-card premium-funnel-card admin-section-card">
       <div class="admin-card-head">
         <h2>결제 페이지 퍼널</h2>
-        <span>${periodLabel} · 마지막 수집 ${escapeHtml(funnelFreshness)}</span>
+        <span>${periodLabel} · 퍼널 최신 활동 ${escapeHtml(funnelFreshness)}</span>
       </div>
       ${funnelLimited ? `<p class="admin-note funnel-warning">원본 이벤트 조회가 제한되어 방문/클릭 단계는 비어 보일 수 있어요. 접수·승인 단계는 구매 신청 DB 기준으로 보정해서 표시합니다.</p>` : ""}
       <div class="premium-funnel-list">
@@ -5027,6 +5041,22 @@ function getContentGaps(noResults) {
     .slice(0, 12);
 }
 
+
+function getAdminDataFreshness(data) {
+  const resource = latestDate((data.popularResources || []).map((row) => row.last_opened_at));
+  const search = latestDate([...(data.searchTerms || []), ...(data.noResults || [])].map((row) => row.last_searched_at));
+  const orders = latestDate((data.bankOrders || []).flatMap((order) => [order.createdAt, order.approvedAt, order.updatedAt]));
+  const events = latestDate((data.rawEvents || []).map((event) => event.created_at));
+  const comments = latestDate((data.comments || []).map((row) => row.created_at));
+  const premiumFiles = latestDate((data.premiumFileViews || []).map((row) => row.last_opened_at));
+  const overall = latestDate([resource, search, orders, events, comments, premiumFiles]);
+  return {
+    overall: overall ? formatAdminDate(overall) : "없음",
+    resource: resource ? formatAdminDate(resource) : "없음",
+    search: search ? formatAdminDate(search) : "없음",
+    orders: orders ? formatAdminDate(orders) : "없음"
+  };
+}
 
 function getPremiumFunnel(events, orders = [], premiumFileViews = []) {
   const normalized = (events || []).map(normalizeAdminEvent);
