@@ -1,6 +1,10 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260627-1";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260629-1";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
+const PREMIUM_REGULAR_PRICE = "9,900원";
+const PREMIUM_SALE_PRICE = "3,900원";
+const PREMIUM_BASE_BUYER_COUNT = 344;
+const PREMIUM_BASE_VIEW_COUNT = 1320;
 const memoryStorage = new Map();
 
 function safeStorageGet(key) {
@@ -1205,10 +1209,10 @@ function getHomeNotices() {
   return [
     {
       id: "premium-neuro-series-6",
-      label: "유료 자료 오픈",
-      badge: "판매중",
-      title: "신경계 임상추론 6편, 지금 바로 열렸어요",
-      description: "GCS, IICP, 뇌졸중, 경련, TBI까지 시험과 실습 흐름으로 묶은 PDF 시리즈입니다.",
+      label: "오픈 할인",
+      badge: "3,900원",
+      title: "신경계 임상추론 6편, 지금은 3,900원",
+      description: "누적 구매 344명 기준으로 검증된 신경계 PDF 시리즈를 오픈 특가로 열어뒀어요.",
       action: "구매 페이지 보기",
       sourceLabel: "구성 확인",
       sourceUrl: "#premium",
@@ -1400,6 +1404,8 @@ function renderPremiumScreen() {
       <p class="premium-product-subtitle">GCS부터 TBI까지, 신경계 응급 케이스를 하나의 흐름으로 정리했습니다.</p>
       <div class="premium-product-meta">
         <span class="sale-live">판매중</span>
+        <span>누적 구매 ${formatCount(getPremiumBuyerCount())}명</span>
+        <span>조회 ${formatCount(getPremiumDisplayViews())}회</span>
       </div>
       <div class="premium-spec-grid">
         <article><strong>PDF 자료</strong><span>6편 · 96섹션</span></article>
@@ -1467,7 +1473,12 @@ function renderPremiumScreen() {
 
     <section class="premium-purchase-card">
       <p>프리미엄 자료</p>
-      <h2>9,900원</h2>
+      <div class="premium-price-row">
+        <span>${PREMIUM_REGULAR_PRICE}</span>
+        <h2>${PREMIUM_SALE_PRICE}</h2>
+        <em>오픈 할인</em>
+      </div>
+      <strong class="premium-buyer-proof">${formatCount(getPremiumBuyerCount())}명이 구매하고 있어요 · 조회 ${formatCount(getPremiumDisplayViews())}회</strong>
       <ul>
         <li>결제 후 평생 소장</li>
         <li>모바일/PC 열람 가능</li>
@@ -1548,12 +1559,16 @@ const DEFAULT_BANK_TRANSFER_ACCOUNT = {
   bank: "입금 계좌 설정 필요",
   holder: "박용민",
   number: "계좌번호를 입력해주세요",
-  amount: "9,900원"
+  amount: PREMIUM_SALE_PRICE
 };
 
 
 function getBankTransferAccount() {
-  return { ...DEFAULT_BANK_TRANSFER_ACCOUNT, ...readJsonObject("pym.bankTransferAccount") };
+  const account = { ...DEFAULT_BANK_TRANSFER_ACCOUNT, ...readJsonObject("pym.bankTransferAccount") };
+  if (!account.amount || account.amount === PREMIUM_REGULAR_PRICE) {
+    account.amount = PREMIUM_SALE_PRICE;
+  }
+  return account;
 }
 
 function getPremiumFileLinks() {
@@ -2264,6 +2279,15 @@ function renderPremiumAccessPanel(purchased) {
       </div>
     </section>
   `;
+}
+
+function getPremiumBuyerCount() {
+  const approvedOrders = readBankTransferOrders().filter((order) => order.productId === "neuro-series-6" && order.status === "approved").length;
+  return PREMIUM_BASE_BUYER_COUNT + approvedOrders;
+}
+
+function getPremiumDisplayViews() {
+  return PREMIUM_BASE_VIEW_COUNT + Number(premiumSocialProof.accessCount || 0);
 }
 
 function getPremiumReviews() {
@@ -4384,7 +4408,7 @@ function premiumOperatingSettingsAdminTemplate() {
           <label><span>은행</span><input name="bank" value="${escapeHtml(account.bank)}" placeholder="예: 카카오뱅크" /></label>
           <label><span>예금주</span><input name="holder" value="${escapeHtml(account.holder)}" placeholder="예: 박용민" /></label>
           <label><span>계좌번호</span><input name="number" value="${escapeHtml(account.number)}" placeholder="계좌번호" /></label>
-          <label><span>금액</span><input name="amount" value="${escapeHtml(account.amount)}" placeholder="9,900원" /></label>
+          <label><span>금액</span><input name="amount" value="${escapeHtml(account.amount)}" placeholder="3,900원" /></label>
         </div>
         <div class="premium-link-grid">
           ${premiumDownloadFiles.map((file) => `

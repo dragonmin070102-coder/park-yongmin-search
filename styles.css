@@ -4775,6 +4775,36 @@ body.search-mode .premium-screen {
   letter-spacing: 0;
 }
 
+.premium-price-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.premium-price-row span {
+  color: #8b95a1;
+  font-size: 15px;
+  font-weight: 800;
+  text-decoration: line-through;
+}
+
+.premium-price-row em {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #fff4e5;
+  color: #f04438;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.premium-buyer-proof {
+  color: #3182f6;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .premium-purchase-card ul {
   display: grid;
   gap: 8px;
