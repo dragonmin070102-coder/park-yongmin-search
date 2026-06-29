@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260629-2";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260629-3";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const PREMIUM_REGULAR_PRICE = "9,900원";
 const PREMIUM_SALE_PRICE = "3,900원";
@@ -1450,13 +1450,20 @@ function renderAgentScreen() {
         ${samples.map((sample) => `<button type="button" data-agent-sample="${escapeHtml(sample)}">${escapeHtml(sample)}</button>`).join("")}
       </div>
     </section>
-    <section class="agent-chat-card">
+    <section class="agent-chat-card ${agentLoading ? "loading" : ""}">
+      <div class="agent-chat-status">
+        <div>
+          <strong>${agentLoading ? "답변 생성 중" : "자료 기반 답변"}</strong>
+          <span>${agentLoading ? "관련 PYM 자료를 읽고 정리하고 있어요." : "질문하면 먼저 자료를 찾고 답변합니다."}</span>
+        </div>
+        ${agentLoading ? `<i aria-hidden="true"></i>` : ""}
+      </div>
       <div class="agent-message-list" id="agentMessageList">
         ${renderAgentMessages()}
       </div>
       <form class="agent-input-form" data-agent-form>
-        <textarea name="question" rows="1" placeholder="예: 폐렴 케이스에서 WBC랑 SpO2를 어떻게 연결해?" ${agentLoading ? "disabled" : ""}></textarea>
-        <button type="submit" ${agentLoading ? "disabled" : ""}>${agentLoading ? "생각 중" : "질문"}</button>
+        <textarea name="question" rows="1" placeholder="질환, 검사, 실습 질문을 입력하세요" ${agentLoading ? "disabled" : ""}></textarea>
+        <button type="submit" ${agentLoading ? "disabled" : ""}>${agentLoading ? "대기" : "전송"}</button>
       </form>
     </section>
   `;
@@ -1476,9 +1483,13 @@ function renderAgentMessages() {
   }
 
   return agentMessages.map((message) => `
-    <article class="agent-message ${escapeHtml(message.role)}">
+    <article class="agent-message ${escapeHtml(message.role)} ${message.loading ? "loading" : ""}">
       <span>${message.role === "user" ? "나" : "PYM Agent"}</span>
-      <p>${escapeHtml(message.content).replace(/\n/g, "<br />")}</p>
+      ${message.loading ? `
+        <div class="agent-typing" aria-label="답변 생성 중">
+          <i></i><i></i><i></i>
+        </div>
+      ` : `<p>${escapeHtml(message.content).replace(/\n/g, "<br />")}</p>`}
       ${message.references?.length ? `
         <div class="agent-references">
           <strong>참고한 PYM 자료</strong>
@@ -1503,7 +1514,8 @@ function getAgentLocalMatches(question) {
 }
 
 function saveAgentMessages() {
-  safeStorageSet("pym.agentMessages", JSON.stringify(agentMessages.slice(-12)));
+  const stableMessages = agentMessages.filter((message) => !message.loading).slice(-12);
+  safeStorageSet("pym.agentMessages", JSON.stringify(stableMessages));
 }
 
 async function submitAgentQuestion(form) {
@@ -1515,7 +1527,7 @@ async function submitAgentQuestion(form) {
   agentMessages = [
     ...agentMessages,
     { role: "user", content: question },
-    { role: "assistant", content: "관련 PYM 자료를 먼저 찾는 중이에요.", references: localReferences }
+    { role: "assistant", content: "관련 PYM 자료를 먼저 찾는 중이에요.", references: localReferences, loading: true }
   ].slice(-12);
   agentLoading = true;
   saveAgentMessages();
@@ -1534,14 +1546,16 @@ async function submitAgentQuestion(form) {
     agentMessages[agentMessages.length - 1] = {
       role: "assistant",
       content: payload.answer || "현재 자료 기준으로는 답변이 부족해요.",
-      references: payload.references?.length ? payload.references : localReferences
+      references: payload.references?.length ? payload.references : localReferences,
+      loading: false
     };
     trackEvent("agent_answer_success", { referenceCount: agentMessages[agentMessages.length - 1].references.length, model: payload.model || "" });
   } catch (error) {
     agentMessages[agentMessages.length - 1] = {
       role: "assistant",
       content: `${error.message || "PYM Agent API 연결에 실패했어요."}\n\n지금 화면에서는 관련 자료까지만 먼저 보여줄게요. 배포 환경에 NVIDIA_API_KEY를 설정하고 PYM Agent API를 연결하면 답변 생성이 열립니다.`,
-      references: localReferences
+      references: localReferences,
+      loading: false
     };
     trackEvent("agent_answer_failed", { message: error.message || "unknown" });
   } finally {
