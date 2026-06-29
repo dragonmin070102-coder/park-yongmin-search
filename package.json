@@ -1,0 +1,12 @@
+{
+  "name": "park-yongmin-search",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "check": "node --check src/main.js && node --check api/pym-agent.js"
+  },
+  "dependencies": {
+    "openai": "^6.15.0"
+  }
+}

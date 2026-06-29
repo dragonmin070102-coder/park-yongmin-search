@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260629-1";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260629-2";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const PREMIUM_REGULAR_PRICE = "9,900원";
 const PREMIUM_SALE_PRICE = "3,900원";
@@ -102,6 +102,7 @@ const analyticsContent = document.querySelector("#analyticsContent");
 const homeNoticeCarousel = document.querySelector("#homeNoticeCarousel");
 const trendScreen = document.querySelector("#trendScreen");
 const premiumScreen = document.querySelector("#premiumScreen");
+const agentScreen = document.querySelector("#agentScreen");
 
 let activeType = "전체";
 let activeIntent = "전체";
@@ -134,10 +135,13 @@ let adminSearchTimer = null;
 let analyticsFlushScheduled = false;
 let currentPremiumPreviewCards = [];
 let premiumSocialProof = { reviews: [], accessCount: 0 };
+let agentMessages = readJsonArray("pym.agentMessages").slice(-12);
+let agentLoading = false;
 
 const analyticsUserId = getOrCreateAnalyticsUserId();
 const analyticsSessionId = createSessionId();
 const supabaseConfig = getSupabaseConfig();
+const agentApiUrl = String(window.PYM_AGENT_API_URL || "/api/pym-agent");
 
 const communityQuestions = [
   {
@@ -898,6 +902,7 @@ document.addEventListener("click", (event) => {
   });
   premiumSocialProof.accessCount += 1;
   renderPremiumScreen();
+renderAgentScreen();
 });
 
 document.addEventListener("click", (event) => {
@@ -920,6 +925,50 @@ document.addEventListener("click", (event) => {
   if (!gallery) return;
 
   openPremiumPreviewGallery(Number(gallery.dataset.premiumPreviewGallery || 0));
+});
+
+document.addEventListener("submit", (event) => {
+  const form = event.target.closest("[data-agent-form]");
+  if (!form) return;
+
+  event.preventDefault();
+  submitAgentQuestion(form);
+});
+
+document.addEventListener("click", (event) => {
+  const sample = event.target.closest("[data-agent-sample]");
+  if (!sample) return;
+
+  const input = agentScreen?.querySelector("[data-agent-form] textarea");
+  if (input) {
+    input.value = sample.dataset.agentSample || "";
+    input.focus();
+  }
+});
+
+document.addEventListener("click", (event) => {
+  const resourceButton = event.target.closest("[data-agent-resource]");
+  if (!resourceButton) return;
+
+  const resource = resources.find((item) => item.id === resourceButton.dataset.agentResource);
+  if (!resource) return;
+  activeResource = resource;
+  rememberRecent(resource.id);
+  setSearchMode();
+  activeTab = "search";
+  queryInput.value = resource.displayTitle;
+  renderBottomTabs();
+  renderResults();
+  openPreviewModal(resource);
+});
+
+document.addEventListener("click", (event) => {
+  const back = event.target.closest("[data-agent-back]");
+  if (!back) return;
+
+  setHomeMode();
+  renderBottomTabs();
+  window.location.hash = "";
 });
 
 document.addEventListener("submit", (event) => {
@@ -1067,6 +1116,10 @@ function renderBottomTabs() {
       setTrendMode();
       window.scrollTo({ top: 0, behavior: "smooth" });
     } },
+    { id: "agent", label: "Agent", icon: agentIcon(), target: () => {
+      setAgentMode();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } },
     { id: "premium", label: "유료", icon: paidIcon(), target: () => {
       setPremiumMode();
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1095,6 +1148,7 @@ function setHomeMode() {
   document.body.classList.remove("search-mode");
   document.body.classList.remove("trend-mode");
   document.body.classList.remove("premium-mode");
+  document.body.classList.remove("agent-mode");
   activeTab = "home";
   resultMode = "search";
   queryInput.value = "";
@@ -1107,6 +1161,7 @@ function setSearchMode() {
   document.body.classList.add("search-mode");
   document.body.classList.remove("trend-mode");
   document.body.classList.remove("premium-mode");
+  document.body.classList.remove("agent-mode");
   screenQueryInput.value = queryInput.value;
   renderSortTabs();
 }
@@ -1115,6 +1170,7 @@ function setTrendMode() {
   document.body.classList.remove("search-mode");
   document.body.classList.add("trend-mode");
   document.body.classList.remove("premium-mode");
+  document.body.classList.remove("agent-mode");
   activeTab = "trend";
   renderTrendScreen();
   renderBottomTabs();
@@ -1125,9 +1181,21 @@ function setPremiumMode() {
   document.body.classList.remove("search-mode");
   document.body.classList.remove("trend-mode");
   document.body.classList.add("premium-mode");
+  document.body.classList.remove("agent-mode");
   activeTab = "premium";
   renderBottomTabs();
   trackEvent("premium_view", { productId: "neuro-series-6" });
+}
+
+function setAgentMode() {
+  document.body.classList.remove("search-mode");
+  document.body.classList.remove("trend-mode");
+  document.body.classList.remove("premium-mode");
+  document.body.classList.add("agent-mode");
+  activeTab = "agent";
+  renderAgentScreen();
+  renderBottomTabs();
+  trackEvent("agent_view");
 }
 
 function renderSortTabs() {
@@ -1360,6 +1428,128 @@ const premiumDownloadFiles = [
   { number: "05", title: "경련·뇌전증", pages: 10, fileName: "neuro-05-seizure-epilepsy.docx" },
   { number: "06", title: "외상성 뇌손상", pages: 10, fileName: "neuro-06-tbi.docx" }
 ];
+
+
+function renderAgentScreen() {
+  if (!agentScreen) return;
+
+  const samples = ["ABGA 보상 어떻게 봐?", "GBS에서 SpO2 정상인데 왜 위험해?", "IICP 환자 우선순위 알려줘"];
+  agentScreen.innerHTML = `
+    <div class="agent-app-top">
+      <button type="button" data-agent-back aria-label="홈으로 돌아가기">‹</button>
+      <div>
+        <strong>PYM Agent</strong>
+        <span>박용민 자료 기반 RAG 챗봇</span>
+      </div>
+    </div>
+    <section class="agent-hero-card">
+      <p class="eyebrow">Ask PYM</p>
+      <h2>질환명, 검사수치, 실습 질문을 물어보세요.</h2>
+      <p>먼저 PYM 자료를 찾고, 그 자료 요약과 근거를 바탕으로 답합니다.</p>
+      <div class="agent-sample-row">
+        ${samples.map((sample) => `<button type="button" data-agent-sample="${escapeHtml(sample)}">${escapeHtml(sample)}</button>`).join("")}
+      </div>
+    </section>
+    <section class="agent-chat-card">
+      <div class="agent-message-list" id="agentMessageList">
+        ${renderAgentMessages()}
+      </div>
+      <form class="agent-input-form" data-agent-form>
+        <textarea name="question" rows="1" placeholder="예: 폐렴 케이스에서 WBC랑 SpO2를 어떻게 연결해?" ${agentLoading ? "disabled" : ""}></textarea>
+        <button type="submit" ${agentLoading ? "disabled" : ""}>${agentLoading ? "생각 중" : "질문"}</button>
+      </form>
+    </section>
+  `;
+
+  const list = agentScreen.querySelector("#agentMessageList");
+  if (list) list.scrollTop = list.scrollHeight;
+}
+
+function renderAgentMessages() {
+  if (!agentMessages.length) {
+    return `
+      <article class="agent-message assistant">
+        <span>PYM Agent</span>
+        <p>질문을 입력하면 관련 PYM 자료를 먼저 찾고, 병태생리 → 검사수치 → 임상판단 순서로 정리해드릴게요.</p>
+      </article>
+    `;
+  }
+
+  return agentMessages.map((message) => `
+    <article class="agent-message ${escapeHtml(message.role)}">
+      <span>${message.role === "user" ? "나" : "PYM Agent"}</span>
+      <p>${escapeHtml(message.content).replace(/\n/g, "<br />")}</p>
+      ${message.references?.length ? `
+        <div class="agent-references">
+          <strong>참고한 PYM 자료</strong>
+          ${message.references.map((item) => `<button type="button" data-agent-resource="${escapeHtml(item.id || "")}">${escapeHtml(item.title || "PYM 자료")}</button>`).join("")}
+        </div>
+      ` : ""}
+    </article>
+  `).join("");
+}
+
+function getAgentLocalMatches(question) {
+  return scoreResources(question)
+    .filter((item) => item.score > 0)
+    .slice(0, 3)
+    .map(({ resource }) => ({
+      id: resource.id,
+      title: resource.displayTitle,
+      summary: resource.summary,
+      source: resource.source,
+      url: resource.url
+    }));
+}
+
+function saveAgentMessages() {
+  safeStorageSet("pym.agentMessages", JSON.stringify(agentMessages.slice(-12)));
+}
+
+async function submitAgentQuestion(form) {
+  const input = form.elements.question;
+  const question = String(input.value || "").trim();
+  if (!question || agentLoading) return;
+
+  const localReferences = getAgentLocalMatches(question);
+  agentMessages = [
+    ...agentMessages,
+    { role: "user", content: question },
+    { role: "assistant", content: "관련 PYM 자료를 먼저 찾는 중이에요.", references: localReferences }
+  ].slice(-12);
+  agentLoading = true;
+  saveAgentMessages();
+  renderAgentScreen();
+  trackEvent("agent_question_submit", { questionLength: question.length, localReferenceCount: localReferences.length });
+
+  try {
+    const response = await fetch(agentApiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || "PYM Agent API 연결에 실패했어요.");
+
+    agentMessages[agentMessages.length - 1] = {
+      role: "assistant",
+      content: payload.answer || "현재 자료 기준으로는 답변이 부족해요.",
+      references: payload.references?.length ? payload.references : localReferences
+    };
+    trackEvent("agent_answer_success", { referenceCount: agentMessages[agentMessages.length - 1].references.length, model: payload.model || "" });
+  } catch (error) {
+    agentMessages[agentMessages.length - 1] = {
+      role: "assistant",
+      content: `${error.message || "PYM Agent API 연결에 실패했어요."}\n\n지금 화면에서는 관련 자료까지만 먼저 보여줄게요. 배포 환경에 NVIDIA_API_KEY를 설정하고 PYM Agent API를 연결하면 답변 생성이 열립니다.`,
+      references: localReferences
+    };
+    trackEvent("agent_answer_failed", { message: error.message || "unknown" });
+  } finally {
+    agentLoading = false;
+    saveAgentMessages();
+    renderAgentScreen();
+  }
+}
 
 function renderPremiumScreen() {
   if (!premiumScreen) return;
@@ -4104,6 +4294,7 @@ function syncAdminRoute() {
   const hash = window.location.hash;
   const isAdmin = hash === "#admin";
   const isPremium = hash === "#premium";
+  const isAgent = hash === "#agent";
   analyticsAdmin.hidden = !isAdmin;
   document.body.classList.toggle("admin-mode", isAdmin);
 
@@ -4121,6 +4312,12 @@ function syncAdminRoute() {
 
   if (isPremium) {
     setPremiumMode();
+    window.scrollTo({ top: 0, behavior: "auto" });
+    return;
+  }
+
+  if (isAgent) {
+    setAgentMode();
     window.scrollTo({ top: 0, behavior: "auto" });
   }
 }
@@ -5366,6 +5563,10 @@ function starIcon() {
 
 function bookIcon() {
   return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h5.2c1 0 1.8.8 1.8 1.8v13.2c0-.9-.8-1.6-1.8-1.6H5V4.5Zm14 0h-5.2c-1 0-1.8.8-1.8 1.8v13.2c0-.9.8-1.6 1.8-1.6H19V4.5Z"/></svg>`;
+}
+
+function agentIcon() {
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3"/><path d="M5 10a7 7 0 0 1 14 0v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4z"/><path d="M9 13h.01"/><path d="M15 13h.01"/><path d="M9.5 16h5"/></svg>`;
 }
 
 function paidIcon() {

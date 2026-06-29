@@ -1,0 +1,151 @@
+import fs from "node:fs/promises";
+import path from "node:path";
+import OpenAI from "openai";
+
+const MODEL = process.env.NVIDIA_MODEL || "deepseek-ai/deepseek-v4-pro";
+const NIM_BASE_URL = "https://integrate.api.nvidia.com/v1";
+
+function normalizeResourceData(payload) {
+  const items = Array.isArray(payload) ? payload : payload.resources;
+  return Array.isArray(items) ? items : [];
+}
+
+async function loadResources() {
+  const filePath = path.join(process.cwd(), "data", "resources.json");
+  const raw = await fs.readFile(filePath, "utf8");
+  return normalizeResourceData(JSON.parse(raw));
+}
+
+function scoreResources(resources, query) {
+  const tokens = String(query || "").toLowerCase().split(/\s+/).filter(Boolean);
+  return resources.map((resource, index) => {
+    const tags = Array.isArray(resource.tags) ? resource.tags : [];
+    const points = Array.isArray(resource.points) ? resource.points : [];
+    const haystack = [
+      resource.title,
+      resource.displayTitle,
+      resource.type,
+      resource.format,
+      resource.system,
+      resource.intent,
+      resource.stage,
+      resource.evidence,
+      resource.summary,
+      resource.useCase,
+      tags.join(" "),
+      points.join(" ")
+    ].filter(Boolean).join(" ").toLowerCase();
+
+    const score = tokens.reduce((sum, token) => {
+      if (String(resource.displayTitle || "").toLowerCase().includes(token)) return sum + 8;
+      if (tags.join(" ").toLowerCase().includes(token)) return sum + 6;
+      if (haystack.includes(token)) return sum + 3;
+      return sum;
+    }, tokens.length ? 0 : 1);
+
+    return { resource, score, index };
+  }).sort((a, b) => b.score - a.score || a.index - b.index);
+}
+
+function contextBlock(matches) {
+  return matches.map(({ resource }, index) => {
+    const points = Array.isArray(resource.points) ? resource.points.slice(0, 3) : [];
+    const tags = Array.isArray(resource.tags) ? resource.tags.slice(0, 10) : [];
+    return [
+      `[${index + 1}] ${resource.displayTitle || resource.title}`,
+      `분류: ${resource.system || ""} / ${resource.intent || ""} / ${resource.stage || ""}`,
+      `요약: ${resource.summary || ""}`,
+      `본문 일부/근거: ${resource.evidence || resource.useCase || ""}`,
+      points.length ? `핵심 포인트: ${points.join(" / ")}` : "",
+      tags.length ? `태그: ${tags.join(", ")}` : ""
+    ].filter(Boolean).join("\n");
+  }).join("\n\n");
+}
+
+function referencePayload(matches) {
+  return matches.map(({ resource }) => ({
+    id: resource.id,
+    title: resource.displayTitle || resource.title,
+    summary: resource.summary || "",
+    source: resource.source || "",
+    url: resource.url || ""
+  }));
+}
+
+export default async function handler(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", process.env.PYM_AGENT_ALLOWED_ORIGIN || "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "POST only" });
+    return;
+  }
+
+  if (!process.env.NVIDIA_API_KEY) {
+    res.status(500).json({ error: "NVIDIA_API_KEY 환경변수가 설정되지 않았어요." });
+    return;
+  }
+
+  const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+  const question = String(body.question || "").trim();
+  if (!question) {
+    res.status(400).json({ error: "질문을 입력해주세요." });
+    return;
+  }
+
+  const resources = await loadResources();
+  const matches = scoreResources(resources, question).filter((item) => item.score > 0).slice(0, 5);
+  const context = contextBlock(matches);
+  const references = referencePayload(matches);
+
+  if (!matches.length) {
+    res.status(200).json({
+      answer: "현재 PYM 자료 기준으로는 이 질문에 바로 답하기에 근거가 부족해요. 질환명, 검사명, 증상 키워드를 조금 더 구체적으로 입력해주면 관련 자료를 다시 찾아볼게요.",
+      references: []
+    });
+    return;
+  }
+
+  const client = new OpenAI({
+    apiKey: process.env.NVIDIA_API_KEY,
+    baseURL: NIM_BASE_URL
+  });
+
+  const completion = await client.chat.completions.create({
+    model: MODEL,
+    temperature: 0.25,
+    max_tokens: 900,
+    messages: [
+      {
+        role: "system",
+        content: [
+          "너는 PYM Agent다. 박용민 간호 자료 검색 사이트 안에서만 답변한다.",
+          "답변은 쉽고 직관적으로 쓴다.",
+          "가능하면 병태생리 → 검사수치/사정 → 임상판단/간호 우선순위 순서로 설명한다.",
+          "간호학생이 실습과 케이스스터디에 바로 연결할 수 있게 말한다.",
+          "제공된 PYM 자료 context에 없는 내용은 지어내지 말고 '현재 자료 기준으로는 부족하다'고 말한다.",
+          "의학적 진단을 확정하지 말고 학습 보조 설명으로 제한한다. 응급/실제 환자는 기관 기준과 담당 의료진 판단을 따르라고 안내한다.",
+          "한국어로 답한다. 문단은 짧게, 핵심은 굵은 느낌의 표현 대신 일반 텍스트로 명확히 쓴다."
+        ].join("\n")
+      },
+      {
+        role: "user",
+        content: [
+          `질문: ${question}`,
+          "",
+          "PYM 자료 context:",
+          context
+        ].join("\n")
+      }
+    ]
+  });
+
+  const answer = completion.choices?.[0]?.message?.content?.trim() || "현재 자료 기준으로는 답변을 생성하지 못했어요.";
+  res.status(200).json({ answer, references, model: MODEL });
+}

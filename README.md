@@ -42,3 +42,21 @@ GitHub Pages 기준:
 
 - 박용민 컨텐츠 정리본 PDF
 - 신경계 질환 하위 폴더
+
+## PYM Agent MVP
+
+PYM Agent는 기존 `data/resources.json` 자료를 먼저 검색한 뒤, 관련 자료 제목/요약/근거를 NVIDIA NIM LLM 프롬프트에 넣어 답변하는 RAG 챗봇입니다.
+
+### API 환경변수
+
+서버리스 배포 환경에 아래 값을 설정합니다. 이 값은 프론트엔드에 넣으면 안 됩니다.
+
+- `NVIDIA_API_KEY`: NVIDIA NIM API Key
+- `NVIDIA_MODEL`: 선택값. 기본값은 `deepseek-ai/deepseek-v4-pro`
+- `PYM_AGENT_ALLOWED_ORIGIN`: 선택값. 허용할 사이트 Origin
+
+### 로컬/배포 메모
+
+정적 GitHub Pages만으로는 `/api/pym-agent` 서버리스 함수가 실행되지 않습니다. 챗봇 답변 생성을 쓰려면 Vercel, Netlify Functions, Cloudflare Workers, Supabase Edge Functions 중 하나로 API를 배포해야 합니다.
+
+Vercel 기준으로는 저장소를 연결하고 환경변수 `NVIDIA_API_KEY`를 넣으면 `api/pym-agent.js`가 `/api/pym-agent`로 동작합니다.
