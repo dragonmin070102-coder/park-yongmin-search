@@ -6904,3 +6904,437 @@ body.agent-mode {
     max-height: 50vh !important;
   }
 }
+
+/* Agent final visual direction */
+body.agent-mode {
+  overflow-y: auto !important;
+  background: #f3f6fa !important;
+}
+
+.agent-screen {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  width: min(100%, 430px) !important;
+  min-height: 100svh !important;
+  height: auto !important;
+  margin: 0 auto !important;
+  padding: 18px 12px calc(92px + env(safe-area-inset-bottom)) !important;
+  overflow: visible !important;
+  background: #f3f6fa !important;
+}
+
+.agent-app-top {
+  position: static !important;
+  display: grid !important;
+  grid-template-columns: 44px 46px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 12px !important;
+  min-height: 62px !important;
+  padding: 4px 0 10px !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+}
+
+.agent-app-top button {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50% !important;
+  background: #fff !important;
+  color: #191f28 !important;
+  font-size: 28px !important;
+  box-shadow: 0 10px 24px rgba(25, 31, 40, 0.06) !important;
+}
+
+.agent-avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 3px solid #3182f6;
+  border-radius: 16px;
+  background: #f8fbff;
+  color: #3182f6;
+  box-shadow: 0 10px 24px rgba(49, 130, 246, 0.12);
+}
+
+.agent-avatar::before,
+.agent-avatar::after {
+  content: "";
+  position: absolute;
+  top: 17px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #3182f6;
+}
+
+.agent-avatar::before { left: 13px; }
+.agent-avatar::after { right: 13px; }
+
+.agent-avatar i {
+  width: 18px;
+  height: 10px;
+  margin-top: 9px;
+  border: 2px solid #3182f6;
+  border-top: 0;
+  border-radius: 0 0 10px 10px;
+}
+
+.agent-app-top strong {
+  color: #191f28 !important;
+  font-size: 19px !important;
+  line-height: 1.15 !important;
+}
+
+.agent-app-top span:not(.agent-avatar) {
+  color: #6b7684 !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+}
+
+.agent-hero-card {
+  display: grid !important;
+  gap: 16px !important;
+  padding: 20px 18px 18px !important;
+  border: 1px solid #dfe6ee !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+  box-shadow: 0 14px 34px rgba(25, 31, 40, 0.05) !important;
+}
+
+.agent-hero-card .eyebrow {
+  margin: 0 !important;
+  color: #1b64da !important;
+  font-size: 15px !important;
+  font-weight: 950 !important;
+  text-transform: none !important;
+}
+
+.agent-hero-card h2 {
+  margin: 0 !important;
+  color: #191f28 !important;
+  font-size: 25px !important;
+  line-height: 1.28 !important;
+  letter-spacing: 0 !important;
+}
+
+.agent-hero-card p:not(.eyebrow) {
+  display: block !important;
+  margin: 0 !important;
+  color: #6b7684 !important;
+  font-size: 15px !important;
+  line-height: 1.55 !important;
+  font-weight: 700 !important;
+}
+
+.agent-sample-row {
+  display: flex !important;
+  gap: 8px !important;
+  overflow-x: auto !important;
+  padding: 2px 0 4px !important;
+  scrollbar-width: none;
+}
+
+.agent-sample-row::-webkit-scrollbar {
+  display: none;
+}
+
+.agent-sample-row button {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex: 0 0 auto !important;
+  min-height: 40px !important;
+  padding: 0 14px !important;
+  border: 1px solid #d8e1ec !important;
+  border-radius: 999px !important;
+  background: #fff !important;
+  color: #191f28 !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  box-shadow: 0 4px 12px rgba(25, 31, 40, 0.03) !important;
+}
+
+.agent-sample-row button span {
+  color: #3182f6;
+  font-size: 15px;
+}
+
+.agent-hero-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: #edf0f3;
+  overflow: hidden;
+}
+
+.agent-hero-progress span {
+  display: block;
+  width: 46px;
+  height: 100%;
+  border-radius: inherit;
+  background: #3182f6;
+}
+
+.agent-chat-card {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 520px !important;
+  height: auto !important;
+  border: 1px solid #dfe6ee !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+  overflow: hidden !important;
+  box-shadow: 0 14px 34px rgba(25, 31, 40, 0.05) !important;
+}
+
+.agent-chat-status {
+  min-height: 48px !important;
+  padding: 12px 14px !important;
+  border-bottom: 1px solid #edf0f3 !important;
+  background: #fff !important;
+}
+
+.agent-chat-status strong {
+  font-size: 13px !important;
+}
+
+.agent-chat-status span {
+  font-size: 11.5px !important;
+}
+
+.agent-message-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+  min-height: 340px !important;
+  max-height: none !important;
+  flex: 1 1 auto !important;
+  padding: 16px 14px !important;
+  overflow-y: auto !important;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+}
+
+.agent-message {
+  display: grid !important;
+  gap: 7px !important;
+  max-width: 92% !important;
+}
+
+.agent-message span {
+  color: #8b95a1 !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+}
+
+.agent-message p {
+  margin: 0 !important;
+  padding: 12px 13px !important;
+  border: 1px solid #edf0f3 !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+  color: #191f28 !important;
+  font-size: 14px !important;
+  line-height: 1.62 !important;
+  word-break: keep-all !important;
+  overflow-wrap: anywhere !important;
+  box-shadow: 0 8px 18px rgba(25, 31, 40, 0.04) !important;
+}
+
+.agent-message.user {
+  justify-self: end !important;
+  align-self: flex-end !important;
+  max-width: 82% !important;
+}
+
+.agent-message.user span {
+  text-align: right !important;
+}
+
+.agent-message.user p {
+  border: 0 !important;
+  border-radius: 10px 10px 2px 10px !important;
+  background: #3182f6 !important;
+  color: #fff !important;
+  font-size: 15px !important;
+  box-shadow: 0 10px 24px rgba(49, 130, 246, 0.2) !important;
+}
+
+.agent-message.assistant p {
+  border-radius: 10px 10px 10px 2px !important;
+}
+
+.agent-typing {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  width: fit-content !important;
+  padding: 13px 14px !important;
+  border: 1px solid #edf0f3 !important;
+  border-radius: 10px 10px 10px 2px !important;
+  background: #fff !important;
+  box-shadow: 0 8px 18px rgba(25, 31, 40, 0.04) !important;
+}
+
+.agent-typing::before {
+  content: "관련 PYM 자료를 먼저 찾는 중이에요. 잠시만 기다려주세요!";
+  color: #191f28;
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 750;
+}
+
+.agent-typing i {
+  width: 5px !important;
+  height: 5px !important;
+}
+
+.agent-references {
+  display: grid !important;
+  gap: 7px !important;
+  width: 100% !important;
+  padding: 11px !important;
+  border: 1px solid #dfe6ee !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+  box-shadow: 0 8px 18px rgba(25, 31, 40, 0.035) !important;
+}
+
+.agent-references strong {
+  color: #6b7684 !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+}
+
+.agent-references button {
+  display: grid !important;
+  grid-template-columns: 24px minmax(0, 1fr) 16px !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-height: 42px !important;
+  padding: 0 10px !important;
+  border: 1px solid #dfe6ee !important;
+  border-radius: 8px !important;
+  background: #fff !important;
+  color: #191f28 !important;
+  text-align: left !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+}
+
+.agent-references button i {
+  color: #6b7684;
+  font-style: normal;
+  font-size: 15px;
+}
+
+.agent-references button span {
+  min-width: 0;
+  overflow: hidden;
+  color: #191f28 !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px !important;
+}
+
+.agent-references button em {
+  color: #8b95a1;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.agent-input-form {
+  position: sticky !important;
+  bottom: 0 !important;
+  display: grid !important;
+  grid-template-columns: 32px minmax(0, 1fr) 46px !important;
+  align-items: end !important;
+  gap: 8px !important;
+  padding: 10px !important;
+  border-top: 1px solid #edf0f3 !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(14px) !important;
+}
+
+.agent-attach,
+.agent-send {
+  display: grid !important;
+  place-items: center !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  font-weight: 900 !important;
+}
+
+.agent-attach {
+  width: 32px !important;
+  height: 32px !important;
+  margin-bottom: 4px !important;
+  background: #f2f4f6 !important;
+  color: #6b7684 !important;
+  font-size: 15px !important;
+}
+
+.agent-send {
+  width: 46px !important;
+  height: 46px !important;
+  min-width: 46px !important;
+  min-height: 46px !important;
+  background: #2478f7 !important;
+  color: #fff !important;
+  font-size: 18px !important;
+  box-shadow: 0 10px 24px rgba(49, 130, 246, 0.28) !important;
+}
+
+.agent-input-box {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.agent-input-box textarea {
+  width: 100% !important;
+  min-height: 26px !important;
+  max-height: 84px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #191f28 !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+  outline: none !important;
+}
+
+.agent-input-box textarea::placeholder {
+  color: #adb5bd;
+}
+
+.agent-input-box span {
+  color: #adb5bd;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+@media (max-height: 720px) {
+  .agent-hero-card {
+    padding: 15px !important;
+  }
+
+  .agent-hero-card h2 {
+    font-size: 21px !important;
+  }
+
+  .agent-hero-card p:not(.eyebrow) {
+    font-size: 13px !important;
+  }
+
+  .agent-chat-card {
+    min-height: 470px !important;
+  }
+
+  .agent-message-list {
+    min-height: 300px !important;
+  }
+}

@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260629-4";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260629-5";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const PREMIUM_REGULAR_PRICE = "9,900원";
 const PREMIUM_SALE_PRICE = "3,900원";
@@ -1433,10 +1433,17 @@ const premiumDownloadFiles = [
 function renderAgentScreen() {
   if (!agentScreen) return;
 
-  const samples = ["ABGA 보상 어떻게 봐?", "GBS에서 SpO2 정상인데 왜 위험해?", "IICP 환자 우선순위 알려줘"];
+  const samples = [
+    { icon: "♙", text: "ABGA 보상 어떻게 봐?" },
+    { icon: "♧", text: "GBS에서 SpO2 정상인데 왜 위험해?" },
+    { icon: "▣", text: "폐렴 케이스 우선순위는?" }
+  ];
   agentScreen.innerHTML = `
     <div class="agent-app-top">
       <button type="button" data-agent-back aria-label="홈으로 돌아가기">‹</button>
+      <span class="agent-avatar" aria-hidden="true">
+        <i></i>
+      </span>
       <div>
         <strong>PYM Agent</strong>
         <span>박용민 자료 기반 RAG 챗봇</span>
@@ -1444,11 +1451,12 @@ function renderAgentScreen() {
     </div>
     <section class="agent-hero-card">
       <p class="eyebrow">Ask PYM</p>
-      <h2>질환명, 검사수치, 실습 질문을 물어보세요.</h2>
-      <p>먼저 PYM 자료를 찾고, 그 자료 요약과 근거를 바탕으로 답합니다.</p>
+      <h2>질환명, 검사수치,<br />실습 질문을 물어보세요.</h2>
+      <p>먼저 PYM 자료를 찾고, 그 자료 요약과<br />근거를 바탕으로 답합니다.</p>
       <div class="agent-sample-row">
-        ${samples.map((sample) => `<button type="button" data-agent-sample="${escapeHtml(sample)}">${escapeHtml(sample)}</button>`).join("")}
+        ${samples.map((sample) => `<button type="button" data-agent-sample="${escapeHtml(sample.text)}"><span>${escapeHtml(sample.icon)}</span>${escapeHtml(sample.text)}</button>`).join("")}
       </div>
+      <div class="agent-hero-progress" aria-hidden="true"><span></span></div>
     </section>
     <section class="agent-chat-card ${agentLoading ? "loading" : ""}">
       <div class="agent-chat-status">
@@ -1462,8 +1470,12 @@ function renderAgentScreen() {
         ${renderAgentMessages()}
       </div>
       <form class="agent-input-form" data-agent-form>
-        <textarea name="question" rows="1" placeholder="질환, 검사, 실습 질문을 입력하세요" ${agentLoading ? "disabled" : ""}></textarea>
-        <button type="submit" ${agentLoading ? "disabled" : ""}>${agentLoading ? "대기" : "전송"}</button>
+        <button class="agent-attach" type="button" aria-label="첨부 준비 중" disabled>⌘</button>
+        <div class="agent-input-box">
+          <textarea name="question" rows="1" placeholder="질문을 입력하세요..." ${agentLoading ? "disabled" : ""}></textarea>
+          <span>Enter로 전송 / Shift + Enter로 줄바꿈</span>
+        </div>
+        <button class="agent-send" type="submit" aria-label="질문 전송" ${agentLoading ? "disabled" : ""}>➤</button>
       </form>
     </section>
   `;
@@ -1493,7 +1505,7 @@ function renderAgentMessages() {
       ${message.references?.length ? `
         <div class="agent-references">
           <strong>참고한 PYM 자료</strong>
-          ${message.references.map((item) => `<button type="button" data-agent-resource="${escapeHtml(item.id || "")}">${escapeHtml(item.title || "PYM 자료")}</button>`).join("")}
+          ${message.references.map((item) => `<button type="button" data-agent-resource="${escapeHtml(item.id || "")}"><i aria-hidden="true">▤</i><span>${escapeHtml(item.title || "PYM 자료")}</span><em>›</em></button>`).join("")}
         </div>
       ` : ""}
     </article>
