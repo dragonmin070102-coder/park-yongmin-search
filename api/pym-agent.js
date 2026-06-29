@@ -2,8 +2,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import OpenAI from "openai";
 
-const MODEL = process.env.NVIDIA_MODEL || "deepseek-ai/deepseek-v4-pro";
+const MODEL = process.env.NVIDIA_MODEL || "moonshotai/kimi-k2.6";
 const NIM_BASE_URL = "https://integrate.api.nvidia.com/v1";
+const NIM_TIMEOUT_MS = Number(process.env.NVIDIA_TIMEOUT_MS || 22000);
+
+export const config = {
+  maxDuration: 30
+};
 
 function normalizeResourceData(payload) {
   const items = Array.isArray(payload) ? payload : payload.resources;
@@ -72,6 +77,45 @@ function referencePayload(matches) {
   }));
 }
 
+function fallbackAnswer(question, matches) {
+  const titles = matches.map(({ resource }) => resource.displayTitle || resource.title).filter(Boolean);
+  const top = matches[0]?.resource;
+  if (!top) {
+    return "현재 PYM 자료 기준으로는 이 질문에 바로 답하기에 근거가 부족해요. 질환명, 검사명, 증상 키워드를 조금 더 구체적으로 입력해주면 관련 자료를 다시 찾아볼게요.";
+  }
+
+  const points = Array.isArray(top.points) ? top.points.slice(0, 3) : [];
+  return [
+    `질문: ${question}`,
+    "",
+    `현재 PYM 자료 기준으로는 ${top.displayTitle || top.title} 자료가 가장 관련 있어 보여요.`,
+    "",
+    "1. 병태생리/핵심 흐름",
+    top.summary || "자료 요약 기준으로 핵심 개념을 먼저 잡는 것이 좋아요.",
+    "",
+    "2. 검사수치/사정 포인트",
+    points[0] || top.evidence || "현재 자료에는 세부 수치 근거가 충분하지 않아, 원본 자료 확인이 필요해요.",
+    "",
+    "3. 임상판단/간호 우선순위",
+    points.slice(1).join(" ") || top.useCase || "실제 환자 판단은 기관 기준과 담당 의료진 판단을 따라야 해요.",
+    "",
+    `참고한 PYM 자료: ${titles.join(", ")}`
+  ].join("\n");
+}
+
+async function withTimeout(promise, ms) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error("NVIDIA NIM 응답 시간이 길어 PYM 자료 기반 요약으로 대신 표시했어요.")), ms);
+  });
+
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", process.env.PYM_AGENT_ALLOWED_ORIGIN || "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -92,7 +136,13 @@ export default async function handler(req, res) {
     return;
   }
 
-  const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+  let body;
+  try {
+    body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+  } catch {
+    res.status(400).json({ error: "요청 형식이 올바르지 않아요." });
+    return;
+  }
   const question = String(body.question || "").trim();
   if (!question) {
     res.status(400).json({ error: "질문을 입력해주세요." });
@@ -117,34 +167,46 @@ export default async function handler(req, res) {
     baseURL: NIM_BASE_URL
   });
 
-  const completion = await client.chat.completions.create({
-    model: MODEL,
-    temperature: 0.25,
-    max_tokens: 900,
-    messages: [
-      {
-        role: "system",
-        content: [
-          "너는 PYM Agent다. 박용민 간호 자료 검색 사이트 안에서만 답변한다.",
-          "답변은 쉽고 직관적으로 쓴다.",
-          "가능하면 병태생리 → 검사수치/사정 → 임상판단/간호 우선순위 순서로 설명한다.",
-          "간호학생이 실습과 케이스스터디에 바로 연결할 수 있게 말한다.",
-          "제공된 PYM 자료 context에 없는 내용은 지어내지 말고 '현재 자료 기준으로는 부족하다'고 말한다.",
-          "의학적 진단을 확정하지 말고 학습 보조 설명으로 제한한다. 응급/실제 환자는 기관 기준과 담당 의료진 판단을 따르라고 안내한다.",
-          "한국어로 답한다. 문단은 짧게, 핵심은 굵은 느낌의 표현 대신 일반 텍스트로 명확히 쓴다."
-        ].join("\n")
-      },
-      {
-        role: "user",
-        content: [
-          `질문: ${question}`,
-          "",
-          "PYM 자료 context:",
-          context
-        ].join("\n")
-      }
-    ]
-  });
+  let completion;
+  try {
+    completion = await withTimeout(client.chat.completions.create({
+      model: MODEL,
+      temperature: 0.25,
+      max_tokens: 650,
+      messages: [
+        {
+          role: "system",
+          content: [
+            "너는 PYM Agent다. 박용민 간호 자료 검색 사이트 안에서만 답변한다.",
+            "답변은 쉽고 직관적으로 쓴다.",
+            "가능하면 병태생리 → 검사수치/사정 → 임상판단/간호 우선순위 순서로 설명한다.",
+            "간호학생이 실습과 케이스스터디에 바로 연결할 수 있게 말한다.",
+            "제공된 PYM 자료 context에 없는 내용은 지어내지 말고 '현재 자료 기준으로는 부족하다'고 말한다.",
+            "의학적 진단을 확정하지 말고 학습 보조 설명으로 제한한다. 응급/실제 환자는 기관 기준과 담당 의료진 판단을 따르라고 안내한다.",
+            "한국어로 답한다. 문단은 짧게, 핵심은 굵은 느낌의 표현 대신 일반 텍스트로 명확히 쓴다."
+          ].join("\n")
+        },
+        {
+          role: "user",
+          content: [
+            `질문: ${question}`,
+            "",
+            "PYM 자료 context:",
+            context
+          ].join("\n")
+        }
+      ]
+    }), NIM_TIMEOUT_MS);
+  } catch (error) {
+    res.status(200).json({
+      answer: fallbackAnswer(question, matches),
+      references,
+      model: MODEL,
+      fallback: true,
+      warning: error.message || "NVIDIA NIM 응답을 받지 못해 PYM 자료 기반 요약으로 대신 표시했어요."
+    });
+    return;
+  }
 
   const answer = completion.choices?.[0]?.message?.content?.trim() || "현재 자료 기준으로는 답변을 생성하지 못했어요.";
   res.status(200).json({ answer, references, model: MODEL });
