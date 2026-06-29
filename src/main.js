@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260629-3";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260629-4";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const PREMIUM_REGULAR_PRICE = "9,900원";
 const PREMIUM_SALE_PRICE = "3,900원";
