@@ -143,6 +143,58 @@ const analyticsSessionId = createSessionId();
 const supabaseConfig = getSupabaseConfig();
 const agentApiUrl = String(window.PYM_AGENT_API_URL || "/api/pym-agent");
 
+const adminSections = [
+  {
+    id: "overview",
+    hash: "#admin",
+    label: "개요",
+    eyebrow: "Overview",
+    title: "운영센터 개요",
+    description: "핵심 지표와 오늘 봐야 할 운영 판단만 먼저 확인합니다."
+  },
+  {
+    id: "content",
+    hash: "#admin-content",
+    label: "콘텐츠/검색",
+    eyebrow: "Content Intelligence",
+    title: "콘텐츠와 검색 수요",
+    description: "검색어, 실패어, 자료 조회를 묶어서 다음 제작 우선순위를 봅니다."
+  },
+  {
+    id: "premium",
+    hash: "#admin-premium",
+    label: "프리미엄/판매",
+    eyebrow: "Premium Sales",
+    title: "프리미엄 판매 운영",
+    description: "매출, 구매 신청, 승인, 결제 퍼널, 자료 링크를 한 화면에서 관리합니다."
+  },
+  {
+    id: "community",
+    hash: "#admin-community",
+    label: "커뮤니티/댓글",
+    eyebrow: "Community",
+    title: "댓글과 반응",
+    description: "자료와 동향에 남겨진 의견을 확인하고 커뮤니티 반응을 읽습니다."
+  },
+  {
+    id: "settings",
+    hash: "#admin-settings",
+    label: "설정/데이터",
+    eyebrow: "Settings",
+    title: "데이터 연결과 운영 도구",
+    description: "Supabase 연결, CSV, 테스트 이벤트, 수집 상태를 관리합니다."
+  }
+];
+
+function isAdminHash(hash = window.location.hash) {
+  return adminSections.some((section) => section.hash === hash);
+}
+
+function getActiveAdminSection() {
+  return adminSections.find((section) => section.hash === window.location.hash) || adminSections[0];
+}
+
+
 const communityQuestions = [
   {
     id: "gbs-icu",
@@ -776,10 +828,10 @@ document.addEventListener("click", (event) => {
 
 window.addEventListener("hashchange", syncAdminRoute);
 window.addEventListener("error", (event) => {
-  if (window.location.hash === "#admin") renderAdminFallback(event.error || new Error(event.message));
+  if (isAdminHash(window.location.hash)) renderAdminFallback(event.error || new Error(event.message));
 });
 window.addEventListener("unhandledrejection", (event) => {
-  if (window.location.hash === "#admin") renderAdminFallback(event.reason instanceof Error ? event.reason : new Error(String(event.reason || "Promise rejection")));
+  if (isAdminHash(window.location.hash)) renderAdminFallback(event.reason instanceof Error ? event.reason : new Error(String(event.reason || "Promise rejection")));
 });
 window.addEventListener("pagehide", () => flushRemoteAnalytics({ silent: true, limit: 20 }));
 document.addEventListener("visibilitychange", () => {
@@ -801,7 +853,7 @@ document.addEventListener("click", (event) => {
   if (!reset) return;
 
   resetPremiumPurchaseTest(reset.dataset.premiumTestReset || "neuro-series-6");
-  if (window.location.hash === "#admin") renderAnalyticsAdmin();
+  if (isAdminHash(window.location.hash)) renderAnalyticsAdmin();
 });
 
 document.addEventListener("click", (event) => {
@@ -4318,7 +4370,7 @@ function resourcePayload(resource) {
 
 function syncAdminRoute() {
   const hash = window.location.hash;
-  const isAdmin = hash === "#admin";
+  const isAdmin = isAdminHash(hash);
   const isPremium = hash === "#premium";
   const isAgent = hash === "#agent";
   analyticsAdmin.hidden = !isAdmin;
@@ -4377,7 +4429,381 @@ function renderAdminFallback(error) {
 }
 
 
+function buildAdminRenderContext() {
+  const data = adminDashboardState.data || buildEmptyAdminDashboardData();
+  const filtered = filterAdminData(data);
+  const kpis = getAdminKpis(filtered);
+  const revenue = getRevenueKpis(data.bankOrders || []);
+  const insights = getAdminInsights(filtered);
+  const gaps = getContentGaps(filtered.noResults);
+  const demand = getDemandAnalysis(filtered.searchTerms, filtered.popularResources);
+  const periodLabel = adminPeriodLabel(adminDashboardState.period);
+  const premiumFunnel = getPremiumFunnel(filtered.rawEvents, filtered.bankOrders || [], filtered.premiumFileViews || []);
+  const funnelFreshness = getFunnelFreshness(premiumFunnel);
+  const dataFreshness = getAdminDataFreshness(filtered);
+  const funnelLimited = !filtered.rawEvents.length && ((filtered.bankOrders || []).length || (filtered.popularResources || []).length || (filtered.searchTerms || []).length);
+  return {
+    activeSection: getActiveAdminSection(),
+    data,
+    filtered,
+    kpis,
+    revenue,
+    insights,
+    gaps,
+    demand,
+    periodLabel,
+    premiumFunnel,
+    funnelFreshness,
+    dataFreshness,
+    funnelLimited
+  };
+}
+
 function renderAnalyticsAdmin() {
+  const ctx = buildAdminRenderContext();
+  analyticsContent.innerHTML = `
+    <div class="admin-shell">
+      <aside class="admin-sidebar" aria-label="콘텐츠 운영센터 메뉴">
+        <div class="admin-sidebar-brand">
+          <span>P</span>
+          <div>
+            <strong>PYM Center</strong>
+            <em>콘텐츠 운영센터</em>
+          </div>
+        </div>
+        <nav class="admin-side-nav">
+          ${adminSections.map((section) => `
+            <a class="${ctx.activeSection.id === section.id ? "active" : ""}" href="${section.hash}">
+              <strong>${escapeHtml(section.label)}</strong>
+              <span>${escapeHtml(section.eyebrow)}</span>
+            </a>
+          `).join("")}
+        </nav>
+      </aside>
+      <div class="admin-workspace">
+        ${adminHeaderTemplate(ctx)}
+        ${adminToolbarTemplate()}
+        ${adminStatusTemplate()}
+        <div class="admin-section-grid">
+          ${adminSectionContentTemplate(ctx)}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function adminHeaderTemplate(ctx) {
+  return `
+    <section class="admin-hero">
+      <p class="eyebrow">${escapeHtml(ctx.activeSection.eyebrow)}</p>
+      <h2>${escapeHtml(ctx.activeSection.title)}</h2>
+      <p>${escapeHtml(ctx.activeSection.description)}</p>
+    </section>
+  `;
+}
+
+function adminToolbarTemplate() {
+  return `
+    <div class="admin-toolbar">
+      <div class="admin-period-tabs">
+        ${["today", "7d", "30d", "all"].map((period) => `
+          <button type="button" class="${adminDashboardState.period === period ? "active" : ""}" data-admin-period="${period}">${adminPeriodLabel(period)}</button>
+        `).join("")}
+      </div>
+      <input data-admin-search type="search" value="${escapeHtml(adminDashboardState.query)}" placeholder="검색어, 자료명 검색" />
+    </div>
+  `;
+}
+
+function adminStatusTemplate() {
+  return `
+    ${adminDashboardState.loading ? `<p class="admin-status">Supabase 데이터를 불러오는 중이에요.</p>` : ""}
+    ${adminDashboardState.error ? `<p class="admin-status error">${escapeHtml(adminDashboardState.error)}</p>` : ""}
+  `;
+}
+
+function adminSectionContentTemplate(ctx) {
+  if (ctx.activeSection.id === "content") return adminContentSectionTemplate(ctx);
+  if (ctx.activeSection.id === "premium") return adminPremiumSectionTemplate(ctx);
+  if (ctx.activeSection.id === "community") return adminCommunitySectionTemplate(ctx);
+  if (ctx.activeSection.id === "settings") return adminSettingsSectionTemplate(ctx);
+  return adminOverviewSectionTemplate(ctx);
+}
+
+function adminFreshnessCardTemplate(ctx, extraClass = "wide") {
+  return `
+    <section class="admin-card admin-freshness-card admin-section-card ${extraClass}">
+      <div class="admin-card-head">
+        <h2>데이터 최신 상태</h2>
+        <span>${ctx.periodLabel} 기준</span>
+      </div>
+      <div class="admin-freshness-grid">
+        <article><strong>${escapeHtml(ctx.dataFreshness.overall)}</strong><span>전체 데이터 최신</span></article>
+        <article><strong>${escapeHtml(ctx.dataFreshness.resource)}</strong><span>자료 조회 최신</span></article>
+        <article><strong>${escapeHtml(ctx.dataFreshness.search)}</strong><span>검색 최신</span></article>
+        <article><strong>${escapeHtml(ctx.funnelFreshness)}</strong><span>결제 퍼널 최신 활동</span></article>
+      </div>
+      <p class="admin-note">결제 퍼널 시간은 구매 여정 안의 마지막 활동만 뜻합니다. 사이트 전체 수집 상태는 전체 데이터 최신/자료 조회 최신을 기준으로 보세요.</p>
+    </section>
+  `;
+}
+
+function adminOverviewSectionTemplate(ctx) {
+  return `
+    ${adminFreshnessCardTemplate(ctx)}
+    <div class="admin-summary dashboard-kpis">
+      ${adminMetricTemplate("총 이벤트 수", ctx.kpis.totalEvents)}
+      ${adminMetricTemplate("페이지 조회 수", ctx.kpis.totalPageViews)}
+      ${adminMetricTemplate("총 자료 조회 수", ctx.kpis.totalResourceViews)}
+      ${adminMetricTemplate("총 검색 수", ctx.kpis.totalSearches)}
+      ${adminMetricTemplate("검색 실패 수", ctx.kpis.totalFailures)}
+      ${adminMetricTemplate("댓글 수", ctx.kpis.totalComments)}
+      ${adminMetricTemplate("프리미엄 방문", ctx.kpis.premiumViews)}
+      ${adminMetricTemplate("최근 7일 활성 사용자", ctx.kpis.activeUsers7d)}
+    </div>
+    <section class="admin-card insight-card admin-section-card">
+      <div class="admin-card-head">
+        <h2>운영자 인사이트</h2>
+        <span>${ctx.periodLabel} 기준</span>
+      </div>
+      <div class="admin-insights">
+        ${ctx.insights.map((insight) => `<article>${escapeHtml(insight)}</article>`).join("")}
+      </div>
+    </section>
+    <section class="admin-card admin-section-card">
+      <div class="admin-card-head">
+        <h2>콘텐츠 제작 추천</h2>
+        <span>실패 3회 이상</span>
+      </div>
+      <div class="gap-list">
+        ${ctx.gaps.length ? ctx.gaps.map((row) => `
+          <article>
+            <strong>🔥 ${escapeHtml(row.query)}</strong>
+            <span>검색 실패 ${formatCount(row.no_result_count)}회 · 사용자 수요는 있으나 콘텐츠가 부족한 주제</span>
+          </article>
+        `).join("") : `<p class="admin-empty">현재 기준 콘텐츠 제작 추천 항목이 없어요.</p>`}
+      </div>
+    </section>
+    <div class="admin-summary dashboard-kpis revenue-kpis">
+      ${adminMetricTemplate("오늘 수입", formatWon(ctx.revenue.todayRevenue))}
+      ${adminMetricTemplate("이번 달 수입", formatWon(ctx.revenue.monthRevenue))}
+      ${adminMetricTemplate("총 수입", formatWon(ctx.revenue.totalRevenue))}
+      ${adminMetricTemplate("승인 주문", ctx.revenue.approvedOrders)}
+    </div>
+  `;
+}
+
+function adminContentSectionTemplate(ctx) {
+  return `
+    <section class="admin-card admin-section-card">
+      <div class="admin-card-head">
+        <h2>인기 검색어 TOP 20</h2>
+        <button type="button" data-admin-csv="searchTerms">CSV</button>
+      </div>
+      ${barChartTemplate(ctx.filtered.searchTerms.slice(0, 10), "query", "search_count")}
+      ${adminDataTable(["검색어", "검색 횟수", "최근 검색일"], ctx.filtered.searchTerms.slice(0, 20).map((row) => [
+        row.query,
+        formatCount(row.search_count),
+        formatAdminDate(row.last_searched_at)
+      ]), "검색어 데이터가 없어요")}
+    </section>
+    <section class="admin-card admin-section-card">
+      <div class="admin-card-head">
+        <h2>검색 실패어 TOP 20</h2>
+        <button type="button" data-admin-csv="noResults">CSV</button>
+      </div>
+      ${lineChartTemplate(ctx.filtered.noResults.slice(0, 20))}
+      ${adminDataTable(["검색어", "실패 횟수", "마지막 검색일", "운영 판단"], ctx.filtered.noResults.slice(0, 20).map((row) => [
+        row.query,
+        formatCount(row.no_result_count),
+        formatAdminDate(row.last_searched_at),
+        row.no_result_count >= 3 ? `<span class="admin-badge danger">콘텐츠 제작 후보</span>` : `<span class="admin-badge">관찰</span>`
+      ]), "검색 실패 데이터가 없어요")}
+    </section>
+    <section class="admin-card admin-section-card wide">
+      <div class="admin-card-head">
+        <h2>인기 콘텐츠 TOP 20</h2>
+        <button type="button" data-admin-csv="popularResources">CSV</button>
+      </div>
+      ${barChartTemplate(ctx.filtered.popularResources.slice(0, 10), "resource_title", "open_count")}
+      ${adminDataTable(["제목", "조회수", "최근 조회일"], ctx.filtered.popularResources.slice(0, 20).map((row) => [
+        row.resource_title || row.resource_id,
+        formatCount(row.open_count),
+        formatAdminDate(row.last_opened_at)
+      ]), "인기 콘텐츠 데이터가 없어요")}
+    </section>
+    <section class="admin-card admin-section-card wide">
+      <div class="admin-card-head">
+        <h2>자료별 조회 상세</h2>
+        <span>미리보기와 원본 열기 분리</span>
+      </div>
+      ${adminDataTable(["자료", "미리보기", "원본 열기", "합계", "최근 조회"], ctx.filtered.resourceViewDetails.slice(0, 30).map((row) => [
+        row.resource_title || row.resource_id,
+        formatCount(row.preview_count),
+        formatCount(row.source_open_count),
+        formatCount(row.total_count),
+        formatAdminDate(row.last_viewed_at)
+      ]), "자료별 조회 데이터가 아직 없어요")}
+    </section>
+    <section class="admin-card admin-section-card">
+      <div class="admin-card-head">
+        <h2>콘텐츠 수요 분석</h2>
+        <span>검색→조회 전환율</span>
+      </div>
+      ${adminDataTable(["주제", "검색량", "조회량", "전환율"], ctx.demand.slice(0, 20).map((row) => [
+        row.topic,
+        formatCount(row.searches),
+        formatCount(row.views),
+        `${row.conversion}%`
+      ]), "수요 분석 데이터가 부족해요")}
+    </section>
+    <section class="admin-card admin-section-card">
+      <div class="admin-card-head">
+        <h2>화면별 조회수</h2>
+        <span>${ctx.periodLabel} 기준</span>
+      </div>
+      ${adminDataTable(["화면", "조회수", "최근 조회"], ctx.filtered.pageViews.slice(0, 20).map((row) => [
+        row.page_label,
+        formatCount(row.view_count),
+        formatAdminDate(row.last_viewed_at)
+      ]), "페이지 조회 데이터가 아직 없어요")}
+    </section>
+    <section class="admin-card admin-section-card wide">
+      <div class="admin-card-head">
+        <h2>운영 이벤트 조회수</h2>
+        <span>배너·구매·자료 행동</span>
+      </div>
+      ${adminDataTable(["이벤트", "횟수", "최근 발생"], ctx.filtered.eventCounts.slice(0, 24).map((row) => [
+        row.event_label,
+        formatCount(row.event_count),
+        formatAdminDate(row.last_event_at)
+      ]), "운영 이벤트 데이터가 아직 없어요")}
+    </section>
+  `;
+}
+
+function adminPremiumSectionTemplate(ctx) {
+  return `
+    <div class="admin-summary dashboard-kpis revenue-kpis">
+      ${adminMetricTemplate("오늘 수입", formatWon(ctx.revenue.todayRevenue))}
+      ${adminMetricTemplate("이번 달 수입", formatWon(ctx.revenue.monthRevenue))}
+      ${adminMetricTemplate("총 수입", formatWon(ctx.revenue.totalRevenue))}
+      ${adminMetricTemplate("승인 주문", ctx.revenue.approvedOrders)}
+      ${adminMetricTemplate("프리미엄 방문", ctx.kpis.premiumViews)}
+      ${adminMetricTemplate("구매자료 열기", ctx.kpis.fileOpens)}
+    </div>
+    <section class="admin-card premium-funnel-card admin-section-card">
+      <div class="admin-card-head">
+        <h2>결제 페이지 퍼널</h2>
+        <span>${ctx.periodLabel} · 퍼널 최신 활동 ${escapeHtml(ctx.funnelFreshness)}</span>
+      </div>
+      ${ctx.funnelLimited ? `<p class="admin-note funnel-warning">원본 이벤트 조회가 제한되어 방문/클릭 단계는 비어 보일 수 있어요. 접수·승인 단계는 구매 신청 DB 기준으로 보정해서 표시합니다.</p>` : ""}
+      <div class="premium-funnel-list">
+        ${ctx.premiumFunnel.map((step) => `
+          <article>
+            <div>
+              <strong>${escapeHtml(step.label)}</strong>
+              <span>이전 단계 대비 ${step.dropOff}% 이탈 · 최근 ${escapeHtml(formatAdminDate(step.lastAt))}</span>
+            </div>
+            <b>${formatCount(step.count)}</b>
+            <em style="width: ${step.rate}%"></em>
+          </article>
+        `).join("")}
+      </div>
+    </section>
+    <section class="admin-card admin-section-card">
+      <div class="admin-card-head">
+        <h2>프리미엄 파일 열람</h2>
+        <span>구매완료 이후</span>
+      </div>
+      ${adminDataTable(["파일", "열기", "최근 열람"], ctx.filtered.premiumFileViews.slice(0, 20).map((row) => [
+        row.file_label,
+        formatCount(row.open_count),
+        formatAdminDate(row.last_opened_at)
+      ]), "프리미엄 파일 열람 데이터가 아직 없어요")}
+    </section>
+    ${bankTransferOrdersAdminTemplate()}
+    ${premiumOperatingSettingsAdminTemplate()}
+    ${premiumTestToolsAdminTemplate()}
+  `;
+}
+
+function adminCommunitySectionTemplate(ctx) {
+  const comments = (ctx.filtered.comments || []).slice(0, 80);
+  const trendCount = comments.filter((row) => row.comment_type === "trend").length;
+  const resourceCount = comments.filter((row) => row.comment_type === "resource").length;
+  const totalLikes = comments.reduce((sum, row) => sum + Number(row.likes || 0), 0);
+  return `
+    <div class="admin-summary dashboard-kpis">
+      ${adminMetricTemplate("전체 댓글", ctx.kpis.totalComments)}
+      ${adminMetricTemplate("동향 댓글", trendCount)}
+      ${adminMetricTemplate("자료 댓글", resourceCount)}
+      ${adminMetricTemplate("댓글 좋아요", totalLikes)}
+    </div>
+    <section class="admin-card admin-section-card wide">
+      <div class="admin-card-head">
+        <h2>최근 댓글</h2>
+        <span>동향·자료 통합</span>
+      </div>
+      ${adminDataTable(["구분", "대상", "닉네임", "내용", "좋아요", "작성일"], comments.map((row) => [
+        row.comment_type === "resource" ? "자료" : "동향",
+        row.article_id || row.resource_id || "-",
+        row.nickname || "익명",
+        row.body || "-",
+        formatCount(row.likes || 0),
+        formatAdminDate(row.created_at)
+      ]), "댓글 데이터가 아직 없어요")}
+    </section>
+    <section class="admin-card admin-section-card">
+      <div class="admin-card-head">
+        <h2>반응 관리 메모</h2>
+        <span>운영 가이드</span>
+      </div>
+      <div class="admin-insights">
+        <article>댓글이 늘어나는 자료는 다음 인스타 캐러셀이나 추가 해설 콘텐츠 후보로 올려두세요.</article>
+        <article>질문형 댓글은 PYM Agent 답변 품질 개선용 질문 세트로 모으면 좋아요.</article>
+      </div>
+    </section>
+  `;
+}
+
+function adminSettingsSectionTemplate(ctx) {
+  return `
+    ${adminFreshnessCardTemplate(ctx)}
+    <section class="admin-card admin-section-card wide">
+      <div class="admin-card-head">
+        <h2>데이터 연결</h2>
+        <span>${supabaseConfig.enabled ? "Supabase 연결됨" : "미연결"}</span>
+      </div>
+      <p class="admin-note">검색어 길이 2 이하의 노이즈는 기본 숨김 처리됩니다. 원본 이벤트 조회가 제한되어도 Supabase 집계 테이블을 우선 읽어 운영 숫자를 표시합니다.</p>
+    </section>
+    <section class="admin-card admin-section-card">
+      <div class="admin-card-head">
+        <h2>수집 상태</h2>
+        <span>${ctx.periodLabel} 기준</span>
+      </div>
+      <div class="admin-freshness-grid compact">
+        <article><strong>${escapeHtml(ctx.dataFreshness.overall)}</strong><span>마지막 전체 이벤트</span></article>
+        <article><strong>${escapeHtml(ctx.dataFreshness.resource)}</strong><span>마지막 자료 조회</span></article>
+        <article><strong>${escapeHtml(ctx.dataFreshness.search)}</strong><span>마지막 검색</span></article>
+        <article><strong>${escapeHtml(ctx.funnelFreshness)}</strong><span>마지막 결제 퍼널</span></article>
+      </div>
+    </section>
+    <section class="admin-card admin-section-card">
+      <div class="admin-card-head">
+        <h2>운영 도구</h2>
+        <span>Export · Test</span>
+      </div>
+      <div class="admin-actions inline">
+        <button type="button" data-admin-refresh>데이터 새로고침</button>
+        <button type="button" data-admin-export>JSON 내보내기</button>
+        <button type="button" data-supabase-test>Supabase 테스트</button>
+      </div>
+    </section>
+  `;
+}
+
+function renderAnalyticsAdminLegacy() {
   const data = adminDashboardState.data || buildEmptyAdminDashboardData();
   const filtered = filterAdminData(data);
   const kpis = getAdminKpis(filtered);
@@ -4801,9 +5227,10 @@ function bankTransferOrdersAdminTemplate() {
 }
 
 function adminMetricTemplate(label, value) {
+  const displayValue = typeof value === "number" ? formatCount(value) : String(value || "0");
   return `
     <article>
-      <strong>${escapeHtml(formatCount(value))}</strong>
+      <strong>${escapeHtml(displayValue)}</strong>
       <span>${escapeHtml(label)}</span>
     </article>
   `;
@@ -5148,7 +5575,11 @@ function pageLabel(key) {
     "#trend": "최근 간호 동향",
     "#premium": "유료 구매 페이지",
     "#premiumAccess": "구매완료 자료",
-    "#admin": "어드민"
+    "#admin": "운영센터 개요",
+    "#admin-content": "운영센터 콘텐츠/검색",
+    "#admin-premium": "운영센터 프리미엄/판매",
+    "#admin-community": "운영센터 커뮤니티/댓글",
+    "#admin-settings": "운영센터 설정/데이터"
   };
   return map[normalized] || normalized.replace(/^#/, "") || "홈";
 }
@@ -5614,7 +6045,7 @@ function escapeHtml(value) {
 }
 })().catch((error) => {
   console.error("PYM app failed to initialize", error);
-  if (window.location.hash === "#admin") {
+  if (isAdminHash(window.location.hash)) {
     document.body.classList.add("admin-mode");
     const admin = document.querySelector("#analyticsAdmin");
     const content = document.querySelector("#analyticsContent");
