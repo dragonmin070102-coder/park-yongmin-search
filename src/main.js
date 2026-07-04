@@ -135,7 +135,8 @@ let adminSearchTimer = null;
 let analyticsFlushScheduled = false;
 let currentPremiumPreviewCards = [];
 let premiumSocialProof = { reviews: [], accessCount: 0 };
-let agentMessages = readJsonArray("pym.agentMessages").slice(-12);
+safeStorageRemove("pym.agentMessages");
+let agentMessages = [];
 let agentLoading = false;
 
 const analyticsUserId = getOrCreateAnalyticsUserId();
@@ -1578,8 +1579,7 @@ function getAgentLocalMatches(question) {
 }
 
 function saveAgentMessages() {
-  const stableMessages = agentMessages.filter((message) => !message.loading).slice(-12);
-  safeStorageSet("pym.agentMessages", JSON.stringify(stableMessages));
+  safeStorageRemove("pym.agentMessages");
 }
 
 async function submitAgentQuestion(form) {
