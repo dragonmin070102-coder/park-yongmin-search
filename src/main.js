@@ -1533,6 +1533,7 @@ function renderAgentScreen() {
     </section>
   `;
 
+  consumePendingAgentQuestion();
   const list = agentScreen.querySelector("#agentMessageList");
   if (list) list.scrollTop = list.scrollHeight;
 }
@@ -3368,6 +3369,64 @@ function writeStoredIds(key, ids) {
   safeStorageSet(key, JSON.stringify(ids));
 }
 
+const SEARCH_EXPANSION_RULES = [
+  { terms: ["신경계", "신경", "neurology", "neuro"], tokens: ["신경계", "iicp", "두개내압", "gbs", "길랭", "mg", "중증근무력증", "als", "ms", "파킨슨", "임상추론"], systems: ["신경계"], boostIds: ["iicp", "gbs", "mg", "als", "ms", "pd"] },
+  { terms: ["ecg", "ekg", "심전도"], tokens: ["ecg", "ekg", "심전도", "stemi", "nstemi", "acs", "심근경색", "흉통"], boostIds: ["acs-ecg", "mi", "acls"] },
+  { terms: ["abga", "abg", "동맥혈가스", "동맥혈가스분석", "가스분석", "산염기"], tokens: ["abga", "abg", "동맥혈가스분석", "ph", "paco2", "hco3", "pao2", "rome", "보상", "산증", "알칼리증"], boostIds: ["abga", "pneumonia-case-study", "pneumothorax-cxr"] },
+  { terms: ["심혈관", "순환기", "cardio", "cardiac", "심장"], tokens: ["심혈관", "acs", "ecg", "심근경색", "허혈", "흉통", "acls", "cpr"], systems: ["심혈관"], boostIds: ["acs-ecg", "mi", "acls"] },
+  { terms: ["간호중재", "중재", "nursing intervention", "간호수행", "간호관리"], tokens: ["간호중재", "간호수행", "보고", "우선순위", "산소요법", "체위", "사정", "모니터링"], intents: ["간호중재", "임상추론"], boostIds: ["iicp", "thyroidectomy", "pneumonia-case-study", "abga", "acls"] },
+  { terms: ["gbs", "길랑", "길랭", "길랑바레", "길랭바레", "guillain"], tokens: ["gbs", "길랭바레", "길랑바레", "상행성", "호흡근"], boostIds: ["gbs", "mg", "als"] },
+  { terms: ["khsim", "시뮬레이션", "실습훈련", "간호시뮬레이션"], tokens: ["khsim", "시뮬레이션", "실습", "환자 시나리오"], boostIds: ["khsim-simulation", "abga", "acls", "pneumonia-case-study"] },
+  { terms: ["흉부", "cxr", "chest", "xray", "x-ray", "호흡기"], tokens: ["흉부", "cxr", "chest x-ray", "호흡기", "기흉", "폐렴", "abga"], systems: ["호흡기"], boostIds: ["pneumothorax-cxr", "pneumonia-case-study", "abga"] },
+  { terms: ["nclex", "엔클렉스"], tokens: ["nclex", "문제", "임상추론", "우선순위", "보고"], intents: ["임상추론"], boostIds: ["abga", "acls", "iicp", "pneumonia-case-study"] }
+];
+
+function normalizeSearchText(value) {
+  return String(value || "").toLowerCase().replace(/[\s_\-/]+/g, " ").trim();
+}
+
+function buildSearchContext(query) {
+  const normalized = normalizeSearchText(query);
+  const baseTokens = normalized.split(/\s+/).filter(Boolean);
+  const expansion = { tokens: [...baseTokens], boostIds: new Set(), systems: new Set(), intents: new Set(), matchedRules: [] };
+  if (!normalized) return expansion;
+
+  SEARCH_EXPANSION_RULES.forEach((rule) => {
+    const matched = rule.terms.some((term) => {
+      const normalizedTerm = normalizeSearchText(term);
+      return normalized === normalizedTerm || normalized.includes(normalizedTerm) || normalizedTerm.includes(normalized);
+    });
+    if (!matched) return;
+    expansion.matchedRules.push(rule);
+    (rule.tokens || []).forEach((token) => expansion.tokens.push(normalizeSearchText(token)));
+    (rule.boostIds || []).forEach((id) => expansion.boostIds.add(id));
+    (rule.systems || []).forEach((system) => expansion.systems.add(system));
+    (rule.intents || []).forEach((intent) => expansion.intents.add(intent));
+  });
+
+  expansion.tokens = Array.from(new Set(expansion.tokens.filter(Boolean)));
+  return expansion;
+}
+
+function openAgentWithQuestion(question, context = {}) {
+  const cleaned = String(question || "").trim();
+  if (cleaned) safeStorageSet("pym.pendingAgentQuestion", cleaned);
+  trackEvent("agent_cta_click", { query: cleaned, placement: context.placement || "search", resourceId: context.resourceId || "" });
+  window.location.hash = "agent";
+  setAgentMode();
+}
+
+function consumePendingAgentQuestion() {
+  const pending = safeStorageGet("pym.pendingAgentQuestion");
+  if (!pending) return;
+  safeStorageRemove("pym.pendingAgentQuestion");
+  const input = agentScreen?.querySelector("[data-agent-form] textarea");
+  if (input) {
+    input.value = pending;
+    input.focus();
+  }
+}
+
 function renderResults() {
   const query = queryInput.value.trim();
   screenQueryInput.value = queryInput.value;
@@ -3433,13 +3492,21 @@ function renderResults() {
     });
   });
 
+  grid.querySelectorAll("[data-agent-search-question]").forEach((button) => {
+    button.addEventListener("click", () => {
+      openAgentWithQuestion(button.dataset.agentSearchQuestion, { placement: "search_empty" });
+    });
+  });
+
   renderDetail(activeResource);
 }
 
 function scoreResources(query) {
-  const tokens = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const search = buildSearchContext(query);
   return resources.map((resource) => {
-    const haystack = [
+    const title = normalizeSearchText(resource.displayTitle);
+    const tags = normalizeSearchText(resource.tags.join(" "));
+    const haystack = normalizeSearchText([
       resource.title,
       resource.displayTitle,
       resource.type,
@@ -3452,14 +3519,20 @@ function scoreResources(query) {
       resource.useCase,
       resource.tags.join(" "),
       resource.points.join(" ")
-    ].join(" ").toLowerCase();
+    ].join(" "));
 
-    const score = tokens.reduce((sum, token) => {
-      if (resource.displayTitle.toLowerCase().includes(token)) return sum + 8;
-      if (resource.tags.join(" ").toLowerCase().includes(token)) return sum + 6;
+    let score = query ? 0 : 1;
+    if (search.boostIds.has(resource.id)) score += 18;
+    if (search.systems.has(resource.system)) score += 10;
+    if (search.intents.has(resource.intent)) score += 8;
+
+    score += search.tokens.reduce((sum, token) => {
+      if (!token) return sum;
+      if (title.includes(token)) return sum + 8;
+      if (tags.includes(token)) return sum + 6;
       if (haystack.includes(token)) return sum + 3;
       return sum;
-    }, query ? 0 : 1);
+    }, 0);
 
     return { resource, score };
   });
@@ -3523,10 +3596,11 @@ function emptyTemplate(query) {
   ].filter(Boolean).join(" + ");
 
   return `
-    <article class="resource-card">
+    <article class="resource-card empty-card search-empty-card">
       <h3>검색 결과가 없어요</h3>
-      <p>"${escapeHtml(query)}" 검색어와 정확히 맞는 자료가 아직 없습니다. ${hasActiveFilters ? `${escapeHtml(filterText)} 필터와 검색어가 같이 적용 중이에요.` : "태그를 추가하거나 Drive 자료를 더 색인하면 바로 확장할 수 있어요."}</p>
-      <div class="card-actions">
+      <p>"${escapeHtml(query)}" 검색어와 정확히 맞는 자료가 아직 없습니다. ${hasActiveFilters ? `${escapeHtml(filterText)} 필터와 검색어가 같이 적용 중이에요.` : "PYM Agent가 현재 자료를 먼저 훑어서 답변할 수 있어요."}</p>
+      <div class="card-actions search-empty-actions">
+        ${query ? `<button type="button" data-agent-search-question="${escapeHtml(query)}">Agent에게 물어보기</button>` : ""}
         ${query ? `<button type="button" data-clear-query>검색어 지우기</button>` : ""}
       </div>
     </article>
@@ -3553,6 +3627,12 @@ function renderDetail(resource) {
       renderDetail(resource);
       renderHomeFeed();
       renderResults();
+    });
+  });
+
+  detail.querySelectorAll("[data-detail-agent]").forEach((button) => {
+    button.addEventListener("click", () => {
+      openAgentWithQuestion(`${resource.displayTitle}에서 가장 중요한 간호 판단을 알려줘`, { placement: "resource_detail", resourceId: resource.id });
     });
   });
 }
@@ -3606,6 +3686,7 @@ function detailTemplate(resource) {
         </div>
       </div>
       <div class="detail-actions">
+        <button type="button" data-detail-agent="${escapeHtml(resource.id)}">이 자료로 Agent에게 질문</button>
         <button type="button" data-detail-copy="${escapeHtml(resource.id)}">요약과 링크 복사</button>
         <button type="button" data-detail-save="${escapeHtml(resource.id)}">${saved ? "즐겨찾기 해제" : "즐겨찾기 저장"}</button>
         <a class="detail-link" href="${escapeHtml(resource.url)}" target="_blank" rel="noreferrer" data-drive="${escapeHtml(resource.id)}">${escapeHtml(resourceSourceLabel(resource))}</a>
@@ -3723,6 +3804,12 @@ function renderModalContent(resource) {
       renderModalContent(resource);
       renderHomeFeed();
       renderResults();
+    });
+  });
+  modalContent.querySelectorAll("[data-detail-agent]").forEach((button) => {
+    button.addEventListener("click", () => {
+      closePreviewModal();
+      openAgentWithQuestion(`${resource.displayTitle}에서 가장 중요한 간호 판단을 알려줘`, { placement: "resource_preview", resourceId: resource.id });
     });
   });
 }

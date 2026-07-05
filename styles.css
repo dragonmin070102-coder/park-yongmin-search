@@ -7549,3 +7549,10 @@ body.admin-mode .admin-freshness-grid.compact {
     grid-template-columns: 1fr;
   }
 }
+
+.search-empty-actions button[data-agent-search-question],
+.detail-actions button[data-detail-agent] {
+  border-color: #3182f6;
+  background: #3182f6;
+  color: #ffffff;
+}
