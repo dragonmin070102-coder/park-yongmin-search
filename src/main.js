@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260629-5";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260707-1";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const PREMIUM_REGULAR_PRICE = "9,900원";
 const PREMIUM_SALE_PRICE = "3,900원";
@@ -3371,10 +3371,14 @@ function writeStoredIds(key, ids) {
 
 const SEARCH_EXPANSION_RULES = [
   { terms: ["신경계", "신경", "neurology", "neuro"], tokens: ["신경계", "iicp", "두개내압", "gbs", "길랭", "mg", "중증근무력증", "als", "ms", "파킨슨", "임상추론"], systems: ["신경계"], boostIds: ["iicp", "gbs", "mg", "als", "ms", "pd"] },
-  { terms: ["ecg", "ekg", "심전도"], tokens: ["ecg", "ekg", "심전도", "stemi", "nstemi", "acs", "심근경색", "흉통"], boostIds: ["acs-ecg", "mi", "acls"] },
-  { terms: ["abga", "abg", "동맥혈가스", "동맥혈가스분석", "가스분석", "산염기"], tokens: ["abga", "abg", "동맥혈가스분석", "ph", "paco2", "hco3", "pao2", "rome", "보상", "산증", "알칼리증"], boostIds: ["abga", "pneumonia-case-study", "pneumothorax-cxr"] },
-  { terms: ["심혈관", "순환기", "cardio", "cardiac", "심장"], tokens: ["심혈관", "acs", "ecg", "심근경색", "허혈", "흉통", "acls", "cpr"], systems: ["심혈관"], boostIds: ["acs-ecg", "mi", "acls"] },
-  { terms: ["간호중재", "중재", "nursing intervention", "간호수행", "간호관리"], tokens: ["간호중재", "간호수행", "보고", "우선순위", "산소요법", "체위", "사정", "모니터링"], intents: ["간호중재", "임상추론"], boostIds: ["iicp", "thyroidectomy", "pneumonia-case-study", "abga", "acls"] },
+  { terms: ["ecg", "ekg", "심전도"], tokens: ["ecg", "ekg", "심전도", "stemi", "nstemi", "acs", "심근경색", "흉통", "troponin"], boostIds: ["acs-clinical-reasoning", "acs-ecg", "mi", "acls"] },
+  { terms: ["abga", "abg", "동맥혈가스", "동맥혈가스분석", "가스분석", "산염기"], tokens: ["abga", "abg", "동맥혈가스분석", "ph", "paco2", "hco3", "pao2", "rome", "보상", "산증", "알칼리증", "dka"], boostIds: ["abga", "dka", "pneumonia-case-study", "pneumothorax-cxr"] },
+  { terms: ["심혈관", "순환기", "cardio", "cardiac", "심장"], tokens: ["심혈관", "acs", "ecg", "심근경색", "허혈", "흉통", "acls", "cpr", "troponin"], systems: ["심혈관"], boostIds: ["acs-clinical-reasoning", "acs-ecg", "mi", "acls"] },
+  { terms: ["응급", "응급간호", "emergency", "쇼크", "shock"], tokens: ["응급", "쇼크", "저혈압", "기도", "산소포화도", "보고", "우선순위", "아나필락시스", "패혈증", "dka", "acls"], systems: ["응급간호"], boostIds: ["anaphylaxis", "sepsis", "dka", "acls"] },
+  { terms: ["아나필락시스", "anaphylaxis", "알레르기", "에피네프린", "epinephrine"], tokens: ["아나필락시스", "anaphylaxis", "에피네프린", "두드러기", "기도부종", "저혈압", "biphasic"], boostIds: ["anaphylaxis", "acls", "sepsis"] },
+  { terms: ["패혈증", "sepsis", "septic", "젖산", "lactate", "qsofa"], tokens: ["패혈증", "sepsis", "septic shock", "젖산", "lactate", "qsofa", "sofa", "map", "혈액배양", "항생제"], boostIds: ["sepsis", "pneumonia-case-study", "abga"] },
+  { terms: ["dka", "당뇨병성 케톤산증", "케톤산증", "케톤", "kussmaul"], tokens: ["dka", "당뇨병성 케톤산증", "케톤", "혈당", "대사성 산증", "kussmaul", "anion gap", "칼륨", "인슐린"], boostIds: ["dka", "abga", "siadh"] },
+  { terms: ["간호중재", "중재", "nursing intervention", "간호수행", "간호관리"], tokens: ["간호중재", "간호수행", "보고", "우선순위", "산소요법", "체위", "사정", "모니터링"], intents: ["간호중재", "임상추론"], boostIds: ["iicp", "thyroidectomy", "pneumonia-case-study", "abga", "acls", "anaphylaxis", "sepsis", "dka"] },
   { terms: ["gbs", "길랑", "길랭", "길랑바레", "길랭바레", "guillain"], tokens: ["gbs", "길랭바레", "길랑바레", "상행성", "호흡근"], boostIds: ["gbs", "mg", "als"] },
   { terms: ["khsim", "시뮬레이션", "실습훈련", "간호시뮬레이션"], tokens: ["khsim", "시뮬레이션", "실습", "환자 시나리오"], boostIds: ["khsim-simulation", "abga", "acls", "pneumonia-case-study"] },
   { terms: ["흉부", "cxr", "chest", "xray", "x-ray", "호흡기"], tokens: ["흉부", "cxr", "chest x-ray", "호흡기", "기흉", "폐렴", "abga"], systems: ["호흡기"], boostIds: ["pneumothorax-cxr", "pneumonia-case-study", "abga"] },
@@ -3716,6 +3720,7 @@ function visualMeta(resource) {
     "신경계": { key: "neuro", icon: "N", image: "./assets/thumb-neuro.png" },
     "검사수치": { key: "lab", icon: "Lab", image: "./assets/thumb-lab.png" },
     "호흡기": { key: "resp", icon: "XR", image: "./assets/thumb-resp.png" },
+    "응급간호": { key: "emergency", icon: "ER", image: "./assets/nurse-guide.png" },
     "시뮬레이션": { key: "sim", icon: "SIM", image: "./assets/nurse-guide.png" },
     "수술간호": { key: "surgery", icon: "+", image: "./assets/thumb-surgery.png" }
   };

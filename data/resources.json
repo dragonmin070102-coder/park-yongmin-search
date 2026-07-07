@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-22T23:35:00.000+09:00",
+  "updatedAt": "2026-07-07T21:22:10.000+09:00",
   "resources": [
     {
       "id": "acs-ecg",
@@ -898,6 +898,204 @@
         "태블릿"
       ],
       "rank": 17
+    },
+    {
+      "id": "anaphylaxis",
+      "title": "Anaphylaxis clinical reasoning",
+      "displayTitle": "아나필락시스 임상추론",
+      "type": "응급간호",
+      "format": "Google Doc",
+      "source": "박용민 임상추론 Google Doc",
+      "url": "https://docs.google.com/document/d/1KJJNaV2wJn4p18AECWeKr-GpK7AsLCAz5ouyjVVk9OM/edit",
+      "tags": [
+        "아나필락시스",
+        "Anaphylaxis",
+        "에피네프린",
+        "알레르기",
+        "쇼크",
+        "기도부종",
+        "두드러기 없음",
+        "biphasic reaction"
+      ],
+      "summary": "피부증상 없이 호흡곤란과 저혈압으로 나타나는 아나필락시스를 급성 발생, 다발성 장기 침범, 에피네프린 우선순위로 읽는 임상추론 자료입니다.",
+      "points": [
+        "두드러기나 발진이 없어도 급성 발생과 호흡기·순환기 침범이 있으면 아나필락시스를 의심해야 합니다.",
+        "에피네프린 IM은 저혈압과 기도폐쇄를 동시에 되돌리는 1차 치료이며 항히스타민·스테로이드는 보조 치료로 정리합니다.",
+        "증상 호전 후에도 biphasic reaction 가능성이 있어 최소 4~6시간 관찰과 재발 징후 보고 기준을 확인합니다."
+      ],
+      "useCase": "피부증상 없는 아나필락시스 감별, 에피네프린 투여 우선순위, 알레르기 응급상황 보고 기준 정리",
+      "confidence": "본문 확인",
+      "system": "응급간호",
+      "intent": "임상추론",
+      "stage": "핵심",
+      "evidence": "Drive 문서 박용민_임상추론_아나필락시스에서 피부증상 없는 아나필락시스, 에피네프린 IM, 산소포화도, 저혈압, biphasic reaction, 관찰시간과 NCLEX 문항을 확인했습니다.",
+      "related": [
+        "sepsis",
+        "acls",
+        "abga",
+        "khsim-simulation"
+      ],
+      "keywords": [
+        "아나필락시스",
+        "Anaphylaxis",
+        "에피네프린",
+        "두드러기 없음",
+        "알레르기 쇼크",
+        "biphasic reaction"
+      ],
+      "rank": 18
+    },
+    {
+      "id": "acs-clinical-reasoning",
+      "title": "ACS clinical reasoning",
+      "displayTitle": "ACS 급성심근경색 임상추론",
+      "type": "심혈관",
+      "format": "Google Doc",
+      "source": "박용민 임상추론 Google Doc",
+      "url": "https://docs.google.com/document/d/1UFH_WxbE5pZ14ftcvSlMjm7Z6u5xx3Pt1kEglMsxLZ8/edit",
+      "tags": [
+        "ACS",
+        "급성관상동맥증후군",
+        "심근경색",
+        "STEMI",
+        "NSTEMI",
+        "Troponin",
+        "ECG",
+        "비전형적 증상",
+        "당뇨"
+      ],
+      "summary": "흉통 없이 피로감, 소화불량, 식은땀으로 나타나는 ACS를 ECG 10분 이내, 트로포닌 추세, 재관류 시간으로 연결하는 임상추론 자료입니다.",
+      "points": [
+        "여성·노인·당뇨 환자는 흉통 없이 비전형적 증상으로 ACS가 나타날 수 있어 ECG와 트로포닌으로 판단합니다.",
+        "ECG는 10분 이내, STEMI 재관류는 90분 이내 목표로 초기 대응 속도의 의미를 정리합니다.",
+        "산소포화도 90% 이상에서는 일상적 산소투여를 피하고, 아스피린 저작 투여와 심장내과 보고 흐름을 확인합니다."
+      ],
+      "useCase": "흉통 없는 심근경색, ACS 초기 대응, ECG·Troponin 해석, 당뇨 환자 비전형 증상 감별",
+      "confidence": "본문 확인",
+      "system": "심혈관",
+      "intent": "임상추론",
+      "stage": "핵심",
+      "evidence": "Drive 문서 박용민_임상추론_ACS에서 비전형적 ACS, ECG 10분 이내, door-to-balloon 90분, 트로포닌, 산소투여 기준과 NCLEX 문항을 확인했습니다.",
+      "related": [
+        "acs-ecg",
+        "mi",
+        "acls",
+        "abga"
+      ],
+      "keywords": [
+        "ACS",
+        "급성심근경색",
+        "흉통 없는 심근경색",
+        "ECG 10분",
+        "Troponin",
+        "STEMI",
+        "NSTEMI"
+      ],
+      "rank": 19
+    },
+    {
+      "id": "sepsis",
+      "title": "Sepsis clinical reasoning",
+      "displayTitle": "패혈증 임상추론",
+      "type": "응급간호",
+      "format": "Google Doc",
+      "source": "박용민 임상추론 Google Doc",
+      "url": "https://docs.google.com/document/d/1SHMW6YzB5ig8axUqMqPHx8kTdn4op0Y0PDcLYnMjP0s/edit",
+      "tags": [
+        "패혈증",
+        "Sepsis",
+        "Septic shock",
+        "젖산",
+        "Lactate",
+        "qSOFA",
+        "SOFA",
+        "MAP",
+        "혈액배양",
+        "항생제"
+      ],
+      "summary": "발열보다 의식변화, 저혈압, 젖산 상승, qSOFA로 패혈증과 패혈성 쇼크를 읽는 임상추론 자료입니다.",
+      "points": [
+        "노인 환자는 발열 없이 의식저하와 저혈압으로 패혈증이 드러날 수 있어 체온만으로 배제하지 않습니다.",
+        "qSOFA, 젖산, MAP, 소변량을 장기기능 저하의 신호로 연결하고 항생제 전 혈액배양 순서를 확인합니다.",
+        "수액 30mL/kg, MAP 65mmHg 목표, 승압제 준비처럼 패혈성 쇼크 초기 대응 흐름을 정리합니다."
+      ],
+      "useCase": "열 없는 패혈증 감별, qSOFA·Lactate 해석, 패혈성 쇼크 초기 대응, 혈액배양과 항생제 순서 확인",
+      "confidence": "본문 확인",
+      "system": "응급간호",
+      "intent": "임상추론",
+      "stage": "핵심",
+      "evidence": "Drive 문서 박용민_임상추론_패혈증_Sepsis에서 노인성 패혈증, qSOFA, lactate, MAP, 혈액배양, 항생제, 수액 30mL/kg, 승압제 기준을 확인했습니다.",
+      "related": [
+        "pneumonia-case-study",
+        "abga",
+        "dka",
+        "anaphylaxis",
+        "acls"
+      ],
+      "keywords": [
+        "패혈증",
+        "Sepsis",
+        "Septic shock",
+        "젖산",
+        "Lactate",
+        "qSOFA",
+        "MAP 65",
+        "혈액배양"
+      ],
+      "rank": 20
+    },
+    {
+      "id": "dka",
+      "title": "DKA clinical reasoning",
+      "displayTitle": "당뇨병성 케톤산증 DKA 임상추론",
+      "type": "검사수치",
+      "format": "Google Doc",
+      "source": "박용민 임상추론 Google Doc",
+      "url": "https://docs.google.com/document/d/1GhoJjuHE5hJkCliQF_gnRyxptf4d9olXGbJUru9XjkQ/edit",
+      "bannerTitle": "복통 환자, DKA를 놓치면 흐름이 무너집니다",
+      "bannerDescription": "혈당·케톤·산증을 같이 봐야 합니다. 수액 먼저, 인슐린 전 K 확인까지 한 번에 연결해둔 새 임상추론 자료예요.",
+      "bannerAction": "DKA 흐름 보기",
+      "bannerSourceLabel": "원본 문서",
+      "tags": [
+        "DKA",
+        "당뇨병성 케톤산증",
+        "혈당",
+        "케톤",
+        "대사성 산증",
+        "Kussmaul 호흡",
+        "칼륨",
+        "Anion gap",
+        "ABGA"
+      ],
+      "summary": "복통과 구토 뒤에 숨어 있는 DKA를 혈당, 케톤, 대사성 산증, 칼륨 관리 순서로 읽는 임상추론 자료입니다.",
+      "points": [
+        "DKA는 혈당(D), 케톤(K), 산증(A) 세 기준으로 판단하고 복통 환자에서도 혈당 확인이 우선이 될 수 있습니다.",
+        "Kussmaul 호흡, pH 저하, HCO3 저하, anion gap 상승을 대사성 산증의 보상 흐름으로 연결합니다.",
+        "수액을 먼저 주고 인슐린 전 칼륨을 확인하며, K < 3.3mEq/L이면 인슐린보다 칼륨 보충이 먼저라는 핵심을 정리합니다."
+      ],
+      "useCase": "DKA 진단 기준, 혈당·케톤·ABGA 해석, Kussmaul 호흡, 인슐린 전 칼륨 확인, 응급실 복통 환자 감별",
+      "confidence": "본문 확인",
+      "system": "검사수치",
+      "intent": "임상추론",
+      "stage": "핵심",
+      "evidence": "Drive 문서 박용민_임상추론_DKA에서 혈당, 케톤, pH, HCO3, anion gap, 칼륨, 수액·인슐린 순서와 NCLEX 문항을 확인했습니다.",
+      "related": [
+        "abga",
+        "sepsis",
+        "siadh",
+        "pneumonia-case-study",
+        "khsim-simulation"
+      ],
+      "keywords": [
+        "DKA",
+        "당뇨병성 케톤산증",
+        "혈당 486",
+        "Kussmaul 호흡",
+        "anion gap",
+        "칼륨",
+        "대사성 산증"
+      ],
+      "rank": 21
     }
   ]
 }
