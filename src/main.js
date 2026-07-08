@@ -1,5 +1,5 @@
 (async () => {
-const RESOURCE_DATA_URL = "./data/resources.json?v=20260707-1";
+const RESOURCE_DATA_URL = "./data/resources.json?v=20260708-1";
 const KHSIM_URL = "https://dragonmin070102-coder.github.io/KHSIM/";
 const PREMIUM_REGULAR_PRICE = "9,900원";
 const PREMIUM_SALE_PRICE = "3,900원";
@@ -1323,9 +1323,50 @@ function renderHomeNoticeCarousel() {
 }
 
 function getHomeNotices() {
-  const latest = resources.slice().sort((a, b) => b.rank - a.rank)[0] || resources[0];
   const recommended = resources.find((resource) => resource.id === "gbs") || resources[0];
   const trendArticle = trendArticles[0];
+  const newResourceNoticeMap = {
+    anaphylaxis: {
+      title: "두드러기 없는데도 아나필락시스일 수 있습니다",
+      description: "호흡곤란과 저혈압이 같이 오면 피부증상보다 장기 침범을 먼저 봐야 해요. 에피네프린 우선순위까지 정리했습니다.",
+      action: "아나필락시스 보기"
+    },
+    "acs-clinical-reasoning": {
+      title: "가슴이 안 아픈데 ACS라면?",
+      description: "당뇨·노인·여성 환자는 피로감, 소화불량, 식은땀만으로도 심근경색이 숨어 있을 수 있어요.",
+      action: "ACS 흐름 보기"
+    },
+    sepsis: {
+      title: "열이 없다고 패혈증이 아닌 건 아닙니다",
+      description: "체온보다 의식변화, 저혈압, 젖산, qSOFA를 먼저 연결해 보는 패혈증 임상추론 자료예요.",
+      action: "패혈증 보기"
+    },
+    dka: {
+      title: "복통 환자, DKA를 놓치면 흐름이 무너집니다",
+      description: "혈당·케톤·산증을 같이 봐야 합니다. 수액 먼저, 인슐린 전 K 확인까지 한 번에 연결해둔 새 임상추론 자료예요.",
+      action: "DKA 흐름 보기"
+    }
+  };
+  const newResourceNotices = ["anaphylaxis", "acs-clinical-reasoning", "sepsis", "dka"]
+    .map((id) => {
+      const resource = resources.find((item) => item.id === id);
+      if (!resource) return null;
+      const copy = newResourceNoticeMap[id];
+      return {
+        id: `new-${resource.id}`,
+        label: "새 자료 업데이트",
+        badge: "NEW",
+        title: resource.bannerTitle || copy.title,
+        description: resource.bannerDescription || copy.description,
+        query: resource.keywords?.[0] || resource.displayTitle,
+        action: resource.bannerAction || copy.action,
+        sourceLabel: resource.bannerSourceLabel || "원본 자료",
+        sourceUrl: resource.url,
+        image: visualMeta(resource).image || "./assets/thumb-lab.png",
+        tone: "update"
+      };
+    })
+    .filter(Boolean);
 
   return [
     {
@@ -1341,18 +1382,7 @@ function getHomeNotices() {
       tone: "premium",
       target: "premium"
     },
-    {
-      label: "새 자료 업데이트",
-      badge: "NEW",
-      title: latest.bannerTitle || `${latest.displayTitle} 자료가 추가됐어요`,
-      description: latest.bannerDescription || latest.summary,
-      query: latest.keywords?.[0] || latest.displayTitle,
-      action: latest.bannerAction || "새 자료 보기",
-      sourceLabel: latest.bannerSourceLabel || "원본 자료",
-      sourceUrl: latest.url,
-      image: visualMeta(latest).image || "./assets/thumb-lab.png",
-      tone: "update"
-    },
+    ...newResourceNotices,
     {
       label: "오늘의 추천 자료",
       badge: "추천",
