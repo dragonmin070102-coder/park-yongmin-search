@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "check": "node --check src/main.js && node --check api/pym-agent.js"
+    "check": "node --check src/main.js && node --check api/pym-agent.js && node --check api/bank-order-automation.js"
   },
   "dependencies": {
     "openai": "^6.15.0"

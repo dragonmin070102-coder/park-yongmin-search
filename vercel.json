@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/bank-order-automation",
+      "schedule": "*/10 * * * *"
+    }
+  ]
+}
