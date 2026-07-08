@@ -170,6 +170,14 @@ const adminSections = [
     description: "매출, 구매 신청, 승인, 결제 퍼널, 자료 링크를 한 화면에서 관리합니다."
   },
   {
+    id: "marketing",
+    hash: "#admin-marketing",
+    label: "마케팅/ROAS",
+    eyebrow: "Marketing Analytics",
+    title: "마케팅 성과 분석",
+    description: "유입, 홈배너 CTR, 결제 이탈, ROAS를 한 화면에서 확인합니다."
+  },
+  {
     id: "community",
     hash: "#admin-community",
     label: "커뮤니티/댓글",
@@ -816,6 +824,14 @@ document.addEventListener("submit", (event) => {
 
   event.preventDefault();
   savePremiumOperatingSettings(form);
+});
+
+document.addEventListener("submit", (event) => {
+  const form = event.target.closest("[data-marketing-spend-form]");
+  if (!form) return;
+
+  event.preventDefault();
+  saveMarketingAdSpend(form);
 });
 
 document.addEventListener("click", (event) => {
@@ -4179,14 +4195,30 @@ function formatCount(value) {
   return String(count);
 }
 
+function parseUtmParams(search = window.location.search) {
+  const params = new URLSearchParams(search || "");
+  return ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"].reduce((acc, key) => {
+    const value = params.get(key);
+    if (value) acc[key] = value;
+    return acc;
+  }, {});
+}
+
 function trackEvent(name, properties = {}) {
+  const pageSearch = window.location.search || "";
+  const enrichedProperties = {
+    ...properties,
+    pageSearch,
+    ...parseUtmParams(pageSearch)
+  };
   const event = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     name,
-    properties,
+    properties: enrichedProperties,
     userId: analyticsUserId,
     sessionId: analyticsSessionId,
     path: window.location.pathname,
+    search: pageSearch,
     hash: window.location.hash || "",
     referrer: document.referrer || "",
     userAgent: navigator.userAgent,
@@ -4564,6 +4596,7 @@ function buildAdminRenderContext() {
   const funnelFreshness = getFunnelFreshness(premiumFunnel);
   const dataFreshness = getAdminDataFreshness(filtered);
   const funnelLimited = !filtered.rawEvents.length && ((filtered.bankOrders || []).length || (filtered.popularResources || []).length || (filtered.searchTerms || []).length);
+  const marketing = getMarketingAnalytics(filtered, premiumFunnel);
   return {
     activeSection: getActiveAdminSection(),
     data,
@@ -4577,7 +4610,8 @@ function buildAdminRenderContext() {
     premiumFunnel,
     funnelFreshness,
     dataFreshness,
-    funnelLimited
+    funnelLimited,
+    marketing
   };
 }
 
@@ -4647,6 +4681,7 @@ function adminStatusTemplate() {
 function adminSectionContentTemplate(ctx) {
   if (ctx.activeSection.id === "content") return adminContentSectionTemplate(ctx);
   if (ctx.activeSection.id === "premium") return adminPremiumSectionTemplate(ctx);
+  if (ctx.activeSection.id === "marketing") return adminMarketingSectionTemplate(ctx);
   if (ctx.activeSection.id === "community") return adminCommunitySectionTemplate(ctx);
   if (ctx.activeSection.id === "settings") return adminSettingsSectionTemplate(ctx);
   return adminOverviewSectionTemplate(ctx);
@@ -4847,6 +4882,109 @@ function adminPremiumSectionTemplate(ctx) {
     ${bankTransferOrdersAdminTemplate()}
     ${premiumOperatingSettingsAdminTemplate()}
     ${premiumTestToolsAdminTemplate()}
+  `;
+}
+
+function adminMarketingSectionTemplate(ctx) {
+  const marketing = ctx.marketing;
+  return `
+    <div class="admin-summary dashboard-kpis revenue-kpis marketing-kpis">
+      ${adminMetricTemplate("홈배너 CTR", `${marketing.bannerCtr}%`)}
+      ${adminMetricTemplate("구매 전환율", `${marketing.purchaseConversion}%`)}
+      ${adminMetricTemplate("결제 완료율", `${marketing.approvalConversion}%`)}
+      ${adminMetricTemplate("기간 매출", formatWon(marketing.periodRevenue))}
+      ${adminMetricTemplate("광고비", formatWon(marketing.adSpend))}
+      ${adminMetricTemplate("ROAS", marketing.roasLabel)}
+      ${adminMetricTemplate("CPC", marketing.cpcLabel)}
+      ${adminMetricTemplate("CPA", marketing.cpaLabel)}
+    </div>
+    <section class="admin-card admin-section-card marketing-spend-card">
+      <div class="admin-card-head">
+        <h2>광고비 입력</h2>
+        <span>${ctx.periodLabel} 기준 ROAS 계산</span>
+      </div>
+      <form class="marketing-spend-form" data-marketing-spend-form>
+        <label>
+          <span>${escapeHtml(ctx.periodLabel)} 광고비</span>
+          <input name="adSpend" inputmode="numeric" value="${marketing.adSpend || ""}" placeholder="예: 50000" />
+        </label>
+        <button type="submit">저장</button>
+      </form>
+      <p class="admin-note">광고비를 넣으면 기간 매출을 기준으로 ROAS, CPC, CPA가 계산됩니다. 광고비는 이 브라우저에 기간별로 저장됩니다.</p>
+    </section>
+    <section class="admin-card admin-section-card">
+      <div class="admin-card-head">
+        <h2>홈배너 성과</h2>
+        <span>노출→클릭</span>
+      </div>
+      ${adminDataTable(["구분", "노출", "클릭", "CTR", "최근 활동"], marketing.bannerRows.map((row) => [
+        row.label,
+        formatCount(row.impressions),
+        formatCount(row.clicks),
+        `${row.ctr}%`,
+        formatAdminDate(row.lastAt)
+      ]), "홈배너 데이터가 아직 없어요")}
+    </section>
+    <section class="admin-card premium-funnel-card admin-section-card">
+      <div class="admin-card-head">
+        <h2>결제 이탈 구간</h2>
+        <span>가장 많이 빠지는 단계</span>
+      </div>
+      <div class="premium-funnel-list">
+        ${marketing.dropOffRows.map((step) => `
+          <article>
+            <div>
+              <strong>${escapeHtml(step.label)}</strong>
+              <span>이전 단계 대비 ${step.dropOff}% 이탈 · 최근 ${escapeHtml(formatAdminDate(step.lastAt))}</span>
+            </div>
+            <b>${formatCount(step.count)}</b>
+            <em style="width: ${step.rate}%"></em>
+          </article>
+        `).join("") || `<p class="admin-empty">결제 퍼널 데이터가 아직 없어요.</p>`}
+      </div>
+    </section>
+    <section class="admin-card admin-section-card">
+      <div class="admin-card-head">
+        <h2>클릭률 좋은 행동</h2>
+        <span>CTA 이벤트 순위</span>
+      </div>
+      ${adminDataTable(["행동", "클릭/발생", "최근 발생"], marketing.topClicks.map((row) => [
+        row.label,
+        formatCount(row.count),
+        formatAdminDate(row.lastAt)
+      ]), "클릭 이벤트 데이터가 아직 없어요")}
+    </section>
+    <section class="admin-card admin-section-card">
+      <div class="admin-card-head">
+        <h2>이탈 후보 화면</h2>
+        <span>세션 마지막 행동 기준</span>
+      </div>
+      ${adminDataTable(["마지막 화면", "세션 수", "최근 활동"], marketing.exitPages.map((row) => [
+        row.label,
+        formatCount(row.count),
+        formatAdminDate(row.lastAt)
+      ]), "세션 종료 화면 데이터가 아직 없어요")}
+    </section>
+    <section class="admin-card admin-section-card">
+      <div class="admin-card-head">
+        <h2>유입 소스</h2>
+        <span>UTM/referrer 기준</span>
+      </div>
+      ${adminDataTable(["소스", "방문", "최근 방문"], marketing.trafficSources.map((row) => [
+        row.label,
+        formatCount(row.count),
+        formatAdminDate(row.lastAt)
+      ]), "유입 소스 데이터가 아직 없어요")}
+    </section>
+    <section class="admin-card insight-card admin-section-card wide">
+      <div class="admin-card-head">
+        <h2>마케팅 운영 인사이트</h2>
+        <span>${ctx.periodLabel} 기준</span>
+      </div>
+      <div class="admin-insights">
+        ${marketing.insights.map((insight) => `<article>${escapeHtml(insight)}</article>`).join("")}
+      </div>
+    </section>
   `;
 }
 
@@ -5456,6 +5594,10 @@ function normalizeAdminEvent(event) {
     event_id: event.event_id || event.id || "",
     event_name: event.event_name || event.name || "",
     anonymous_user_id: event.anonymous_user_id || event.userId || "",
+    session_id: event.session_id || event.sessionId || "",
+    path: event.path || "",
+    hash: event.hash || "",
+    referrer: event.referrer || "",
     created_at: event.created_at || event.createdAt || "",
     properties: event.properties || {}
   };
@@ -5700,8 +5842,10 @@ function pageLabel(key) {
     "#admin": "운영센터 개요",
     "#admin-content": "운영센터 콘텐츠/검색",
     "#admin-premium": "운영센터 프리미엄/판매",
+    "#admin-marketing": "운영센터 마케팅/ROAS",
     "#admin-community": "운영센터 커뮤니티/댓글",
-    "#admin-settings": "운영센터 설정/데이터"
+    "#admin-settings": "운영센터 설정/데이터",
+    "#agent": "PYM Agent"
   };
   return map[normalized] || normalized.replace(/^#/, "") || "홈";
 }
@@ -5711,6 +5855,9 @@ function operatingEventLabels() {
     page_view: "페이지 조회",
     premium_view: "유료 페이지 방문",
     home_notice_impression: "홈배너 노출",
+    home_notice_change: "홈배너 전환",
+    home_notice_swipe: "홈배너 스와이프",
+    home_notice_source_open: "홈배너 자료/기사 클릭",
     home_premium_banner_click: "홈배너 구매 클릭",
     premium_checkout_click: "구매 신청 클릭",
     bank_transfer_order_open: "계좌이체 창 열림",
@@ -5718,7 +5865,13 @@ function operatingEventLabels() {
     bank_transfer_order_submit: "구매 신청 접수",
     bank_transfer_order_approve: "입금 확인 승인",
     bank_transfer_order_verified: "구매자 승인 확인",
+    premium_purchase_complete: "구매완료 처리",
+    premium_preview_click: "유료 자료 미리보기",
     premium_secure_file_click: "구매완료 자료 열기",
+    premium_operating_settings_update: "유료 운영 설정 저장",
+    marketing_spend_update: "광고비 저장",
+    agent_cta_click: "Agent CTA 클릭",
+    quick_query: "홈 빠른 검색",
     resource_open: "자료 미리보기",
     drive_open: "원본 자료 열기",
     trend_article_open: "동향 상세 보기",
@@ -5887,6 +6040,227 @@ function getPremiumFunnel(events, orders = [], premiumFileViews = []) {
     const dropOff = prev > 0 ? Math.max(0, Math.round(((prev - step.count) / prev) * 100)) : 0;
     return { ...step, rate: Math.max(4, Math.round((step.count / max) * 100)), dropOff };
   });
+}
+
+function getMarketingAnalytics(data, premiumFunnel = []) {
+  const events = (data.rawEvents || []).map(normalizeAdminEvent);
+  const eventSummary = summarizeEventsByName(events);
+  const orders = mergeBankTransferOrders(data.bankOrders || []);
+  const approvedOrders = orders.filter((order) => order.status === "approved");
+  const revenue = getRevenueKpis(orders);
+  const adSpend = getMarketingAdSpend(adminDashboardState.period);
+  const bannerImpressions = Number(eventSummary.get("home_notice_impression")?.count || 0);
+  const premiumBannerClicks = Number(eventSummary.get("home_premium_banner_click")?.count || 0);
+  const noticeSourceClicks = Number(eventSummary.get("home_notice_source_open")?.count || 0);
+  const bannerClicks = premiumBannerClicks + noticeSourceClicks;
+  const premiumViews = Number(eventSummary.get("premium_view")?.count || 0);
+  const checkoutClicks = Number(eventSummary.get("premium_checkout_click")?.count || 0);
+  const submittedOrders = orders.length;
+
+  const bannerRows = [
+    {
+      label: "홈배너 전체",
+      impressions: bannerImpressions,
+      clicks: bannerClicks,
+      ctr: percentage(bannerClicks, bannerImpressions),
+      lastAt: latestDate([
+        eventSummary.get("home_notice_impression")?.lastAt,
+        eventSummary.get("home_premium_banner_click")?.lastAt,
+        eventSummary.get("home_notice_source_open")?.lastAt
+      ])
+    },
+    {
+      label: "프리미엄 배너",
+      impressions: bannerImpressions,
+      clicks: premiumBannerClicks,
+      ctr: percentage(premiumBannerClicks, bannerImpressions),
+      lastAt: eventSummary.get("home_premium_banner_click")?.lastAt || ""
+    },
+    {
+      label: "공지/자료 배너",
+      impressions: bannerImpressions,
+      clicks: noticeSourceClicks,
+      ctr: percentage(noticeSourceClicks, bannerImpressions),
+      lastAt: eventSummary.get("home_notice_source_open")?.lastAt || ""
+    }
+  ].filter((row) => row.impressions || row.clicks);
+
+  const dropOffRows = [...premiumFunnel]
+    .filter((step, index) => index > 0 && (step.count || step.dropOff))
+    .sort((a, b) => b.dropOff - a.dropOff || b.count - a.count)
+    .slice(0, 6);
+  const topClicks = aggregateMarketingClicks(events);
+  const exitPages = aggregateExitPages(events);
+  const trafficSources = aggregateTrafficSources(events);
+  const roas = adSpend > 0 ? Math.round((revenue.totalRevenue / adSpend) * 100) : 0;
+  const cpc = adSpend > 0 && bannerClicks > 0 ? Math.round(adSpend / bannerClicks) : 0;
+  const cpa = adSpend > 0 && approvedOrders.length > 0 ? Math.round(adSpend / approvedOrders.length) : 0;
+
+  return {
+    adSpend,
+    periodRevenue: revenue.totalRevenue,
+    bannerCtr: percentage(bannerClicks, bannerImpressions),
+    purchaseConversion: percentage(checkoutClicks, premiumViews),
+    approvalConversion: percentage(approvedOrders.length, premiumViews),
+    orderSubmitConversion: percentage(submittedOrders, checkoutClicks),
+    roas,
+    roasLabel: adSpend > 0 ? `${formatCount(roas)}%` : "광고비 필요",
+    cpcLabel: cpc ? formatWon(cpc) : "-",
+    cpaLabel: cpa ? formatWon(cpa) : "-",
+    bannerRows,
+    dropOffRows,
+    topClicks,
+    exitPages,
+    trafficSources,
+    insights: getMarketingInsights({
+      bannerCtr: percentage(bannerClicks, bannerImpressions),
+      purchaseConversion: percentage(checkoutClicks, premiumViews),
+      approvalConversion: percentage(approvedOrders.length, premiumViews),
+      orderSubmitConversion: percentage(submittedOrders, checkoutClicks),
+      roas,
+      adSpend,
+      topClicks,
+      exitPages,
+      trafficSources,
+      dropOffRows
+    })
+  };
+}
+
+function readMarketingAdSpendMap() {
+  try {
+    const parsed = JSON.parse(safeStorageGet("pym.marketingAdSpend") || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function getMarketingAdSpend(period) {
+  return Number(readMarketingAdSpendMap()[period || "all"] || 0);
+}
+
+function saveMarketingAdSpend(form) {
+  const formData = new FormData(form);
+  const amount = parseWonAmount(formData.get("adSpend"));
+  const period = adminDashboardState.period || "all";
+  const spends = readMarketingAdSpendMap();
+  spends[period] = amount;
+  safeStorageSet("pym.marketingAdSpend", JSON.stringify(spends));
+  trackEvent("marketing_spend_update", { period, amount });
+  showToast(`${adminPeriodLabel(period)} 광고비를 저장했어요`);
+  renderAnalyticsAdmin();
+}
+
+function percentage(value, total) {
+  const denominator = Number(total || 0);
+  if (!denominator) return 0;
+  return Math.round((Number(value || 0) / denominator) * 1000) / 10;
+}
+
+function aggregateMarketingClicks(events) {
+  const labels = {
+    home_premium_banner_click: "홈배너 구매 클릭",
+    home_notice_source_open: "홈배너 자료/기사 클릭",
+    premium_checkout_click: "구매 신청 클릭",
+    bank_transfer_order_open: "계좌이체 창 열림",
+    bank_transfer_form_start: "신청서 작성 시작",
+    bank_transfer_order_submit: "구매 신청 접수",
+    agent_cta_click: "Agent CTA 클릭",
+    quick_query: "홈 빠른 검색",
+    premium_preview_click: "유료 자료 미리보기",
+    premium_secure_file_click: "구매완료 자료 열기",
+    resource_open: "자료 미리보기",
+    drive_open: "원본 자료 열기",
+    trend_article_open: "동향 상세 보기"
+  };
+  return aggregateBy(events.filter((event) => labels[event.event_name]), (event) => event.event_name, {
+    countKey: "count",
+    dateKey: "lastAt",
+    labelKey: "event_name"
+  }).map((row) => ({
+    label: labels[row.event_name || row.query] || row.event_name || row.query,
+    count: row.count,
+    lastAt: row.lastAt
+  })).sort((a, b) => b.count - a.count || new Date(b.lastAt) - new Date(a.lastAt)).slice(0, 12);
+}
+
+function aggregateExitPages(events) {
+  const groupedSessions = new Map();
+  events.forEach((event) => {
+    const sessionKey = event.session_id || event.anonymous_user_id || event.event_id;
+    if (!sessionKey) return;
+    const current = groupedSessions.get(sessionKey);
+    if (!current || new Date(event.created_at).getTime() > new Date(current.created_at).getTime()) {
+      groupedSessions.set(sessionKey, event);
+    }
+  });
+
+  return aggregateBy(Array.from(groupedSessions.values()), (event) => normalizePageKey(event.properties?.hash || event.hash || "#home"), {
+    countKey: "count",
+    dateKey: "lastAt",
+    labelKey: "page_key"
+  }).map((row) => ({
+    label: pageLabel(row.page_key || row.query),
+    count: row.count,
+    lastAt: row.lastAt
+  })).sort((a, b) => b.count - a.count || new Date(b.lastAt) - new Date(a.lastAt)).slice(0, 10);
+}
+
+function aggregateTrafficSources(events) {
+  const pageViews = events.filter((event) => event.event_name === "page_view");
+  return aggregateBy(pageViews, getTrafficSourceLabel, {
+    countKey: "count",
+    dateKey: "lastAt",
+    labelKey: "source"
+  }).map((row) => ({
+    label: row.source || row.query,
+    count: row.count,
+    lastAt: row.lastAt
+  })).sort((a, b) => b.count - a.count || new Date(b.lastAt) - new Date(a.lastAt)).slice(0, 10);
+}
+
+function getTrafficSourceLabel(event) {
+  const properties = event.properties || {};
+  if (properties.utm_source) {
+    return [properties.utm_source, properties.utm_medium, properties.utm_campaign].filter(Boolean).join(" / ");
+  }
+  if (properties.pageSearch) {
+    const utm = parseUtmParams(properties.pageSearch);
+    if (utm.utm_source) return [utm.utm_source, utm.utm_medium, utm.utm_campaign].filter(Boolean).join(" / ");
+  }
+  if (event.referrer) {
+    try {
+      const url = new URL(event.referrer);
+      return url.hostname.replace(/^www\./, "");
+    } catch {
+      return "외부 유입";
+    }
+  }
+  return "직접/앱 바로가기";
+}
+
+function getMarketingInsights(marketing) {
+  const insights = [];
+  if (marketing.adSpend > 0) {
+    insights.push(`현재 기간 ROAS는 ${formatCount(marketing.roas)}%입니다. 100% 미만이면 광고비 대비 매출 회수가 부족한 상태로 봐야 합니다.`);
+  } else {
+    insights.push("광고비를 입력하면 홈배너와 프리미엄 판매 기준 ROAS, CPC, CPA를 바로 계산할 수 있어요.");
+  }
+  if (marketing.dropOffRows[0]) {
+    insights.push(`${marketing.dropOffRows[0].label} 단계에서 이탈률이 ${marketing.dropOffRows[0].dropOff}%로 가장 큽니다. 해당 화면의 문구, 버튼 위치, 입력 부담을 먼저 줄여보세요.`);
+  }
+  if (marketing.topClicks[0]) {
+    insights.push(`${marketing.topClicks[0].label}이 ${formatCount(marketing.topClicks[0].count)}회로 가장 강한 행동 신호입니다. 이 행동 앞뒤 화면을 광고 소재와 연결하면 좋습니다.`);
+  }
+  if (marketing.exitPages[0]) {
+    insights.push(`세션 마지막 화면은 ${marketing.exitPages[0].label}이 가장 많습니다. 이 화면에서 다음 행동 버튼이 충분히 눈에 띄는지 확인하세요.`);
+  }
+  if (marketing.bannerCtr && marketing.bannerCtr < 1) {
+    insights.push("홈배너 CTR이 1% 미만이면 제목 훅, 첫 화면 배치, CTA 문구를 다시 실험해볼 필요가 있습니다.");
+  }
+  if (!insights.length) insights.push("아직 마케팅 판단 데이터가 부족합니다. 방문, 배너 클릭, 구매 신청 이벤트가 쌓이면 자동 인사이트가 생성됩니다.");
+  return insights;
 }
 
 function summarizeEventsByName(events) {

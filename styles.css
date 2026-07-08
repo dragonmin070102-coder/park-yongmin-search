@@ -7583,6 +7583,50 @@ body.admin-mode .admin-freshness-grid.compact {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+body.admin-mode .marketing-kpis article strong {
+  color: #0b7a42;
+}
+
+body.admin-mode .marketing-spend-card {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+body.admin-mode .marketing-spend-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 132px;
+  gap: 10px;
+  align-items: end;
+}
+
+body.admin-mode .marketing-spend-form label {
+  display: grid;
+  gap: 7px;
+  color: #6b7684;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+body.admin-mode .marketing-spend-form input {
+  height: 44px;
+  padding: 0 13px;
+  border: 1px solid #d7dce2;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #191f28;
+  font-size: 15px;
+  font-weight: 850;
+}
+
+body.admin-mode .marketing-spend-form button {
+  height: 44px;
+  border: 0;
+  border-radius: 8px;
+  background: #3182f6;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 950;
+}
+
 @media (max-width: 1180px) {
   body.admin-mode .admin-shell {
     grid-template-columns: 220px minmax(920px, 1fr);
@@ -7624,6 +7668,10 @@ body.admin-mode .admin-freshness-grid.compact {
   }
 
   body.admin-mode .admin-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  body.admin-mode .marketing-spend-form {
     grid-template-columns: 1fr;
   }
 }
