@@ -7317,6 +7317,84 @@ body.agent-mode {
   font-weight: 750;
 }
 
+/* Agent mobile viewport lock: keep the composer visible above the app tab bar. */
+body.agent-mode {
+  overflow: hidden !important;
+}
+
+body.agent-mode .agent-screen {
+  display: grid !important;
+  grid-template-rows: auto auto minmax(0, 1fr) !important;
+  height: calc(100svh - 72px - env(safe-area-inset-bottom)) !important;
+  min-height: 0 !important;
+  padding: 8px 12px 10px !important;
+  overflow: hidden !important;
+}
+
+body.agent-mode .agent-app-top {
+  min-height: 48px !important;
+  padding: 0 !important;
+}
+
+body.agent-mode .agent-app-top button {
+  width: 38px !important;
+  height: 38px !important;
+}
+
+body.agent-mode .agent-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+}
+
+body.agent-mode .agent-hero-card {
+  gap: 8px !important;
+  padding: 13px 14px !important;
+}
+
+body.agent-mode .agent-hero-card h2 {
+  font-size: 19px !important;
+}
+
+body.agent-mode .agent-hero-card p:not(.eyebrow) {
+  font-size: 12.5px !important;
+  line-height: 1.45 !important;
+}
+
+body.agent-mode .agent-sample-row button {
+  min-height: 34px !important;
+  font-size: 11.5px !important;
+}
+
+body.agent-mode .agent-chat-card {
+  min-height: 0 !important;
+  height: 100% !important;
+}
+
+body.agent-mode .agent-message-list {
+  min-height: 0 !important;
+  max-height: none !important;
+}
+
+body.agent-mode .agent-input-form {
+  position: static !important;
+  flex: 0 0 auto !important;
+}
+
+@media (max-height: 740px) {
+  body.agent-mode .agent-hero-card p:not(.eyebrow) {
+    display: none !important;
+  }
+
+  body.agent-mode .agent-hero-card {
+    padding: 10px 12px !important;
+  }
+
+  body.agent-mode .agent-hero-card h2 {
+    font-size: 17px !important;
+  }
+}
+
 @media (max-height: 720px) {
   .agent-hero-card {
     padding: 15px !important;

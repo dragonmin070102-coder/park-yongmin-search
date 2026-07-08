@@ -1,0 +1,21 @@
+{
+  "name": "PYM Searching Agent",
+  "short_name": "PYM Search",
+  "description": "박용민 자료 기반 간호 지식 검색과 PYM Agent",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f8fa",
+  "theme_color": "#3182f6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./assets/thumb-neuro.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "medical", "productivity"],
+  "lang": "ko"
+}
