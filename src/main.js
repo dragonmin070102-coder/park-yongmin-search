@@ -3317,6 +3317,31 @@ async function supabaseRequest(path, options = {}) {
   return response.json();
 }
 
+async function supabaseCount(path) {
+  const separator = path.includes("?") ? "&" : "?";
+  const response = await fetch(`${supabaseConfig.url}/rest/v1/${path}${separator}limit=1`, {
+    method: "GET",
+    headers: {
+      apikey: supabaseConfig.anonKey,
+      Authorization: `Bearer ${supabaseConfig.anonKey}`,
+      "Content-Type": "application/json",
+      Prefer: "count=exact"
+    }
+  });
+
+  if (!response.ok) {
+    const error = new Error(`Supabase count failed: ${response.status}`);
+    error.status = response.status;
+    throw error;
+  }
+
+  const contentRange = response.headers.get("content-range") || "";
+  const total = Number(contentRange.split("/")[1]);
+  if (Number.isFinite(total)) return total;
+  const body = await response.json().catch(() => []);
+  return Array.isArray(body) ? body.length : 0;
+}
+
 function getCommentNickname() {
   const key = "pym.commentNickname";
   const existing = safeStorageGet(key);
@@ -5511,14 +5536,15 @@ async function loadAdminDashboardData() {
   await flushRemoteAnalytics({ silent: true, limit: 120 });
 
   try {
-    const [rawEvents, trendComments, resourceComments, bankOrders, searchTermRows, noResultRows, popularResourceRows] = await Promise.all([
+    const [rawEvents, trendComments, resourceComments, bankOrders, searchTermRows, noResultRows, popularResourceRows, exactCounts] = await Promise.all([
       supabaseRequest("analytics_events?select=event_id,event_name,anonymous_user_id,created_at,properties&order=created_at.desc&limit=5000").catch(() => []),
       supabaseRequest("trend_comments?select=id,article_id,nickname,body,likes,created_at&hidden=eq.false&order=created_at.desc&limit=1000").catch(() => []),
       supabaseRequest("resource_comments?select=id,resource_id,nickname,body,likes,created_at&hidden=eq.false&order=created_at.desc&limit=1000").catch(() => []),
       supabaseRequest("bank_transfer_orders?select=*&order=created_at.desc&limit=300").catch(() => { safeStorageSet("pym.bankOrdersTableMissing", "true"); return []; }),
-      supabaseRequest("analytics_search_terms?select=query,search_count,last_searched_at&order=search_count.desc&limit=500").catch(() => []),
-      supabaseRequest("analytics_no_result_terms?select=query,no_result_count,last_searched_at&order=no_result_count.desc&limit=500").catch(() => []),
-      supabaseRequest("analytics_popular_resources?select=resource_id,resource_title,open_count,last_opened_at&order=open_count.desc&limit=500").catch(() => [])
+      supabaseRequest("analytics_search_terms?select=query,search_count,last_searched_at&order=search_count.desc&limit=2000").catch(() => []),
+      supabaseRequest("analytics_no_result_terms?select=query,no_result_count,last_searched_at&order=no_result_count.desc&limit=2000").catch(() => []),
+      supabaseRequest("analytics_popular_resources?select=resource_id,resource_title,open_count,last_opened_at&order=open_count.desc&limit=5000").catch(() => []),
+      loadAdminExactCounts().catch(() => ({}))
     ]);
 
     const mergedRawEvents = mergeAdminEvents(rawEvents, readAnalyticsEvents());
@@ -5532,7 +5558,8 @@ async function loadAdminDashboardData() {
     ], bankOrders.map(fromBankTransferOrderRow), {
       searchTerms: normalizeAdminRows(searchTermRows, "query", "search_count", "last_searched_at"),
       noResults: normalizeAdminRows(noResultRows, "query", "no_result_count", "last_searched_at"),
-      popularResources: normalizeAdminRows(popularResourceRows, "resource_title", "open_count", "last_opened_at")
+      popularResources: normalizeAdminRows(popularResourceRows, "resource_id", "open_count", "last_opened_at"),
+      exactCounts
     });
   } catch {
     adminDashboardState.data = buildAdminDashboardDataFromEvents(readAnalyticsEvents(), []);
@@ -5541,6 +5568,30 @@ async function loadAdminDashboardData() {
     adminDashboardState.loading = false;
     renderAnalyticsAdmin();
   }
+}
+
+async function loadAdminExactCounts() {
+  const [
+    totalEvents,
+    totalPageViews,
+    premiumViews,
+    bannerClicks,
+    fileOpens
+  ] = await Promise.all([
+    supabaseCount("analytics_events?select=event_id"),
+    supabaseCount("analytics_events?select=event_id&event_name=eq.page_view"),
+    supabaseCount("analytics_events?select=event_id&event_name=eq.premium_view"),
+    supabaseCount("analytics_events?select=event_id&event_name=eq.home_premium_banner_click"),
+    supabaseCount("analytics_events?select=event_id&event_name=eq.premium_secure_file_click")
+  ]);
+
+  return {
+    totalEvents,
+    totalPageViews,
+    premiumViews,
+    bannerClicks,
+    fileOpens
+  };
 }
 
 function mergeAdminEvents(...sources) {
@@ -5585,7 +5636,8 @@ function buildAdminDashboardDataFromEvents(events, comments = [], bankOrders = [
     resourceViewDetails: mergeResourceViewDetails(popularResources, aggregateResourceViewDetails(rawEvents)),
     pageViews: aggregatePageViews(rawEvents),
     eventCounts: aggregateOperatingEventCounts(rawEvents),
-    premiumFileViews: aggregatePremiumFileViews(rawEvents)
+    premiumFileViews: aggregatePremiumFileViews(rawEvents),
+    exactCounts: aggregates.exactCounts || {}
   };
 }
 
@@ -5656,7 +5708,8 @@ function filterAdminData(data) {
       .filter((row) => matches(row.id, row.depositor, row.email, row.phoneLast4, row.status)),
     comments: periodComments,
     rawEvents: periodEvents,
-    allRawEvents: data.allRawEvents || data.rawEvents || []
+    allRawEvents: data.allRawEvents || data.rawEvents || [],
+    exactCounts: adminDashboardState.period === "all" ? data.exactCounts || {} : {}
   };
 }
 
@@ -5900,10 +5953,11 @@ function getAdminKpis(data) {
   const totalFailures = sumBy(data.noResults, "no_result_count");
   const totalResourceViews = sumBy(data.popularResources, "open_count");
   const totalComments = data.comments.length;
-  const totalPageViews = (data.rawEvents || []).filter((event) => event.event_name === "page_view").length;
-  const premiumViews = (data.rawEvents || []).filter((event) => event.event_name === "premium_view").length;
-  const bannerClicks = (data.rawEvents || []).filter((event) => event.event_name === "home_premium_banner_click").length;
-  const fileOpens = (data.rawEvents || []).filter((event) => event.event_name === "premium_secure_file_click").length;
+  const exactCounts = data.exactCounts || {};
+  const totalPageViews = Number(exactCounts.totalPageViews ?? (data.rawEvents || []).filter((event) => event.event_name === "page_view").length);
+  const premiumViews = Number(exactCounts.premiumViews ?? (data.rawEvents || []).filter((event) => event.event_name === "premium_view").length);
+  const bannerClicks = Number(exactCounts.bannerClicks ?? (data.rawEvents || []).filter((event) => event.event_name === "home_premium_banner_click").length);
+  const fileOpens = Number(exactCounts.fileOpens ?? (data.rawEvents || []).filter((event) => event.event_name === "premium_secure_file_click").length);
   const rawEvents = data.rawEvents || [];
   const allRawEvents = (data.allRawEvents || rawEvents).map(normalizeAdminEvent);
   const activeUsers7d = new Set(allRawEvents
@@ -5912,7 +5966,7 @@ function getAdminKpis(data) {
     .filter(Boolean)).size;
 
   return {
-    totalEvents: rawEvents.length,
+    totalEvents: Number(exactCounts.totalEvents ?? rawEvents.length),
     totalSearches,
     totalResourceViews,
     totalFailures,
