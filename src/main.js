@@ -843,6 +843,14 @@ document.addEventListener("click", (event) => {
   setPremiumMode();
 });
 
+document.addEventListener("click", (event) => {
+  const productCard = event.target.closest("[data-premium-product]");
+  if (!productCard) return;
+
+  trackEvent("premium_product_select", { productId: productCard.dataset.premiumProduct });
+  document.querySelector("#premiumProductDetail")?.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
 window.addEventListener("hashchange", syncAdminRoute);
 window.addEventListener("error", (event) => {
   if (isAdminHash(window.location.hash)) renderAdminFallback(event.error || new Error(event.message));
@@ -1385,19 +1393,6 @@ function getHomeNotices() {
     .filter(Boolean);
 
   return [
-    {
-      id: "premium-neuro-series-6",
-      label: "오픈 할인",
-      badge: "3,900원",
-      title: "신경계 임상추론 6편, 지금은 3,900원",
-      description: "누적 구매 344명 기준으로 검증된 신경계 PDF 시리즈를 오픈 특가로 열어뒀어요.",
-      action: "구매 페이지 보기",
-      sourceLabel: "구성 확인",
-      sourceUrl: "#premium",
-      image: "./assets/iicp-brain-cover.png",
-      tone: "premium",
-      target: "premium"
-    },
     ...newResourceNotices,
     {
       label: "오늘의 추천 자료",
@@ -1526,6 +1521,36 @@ const premiumDownloadFiles = [
   { number: "04", title: "출혈성 뇌졸중", pages: 10, fileName: "neuro-04-hemorrhagic-stroke.docx" },
   { number: "05", title: "경련·뇌전증", pages: 10, fileName: "neuro-05-seizure-epilepsy.docx" },
   { number: "06", title: "외상성 뇌손상", pages: 10, fileName: "neuro-06-tbi.docx" }
+];
+
+const premiumProducts = [
+  {
+    id: "neuro-series-6",
+    icon: "N",
+    title: "신경계 임상추론",
+    label: "6편 시리즈",
+    price: PREMIUM_SALE_PRICE,
+    status: "판매중",
+    description: "GCS부터 TBI까지"
+  },
+  {
+    id: "respiratory-series",
+    icon: "R",
+    title: "호흡기 임상추론",
+    label: "준비 중",
+    price: "Coming soon",
+    status: "예정",
+    description: "폐렴·ABGA·산소요법"
+  },
+  {
+    id: "emergency-series",
+    icon: "E",
+    title: "응급 케이스",
+    label: "준비 중",
+    price: "Coming soon",
+    status: "예정",
+    description: "ACS·패혈증·DKA"
+  }
 ];
 
 
@@ -1703,7 +1728,28 @@ function renderPremiumScreen() {
       <button type="button" aria-label="알림">☰</button>
     </div>
 
-    <section class="premium-product-hero" aria-labelledby="premium-title">
+    <section class="premium-section premium-product-library" aria-label="유료 자료 목록">
+      <div class="premium-section-head">
+        <div>
+          <p class="eyebrow">Premium store</p>
+          <h2>유료 자료</h2>
+        </div>
+        <span>${premiumProducts.filter((product) => product.status === "판매중").length}개 판매중</span>
+      </div>
+      <div class="premium-product-icon-grid">
+        ${premiumProducts.map((product) => `
+          <button type="button" class="premium-product-icon-card ${product.id === productId ? "active" : ""} ${product.status !== "판매중" ? "disabled" : ""}" ${product.status === "판매중" ? `data-premium-product="${escapeHtml(product.id)}"` : "disabled"}>
+            <span>${escapeHtml(product.icon)}</span>
+            <strong>${escapeHtml(product.title)}</strong>
+            <em>${escapeHtml(product.label)}</em>
+            <small>${escapeHtml(product.description)}</small>
+            <b>${escapeHtml(product.status === "판매중" ? product.price : product.status)}</b>
+          </button>
+        `).join("")}
+      </div>
+    </section>
+
+    <section class="premium-product-hero" id="premiumProductDetail" aria-labelledby="premium-title">
       <p class="premium-breadcrumb">홈 프리미엄 › 신경계 시리즈 › ${escapeHtml(featured.title)}</p>
       <div class="premium-cover-card">
         <div class="premium-cover-copy">
@@ -5920,6 +5966,7 @@ function operatingEventLabels() {
     bank_transfer_order_verified: "구매자 승인 확인",
     premium_purchase_complete: "구매완료 처리",
     premium_preview_click: "유료 자료 미리보기",
+    premium_product_select: "유료 상품 선택",
     premium_secure_file_click: "구매완료 자료 열기",
     premium_operating_settings_update: "유료 운영 설정 저장",
     marketing_spend_update: "광고비 저장",
