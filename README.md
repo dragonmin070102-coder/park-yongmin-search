@@ -45,15 +45,20 @@ GitHub Pages 기준:
 
 ## PYM Agent MVP
 
-PYM Agent는 기존 `data/resources.json` 자료를 먼저 검색한 뒤, 관련 자료 제목/요약/근거를 NVIDIA NIM LLM 프롬프트에 넣어 답변하는 RAG 챗봇입니다.
+PYM Agent는 기존 `data/resources.json` 자료에서 키워드 후보를 먼저 찾고, NVIDIA Retrieval reranker로 관련도를 다시 정렬한 뒤, 관련 자료 제목/요약/근거를 NVIDIA NIM LLM 프롬프트에 넣어 답변하는 RAG 챗봇입니다. Reranker가 실패하면 기존 키워드 검색 결과로 자동 fallback됩니다.
 
 ### API 환경변수
 
 서버리스 배포 환경에 아래 값을 설정합니다. 이 값은 프론트엔드에 넣으면 안 됩니다.
 
 - `NVIDIA_API_KEY`: NVIDIA NIM API Key
-- `NVIDIA_MODEL`: 선택값. 기본값은 `deepseek-ai/deepseek-v4-pro`
+- `NVIDIA_MODEL`: 선택값. 기본값은 `moonshotai/kimi-k2.6`
+- `NVIDIA_RERANK_MODEL`: 선택값. 기본값은 `nvidia/llama-nemotron-rerank-1b-v2`
+- `NVIDIA_RERANK_ENABLED`: 선택값. `false`로 두면 rerank 없이 키워드 검색만 사용
+- `NVIDIA_RERANK_TIMEOUT_MS`: 선택값. 기본값은 `7000`
 - `PYM_AGENT_ALLOWED_ORIGIN`: 선택값. 허용할 사이트 Origin
+
+LLM 답변과 Retrieval reranker는 같은 `NVIDIA_API_KEY`를 사용합니다. 별도 키를 추가로 발급할 필요는 없지만, NVIDIA 계정/크레딧/모델 접근 권한에 따라 특정 모델 호출이 막힐 수 있습니다.
 
 ### 로컬/배포 메모
 

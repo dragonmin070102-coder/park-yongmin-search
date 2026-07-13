@@ -5,6 +5,10 @@ import OpenAI from "openai";
 const MODEL = process.env.NVIDIA_MODEL || "moonshotai/kimi-k2.6";
 const NIM_BASE_URL = "https://integrate.api.nvidia.com/v1";
 const NIM_TIMEOUT_MS = Number(process.env.NVIDIA_TIMEOUT_MS || 22000);
+const RERANK_MODEL = process.env.NVIDIA_RERANK_MODEL || "nvidia/llama-nemotron-rerank-1b-v2";
+const RERANK_URL = process.env.NVIDIA_RERANK_URL || "https://ai.api.nvidia.com/v1/retrieval/nvidia/llama-nemotron-rerank-1b-v2/reranking";
+const RERANK_TIMEOUT_MS = Number(process.env.NVIDIA_RERANK_TIMEOUT_MS || 7000);
+const RERANK_ENABLED = process.env.NVIDIA_RERANK_ENABLED !== "false";
 
 export const config = {
   maxDuration: 30
@@ -65,6 +69,90 @@ function contextBlock(matches) {
       tags.length ? `태그: ${tags.join(", ")}` : ""
     ].filter(Boolean).join("\n");
   }).join("\n\n");
+}
+
+function resourcePassage(resource) {
+  const tags = Array.isArray(resource.tags) ? resource.tags.slice(0, 14) : [];
+  const points = Array.isArray(resource.points) ? resource.points.slice(0, 5) : [];
+  const keywords = Array.isArray(resource.keywords) ? resource.keywords.slice(0, 10) : [];
+  return [
+    `제목: ${resource.displayTitle || resource.title || ""}`,
+    `원제목: ${resource.title || ""}`,
+    `분류: ${resource.system || resource.type || ""} / ${resource.intent || ""} / ${resource.stage || ""}`,
+    `요약: ${resource.summary || ""}`,
+    `근거/본문 일부: ${resource.evidence || ""}`,
+    `활용 상황: ${resource.useCase || ""}`,
+    points.length ? `핵심 포인트: ${points.join(" / ")}` : "",
+    tags.length ? `태그: ${tags.join(", ")}` : "",
+    keywords.length ? `키워드: ${keywords.join(", ")}` : ""
+  ].filter(Boolean).join("\n").slice(0, 2600);
+}
+
+function parseRerankRows(payload) {
+  const candidates = [
+    payload?.rankings,
+    payload?.results,
+    payload?.data,
+    payload?.ranked_passages,
+    payload?.response?.rankings
+  ].find(Array.isArray);
+  return Array.isArray(candidates) ? candidates : [];
+}
+
+function rerankIndex(row) {
+  const value = row?.index ?? row?.passage_index ?? row?.input_index ?? row?.document_index ?? row?.id;
+  const number = Number(value);
+  return Number.isInteger(number) ? number : -1;
+}
+
+function rerankScore(row) {
+  const value = row?.logit ?? row?.score ?? row?.relevance_score ?? row?.ranking_score;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
+
+async function rerankMatches(question, matches) {
+  if (!RERANK_ENABLED || matches.length < 2) {
+    return { matches, used: false, reason: "disabled_or_too_few" };
+  }
+
+  const passages = matches.map(({ resource }) => ({ text: resourcePassage(resource) }));
+  const response = await withTimeout(fetch(RERANK_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.NVIDIA_API_KEY}`,
+      "Content-Type": "application/json",
+      Accept: "application/json"
+    },
+    body: JSON.stringify({
+      model: RERANK_MODEL,
+      query: { text: question },
+      passages,
+      truncate: "END"
+    })
+  }), RERANK_TIMEOUT_MS);
+
+  if (!response.ok) {
+    throw new Error(`NVIDIA rerank failed: ${response.status}`);
+  }
+
+  const payload = await response.json();
+  const rows = parseRerankRows(payload)
+    .map((row) => ({ index: rerankIndex(row), score: rerankScore(row) }))
+    .filter((row) => row.index >= 0 && row.index < matches.length)
+    .sort((a, b) => b.score - a.score);
+
+  if (!rows.length) {
+    return { matches, used: false, reason: "empty_rerank_result" };
+  }
+
+  const ranked = rows.map((row) => ({
+    ...matches[row.index],
+    rerankScore: row.score
+  }));
+  const seen = new Set(ranked.map((item) => item.resource.id));
+  const leftovers = matches.filter((item) => !seen.has(item.resource.id));
+  return { matches: [...ranked, ...leftovers], used: true, model: RERANK_MODEL };
 }
 
 function referencePayload(matches) {
@@ -150,14 +238,22 @@ export default async function handler(req, res) {
   }
 
   const resources = await loadResources();
-  const matches = scoreResources(resources, question).filter((item) => item.score > 0).slice(0, 5);
+  const candidates = scoreResources(resources, question).filter((item) => item.score > 0).slice(0, 20);
+  let retrieval = { matches: candidates, used: false };
+  try {
+    retrieval = await rerankMatches(question, candidates);
+  } catch (error) {
+    retrieval = { matches: candidates, used: false, warning: error.message || "NVIDIA rerank failed" };
+  }
+  const matches = retrieval.matches.slice(0, 5);
   const context = contextBlock(matches);
   const references = referencePayload(matches);
 
   if (!matches.length) {
     res.status(200).json({
       answer: "현재 PYM 자료 기준으로는 이 질문에 바로 답하기에 근거가 부족해요. 질환명, 검사명, 증상 키워드를 조금 더 구체적으로 입력해주면 관련 자료를 다시 찾아볼게요.",
-      references: []
+      references: [],
+      retrieval: { rerankUsed: false, candidateCount: 0 }
     });
     return;
   }
@@ -203,11 +299,27 @@ export default async function handler(req, res) {
       references,
       model: MODEL,
       fallback: true,
+      retrieval: {
+        rerankUsed: Boolean(retrieval.used),
+        rerankModel: retrieval.model || "",
+        candidateCount: candidates.length,
+        warning: retrieval.warning || ""
+      },
       warning: error.message || "NVIDIA NIM 응답을 받지 못해 PYM 자료 기반 요약으로 대신 표시했어요."
     });
     return;
   }
 
   const answer = completion.choices?.[0]?.message?.content?.trim() || "현재 자료 기준으로는 답변을 생성하지 못했어요.";
-  res.status(200).json({ answer, references, model: MODEL });
+  res.status(200).json({
+    answer,
+    references,
+    model: MODEL,
+    retrieval: {
+      rerankUsed: Boolean(retrieval.used),
+      rerankModel: retrieval.model || "",
+      candidateCount: candidates.length,
+      warning: retrieval.warning || ""
+    }
+  });
 }

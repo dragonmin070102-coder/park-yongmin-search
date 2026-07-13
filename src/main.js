@@ -1685,7 +1685,13 @@ async function submitAgentQuestion(form) {
       references: payload.references?.length ? payload.references : localReferences,
       loading: false
     };
-    trackEvent("agent_answer_success", { referenceCount: agentMessages[agentMessages.length - 1].references.length, model: payload.model || "" });
+    trackEvent("agent_answer_success", {
+      referenceCount: agentMessages[agentMessages.length - 1].references.length,
+      model: payload.model || "",
+      rerankUsed: Boolean(payload.retrieval?.rerankUsed),
+      rerankModel: payload.retrieval?.rerankModel || "",
+      candidateCount: Number(payload.retrieval?.candidateCount || 0)
+    });
   } catch (error) {
     agentMessages[agentMessages.length - 1] = {
       role: "assistant",
