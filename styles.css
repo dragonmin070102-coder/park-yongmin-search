@@ -7400,15 +7400,16 @@ body.agent-mode {
 
 /* Agent mobile viewport lock: keep the composer visible above the app tab bar. */
 body.agent-mode {
+  --agent-bottom-reserved: calc(92px + env(safe-area-inset-bottom));
   overflow: hidden !important;
 }
 
 body.agent-mode .agent-screen {
   display: grid !important;
   grid-template-rows: auto auto minmax(0, 1fr) !important;
-  height: calc(100svh - 72px - env(safe-area-inset-bottom)) !important;
+  height: calc(100svh - var(--agent-bottom-reserved)) !important;
   min-height: 0 !important;
-  padding: 8px 12px 10px !important;
+  padding: 8px 12px 14px !important;
   overflow: hidden !important;
 }
 
@@ -7453,13 +7454,16 @@ body.agent-mode .agent-chat-card {
 }
 
 body.agent-mode .agent-message-list {
+  flex: 1 1 auto !important;
   min-height: 0 !important;
   max-height: none !important;
+  padding-bottom: 8px !important;
 }
 
 body.agent-mode .agent-input-form {
   position: static !important;
   flex: 0 0 auto !important;
+  margin-bottom: 0 !important;
 }
 
 @media (max-height: 740px) {
