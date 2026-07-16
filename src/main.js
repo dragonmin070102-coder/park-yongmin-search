@@ -1369,9 +1369,14 @@ function getHomeNotices() {
       title: "복통 환자, DKA를 놓치면 흐름이 무너집니다",
       description: "혈당·케톤·산증을 같이 봐야 합니다. 수액 먼저, 인슐린 전 K 확인까지 한 번에 연결해둔 새 임상추론 자료예요.",
       action: "DKA 흐름 보기"
+    },
+    "copd-acute-exacerbation": {
+      title: "산소를 줬는데, 왜 더 처질까요?",
+      description: "SpO2가 92%로 올라도 의식이 흐려지고 호흡수가 줄면 CO2 마취를 의심해야 합니다. COPD 산소요법의 핵심을 확인하세요.",
+      action: "COPD 흐름 보기"
     }
   };
-  const newResourceNotices = ["anaphylaxis", "acs-clinical-reasoning", "sepsis", "dka"]
+  const newResourceNotices = ["copd-acute-exacerbation", "anaphylaxis", "acs-clinical-reasoning", "sepsis", "dka"]
     .map((id) => {
       const resource = resources.find((item) => item.id === id);
       if (!resource) return null;
@@ -3501,6 +3506,7 @@ const SEARCH_EXPANSION_RULES = [
   { terms: ["아나필락시스", "anaphylaxis", "알레르기", "에피네프린", "epinephrine"], tokens: ["아나필락시스", "anaphylaxis", "에피네프린", "두드러기", "기도부종", "저혈압", "biphasic"], boostIds: ["anaphylaxis", "acls", "sepsis"] },
   { terms: ["패혈증", "sepsis", "septic", "젖산", "lactate", "qsofa"], tokens: ["패혈증", "sepsis", "septic shock", "젖산", "lactate", "qsofa", "sofa", "map", "혈액배양", "항생제"], boostIds: ["sepsis", "pneumonia-case-study", "abga"] },
   { terms: ["dka", "당뇨병성 케톤산증", "케톤산증", "케톤", "kussmaul"], tokens: ["dka", "당뇨병성 케톤산증", "케톤", "혈당", "대사성 산증", "kussmaul", "anion gap", "칼륨", "인슐린"], boostIds: ["dka", "abga", "siadh"] },
+  { terms: ["copd", "만성폐쇄성폐질환", "급성악화", "co2 마취", "과탄산혈증"], tokens: ["copd", "copd 급성악화", "만성폐쇄성폐질환", "co2 narcosis", "과탄산혈증", "spo2 88~92%", "venturi mask", "niv", "haldane effect", "v/q mismatch"], systems: ["호흡기"], boostIds: ["copd-acute-exacerbation", "abga", "pneumonia-case-study"] },
   { terms: ["간호중재", "중재", "nursing intervention", "간호수행", "간호관리"], tokens: ["간호중재", "간호수행", "보고", "우선순위", "산소요법", "체위", "사정", "모니터링"], intents: ["간호중재", "임상추론"], boostIds: ["iicp", "thyroidectomy", "pneumonia-case-study", "abga", "acls", "anaphylaxis", "sepsis", "dka"] },
   { terms: ["gbs", "길랑", "길랭", "길랑바레", "길랭바레", "guillain"], tokens: ["gbs", "길랭바레", "길랑바레", "상행성", "호흡근"], boostIds: ["gbs", "mg", "als"] },
   { terms: ["khsim", "시뮬레이션", "실습훈련", "간호시뮬레이션"], tokens: ["khsim", "시뮬레이션", "실습", "환자 시나리오"], boostIds: ["khsim-simulation", "abga", "acls", "pneumonia-case-study"] },

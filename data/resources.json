@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-07-07T21:22:10.000+09:00",
+  "updatedAt": "2026-07-16T23:55:00.000+09:00",
   "resources": [
     {
       "id": "acs-ecg",
@@ -1096,6 +1096,62 @@
         "대사성 산증"
       ],
       "rank": 21
+    },
+    {
+      "id": "copd-acute-exacerbation",
+      "title": "COPD acute exacerbation clinical reasoning",
+      "displayTitle": "COPD 급성악화 임상추론",
+      "type": "호흡기",
+      "format": "Google Doc",
+      "source": "박용민 임상추론 Google Doc",
+      "url": "https://docs.google.com/document/d/1pcjHOue6Rz4OoNsPzC0xpXp8WePyYkb8y1YHfmzmWqo/edit",
+      "bannerTitle": "산소를 줬는데, 왜 더 처질까요?",
+      "bannerDescription": "SpO2가 92%로 올라도 의식이 흐려지고 호흡수가 줄면 CO2 마취를 의심해야 합니다. COPD 산소요법의 핵심을 새 자료로 확인하세요.",
+      "bannerAction": "COPD 흐름 보기",
+      "bannerSourceLabel": "원본 Word 자료",
+      "tags": [
+        "COPD",
+        "COPD 급성악화",
+        "만성폐쇄성폐질환",
+        "과탄산혈증",
+        "CO2 narcosis",
+        "Haldane effect",
+        "V/Q mismatch",
+        "Venturi mask",
+        "NIV",
+        "ABGA",
+        "SpO2 88~92%"
+      ],
+      "summary": "COPD 급성악화 환자에게 산소를 투여한 뒤 SpO2는 좋아졌지만 의식과 호흡이 나빠지는 상황을 과탄산혈증과 CO2 마취 흐름으로 설명하는 임상추론 자료입니다.",
+      "points": [
+        "COPD 급성악화의 산소포화도 목표는 정상화가 아니라 88~92%이며, 산소 투여 뒤 SpO2와 함께 의식수준·호흡수를 재사정해야 합니다.",
+        "과도한 산소는 Haldane effect와 V/Q mismatch 악화로 PaCO2를 높일 수 있어 의식저하와 서호흡이 나타나면 ABGA 재검과 즉시 보고가 필요합니다.",
+        "Venturi mask로 FiO2를 정확히 조절하고 호흡성산증이 진행되면 NIV를 고려하는 간호 우선순위를 정리합니다."
+      ],
+      "useCase": "COPD 급성악화 산소요법, SpO2 88~92% 목표, CO2 마취 조기 발견, ABGA 재검과 보고 기준 확인",
+      "confidence": "본문 확인",
+      "system": "호흡기",
+      "intent": "임상추론",
+      "stage": "핵심",
+      "evidence": "Drive의 COPD_급성악화 Word 원고에서 산소 투여 후 SpO2 84%→92%, 호흡수 28→12회/분, 의식저하 사례와 Haldane effect, V/Q mismatch, 목표 SpO2 88~92%, Venturi mask, NIV 및 보고 기준을 확인했습니다.",
+      "related": [
+        "abga",
+        "pneumonia-case-study",
+        "pneumothorax-cxr",
+        "khsim-simulation"
+      ],
+      "keywords": [
+        "COPD 급성악화",
+        "COPD",
+        "산소를 줬는데 처짐",
+        "SpO2 88~92%",
+        "CO2 마취",
+        "과탄산혈증",
+        "Venturi mask",
+        "NIV",
+        "ABGA"
+      ],
+      "rank": 22
     }
   ]
 }
