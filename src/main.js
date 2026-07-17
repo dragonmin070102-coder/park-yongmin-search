@@ -5457,6 +5457,8 @@ function buildEmptyAdminDashboardData() {
 function buildAdminDashboardDataFromEvents(events, comments = [], bankOrders = [], aggregates = {}) {
   const rawEvents = events.map(normalizeAdminEvent).filter((event) => event.created_at);
   const eventOrders = extractBankTransferOrdersFromEvents(rawEvents);
+  const authoritativeOrderIds = new Set(bankOrders.map((order) => order.id).filter(Boolean));
+  const fallbackEventOrders = eventOrders.filter((order) => !authoritativeOrderIds.has(order.id));
   const searchTerms = mergeSearchTermRows(aggregates.searchTerms || [], aggregateSearchTerms(rawEvents));
   const noResults = mergeNoResultRows(aggregates.noResults || [], aggregateNoResultTerms(rawEvents));
   const popularResources = mergePopularResourceRows(aggregates.popularResources || [], aggregatePopularResources(rawEvents));
@@ -5464,7 +5466,7 @@ function buildAdminDashboardDataFromEvents(events, comments = [], bankOrders = [
     rawEvents,
     allRawEvents: rawEvents,
     comments,
-    bankOrders: mergeBankTransferOrders(bankOrders, eventOrders),
+    bankOrders: mergeBankTransferOrders(bankOrders, fallbackEventOrders),
     searchTerms,
     noResults,
     popularResources,
