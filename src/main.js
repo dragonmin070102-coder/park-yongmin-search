@@ -5,7 +5,6 @@ const PREMIUM_REGULAR_PRICE = "9,900원";
 const PREMIUM_BASE_BUYER_COUNT = 344;
 const PREMIUM_BASE_VIEW_COUNT = 1320;
 const memoryStorage = new Map();
-const adminSessionStorage = new Map();
 
 function safeStorageGet(key) {
   try {
@@ -32,33 +31,6 @@ function safeStorageRemove(key) {
     window.localStorage?.removeItem(key);
   } catch {
     // Ignore storage restrictions.
-  }
-}
-
-function safeSessionGet(key) {
-  try {
-    return window.sessionStorage?.getItem(key) ?? adminSessionStorage.get(key) ?? null;
-  } catch {
-    return adminSessionStorage.get(key) ?? null;
-  }
-}
-
-function safeSessionSet(key, value) {
-  const stringValue = String(value);
-  adminSessionStorage.set(key, stringValue);
-  try {
-    window.sessionStorage?.setItem(key, stringValue);
-  } catch {
-    // Session-only fallback keeps the admin password out of persistent storage.
-  }
-}
-
-function safeSessionRemove(key) {
-  adminSessionStorage.delete(key);
-  try {
-    window.sessionStorage?.removeItem(key);
-  } catch {
-    // Ignore restricted storage environments.
   }
 }
 
@@ -162,7 +134,13 @@ let adminSearchTimer = null;
 let analyticsFlushScheduled = false;
 let currentPremiumPreviewCards = [];
 let premiumSocialProof = { reviews: [], accessCount: 0 };
-let adminSecret = safeSessionGet("pym.adminSecret") || "";
+let adminSecret = "";
+try {
+  // Remove credentials cached by older deployments. Admin access is memory-only.
+  window.sessionStorage?.removeItem("pym.adminSecret");
+} catch {
+  // Restricted browser storage does not affect memory-only authentication.
+}
 safeStorageRemove("pym.agentMessages");
 let agentMessages = [];
 let agentLoading = false;
@@ -249,7 +227,6 @@ async function adminRequest(action, payload = {}) {
     error.status = response.status;
     if (response.status === 401) {
       adminSecret = "";
-      safeSessionRemove("pym.adminSecret");
     }
     throw error;
   }
@@ -812,13 +789,11 @@ document.addEventListener("submit", async (event) => {
   }
   try {
     const payload = await adminRequest("dashboard");
-    safeSessionSet("pym.adminSecret", candidate);
     applyAdminPayload(payload);
     trackEvent("admin_login_success");
     renderAnalyticsAdmin();
   } catch (error) {
     adminSecret = "";
-    safeSessionRemove("pym.adminSecret");
     renderAdminLogin(error.message || "비밀번호를 확인해 주세요.");
   }
 });
@@ -827,7 +802,6 @@ document.addEventListener("click", (event) => {
   const logout = event.target.closest("[data-admin-logout]");
   if (!logout) return;
   adminSecret = "";
-  safeSessionRemove("pym.adminSecret");
   adminDashboardState.data = null;
   renderAdminLogin();
 });
@@ -4328,12 +4302,17 @@ async function flushRemoteAnalytics(options = {}) {
   }
 
   try {
-    await postSupabaseEvents(pending);
-    markSupabaseSent(pending.map((event) => event.id));
-    if (!silent) showToast(`${pending.length}개 이벤트를 Supabase로 보냈어요`);
-    return pending.length;
-  } catch {
-    const synced = await flushRemoteAnalyticsOneByOne(pending);
+    let synced = 0;
+    for (let index = 0; index < pending.length; index += 20) {
+      const batch = pending.slice(index, index + 20);
+      try {
+        await postSupabaseEvents(batch);
+        markSupabaseSent(batch.map((event) => event.id));
+        synced += batch.length;
+      } catch {
+        synced += await flushRemoteAnalyticsOneByOne(batch);
+      }
+    }
     if (!silent) showToast(`${synced}개 이벤트를 Supabase로 보냈어요`);
     return synced;
   } finally {
