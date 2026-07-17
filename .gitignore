@@ -6,3 +6,5 @@ park-yongmin-search-deploy.zip
 무제 폴더/
 .DS_Store
 assets/premium/*.docx
+.vercel
+.env*

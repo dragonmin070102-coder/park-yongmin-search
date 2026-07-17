@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/bank-order-automation",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
