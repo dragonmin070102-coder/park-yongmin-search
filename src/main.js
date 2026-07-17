@@ -134,6 +134,7 @@ let adminSearchTimer = null;
 let analyticsFlushScheduled = false;
 let currentPremiumPreviewCards = [];
 let premiumSocialProof = { reviews: [], accessCount: 0 };
+let adminUsername = "";
 let adminSecret = "";
 try {
   // Remove credentials cached by older deployments. Admin access is memory-only.
@@ -212,11 +213,12 @@ function getActiveAdminSection() {
 }
 
 async function adminRequest(action, payload = {}) {
-  if (!adminSecret) throw Object.assign(new Error("관리자 로그인이 필요합니다."), { status: 401 });
+  if (!adminUsername || !adminSecret) throw Object.assign(new Error("관리자 로그인이 필요합니다."), { status: 401 });
   const response = await fetch(adminApiUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "X-Admin-ID": adminUsername,
       "X-Admin-Secret": adminSecret
     },
     body: JSON.stringify({ action, ...payload })
@@ -226,6 +228,7 @@ async function adminRequest(action, payload = {}) {
     const error = new Error(result.error || "관리자 요청에 실패했습니다.");
     error.status = response.status;
     if (response.status === 401) {
+      adminUsername = "";
       adminSecret = "";
     }
     throw error;
@@ -243,6 +246,10 @@ function renderAdminLogin(message = "") {
       <h2 id="admin-login-title">운영센터 로그인</h2>
       <p>주문·구매자 정보와 분석 데이터는 관리자 인증 후에만 표시됩니다.</p>
       <form data-admin-login-form>
+        <label>
+          <span>관리자 ID</span>
+          <input type="text" name="adminId" autocomplete="username" autocapitalize="none" spellcheck="false" required />
+        </label>
         <label>
           <span>관리자 비밀번호</span>
           <input type="password" name="adminSecret" autocomplete="current-password" required />
@@ -780,8 +787,10 @@ document.addEventListener("submit", async (event) => {
   if (!loginForm) return;
   event.preventDefault();
   const button = loginForm.querySelector("button[type='submit']");
+  const candidateId = String(new FormData(loginForm).get("adminId") || "").trim();
   const candidate = String(new FormData(loginForm).get("adminSecret") || "").trim();
-  if (!candidate) return;
+  if (!candidateId || !candidate) return;
+  adminUsername = candidateId;
   adminSecret = candidate;
   if (button) {
     button.disabled = true;
@@ -793,6 +802,7 @@ document.addEventListener("submit", async (event) => {
     trackEvent("admin_login_success");
     renderAnalyticsAdmin();
   } catch (error) {
+    adminUsername = "";
     adminSecret = "";
     renderAdminLogin(error.message || "비밀번호를 확인해 주세요.");
   }
@@ -801,6 +811,7 @@ document.addEventListener("submit", async (event) => {
 document.addEventListener("click", (event) => {
   const logout = event.target.closest("[data-admin-logout]");
   if (!logout) return;
+  adminUsername = "";
   adminSecret = "";
   adminDashboardState.data = null;
   renderAdminLogin();
@@ -2206,7 +2217,7 @@ async function submitBankTransferOrder(form) {
     if (!response.ok) throw new Error(order.error || "구매 신청을 접수하지 못했습니다.");
     writeBankTransferOrders(mergeBankTransferOrders(readBankTransferOrders(), [order]));
     trackEvent("bank_transfer_order_submit", { ...bankTransferOrderPayload(order), remoteSaved: true });
-    if (!analyticsAdmin.hidden && adminSecret) loadAdminDashboardData();
+    if (!analyticsAdmin.hidden && adminUsername && adminSecret) loadAdminDashboardData();
     renderBankOrderSubmitted(order, { ok: true });
   } catch (error) {
     showToast(error.message || "구매 신청을 접수하지 못했습니다.");
@@ -4447,7 +4458,7 @@ function syncAdminRoute() {
   document.body.classList.toggle("admin-mode", isAdmin);
 
   if (isAdmin) {
-    if (!adminSecret) {
+    if (!adminUsername || !adminSecret) {
       renderAdminLogin();
       window.scrollTo({ top: 0, behavior: "auto" });
       return;
@@ -5377,7 +5388,7 @@ function adminMetricTemplate(label, value) {
 }
 
 async function loadAdminDashboardData() {
-  if (!adminSecret) {
+  if (!adminUsername || !adminSecret) {
     renderAdminLogin();
     return;
   }
@@ -5396,7 +5407,7 @@ async function loadAdminDashboardData() {
     adminDashboardState.error = "관리자 서버에서 데이터를 불러오지 못해 이 브라우저의 로컬 기록만 표시합니다.";
   } finally {
     adminDashboardState.loading = false;
-    if (adminSecret) renderAnalyticsAdmin();
+    if (adminUsername && adminSecret) renderAnalyticsAdmin();
   }
 }
 

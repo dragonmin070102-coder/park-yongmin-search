@@ -10,9 +10,11 @@ function safeEqual(left, right) {
 }
 
 function requireAdmin(req) {
+  const configuredId = env("ADMIN_ACCESS_ID", "admin");
   const configured = env("ADMIN_ACCESS_SECRET");
+  const providedId = String(req.headers["x-admin-id"] || "");
   const provided = String(req.headers["x-admin-secret"] || "");
-  if (!configured || !safeEqual(provided, configured)) {
+  if (!configured || !safeEqual(providedId, configuredId) || !safeEqual(provided, configured)) {
     const error = new Error("관리자 인증이 필요합니다.");
     error.status = 401;
     throw error;
