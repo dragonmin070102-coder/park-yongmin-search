@@ -9,17 +9,50 @@ function safeEqual(left, right) {
   return a.length > 0 && a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
+const ADMIN_COOKIE = "pym_admin_session";
+
+function parseCookies(req) {
+  return Object.fromEntries(String(req.headers.cookie || "").split(";").map((item) => {
+    const index = item.indexOf("=");
+    return index < 0 ? ["", ""] : [item.slice(0, index).trim(), item.slice(index + 1).trim()];
+  }).filter(([key]) => key));
+}
+
+function sessionSignature(expiresAt, secret) {
+  return crypto.createHmac("sha256", secret).update(`pym-admin:${expiresAt}`).digest("base64url");
+}
+
+function createSessionToken(secret, remember) {
+  const maxAge = remember ? 60 * 60 * 24 * 30 : 60 * 60 * 12;
+  const expiresAt = Math.floor(Date.now() / 1000) + maxAge;
+  return { token: `${expiresAt}.${sessionSignature(expiresAt, secret)}`, maxAge };
+}
+
+function hasValidSession(req, secret) {
+  const [expiresAtText, signature] = String(parseCookies(req)[ADMIN_COOKIE] || "").split(".");
+  const expiresAt = Number(expiresAtText);
+  return Number.isFinite(expiresAt)
+    && expiresAt > Date.now() / 1000
+    && safeEqual(signature, sessionSignature(expiresAtText, secret));
+}
+
+function setAdminCookie(req, res, token, maxAge, remember) {
+  const secure = String(req.headers["x-forwarded-proto"] || "").includes("https") ? "; Secure" : "";
+  const persistence = remember ? `; Max-Age=${maxAge}` : "";
+  res.setHeader("Set-Cookie", `${ADMIN_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Strict${secure}${persistence}`);
+}
+
 function requireAdmin(req) {
   const configuredId = env("ADMIN_ACCESS_ID", "admin");
   const configured = env("ADMIN_ACCESS_SECRET");
   const providedId = String(req.headers["x-admin-id"] || "");
   const provided = String(req.headers["x-admin-secret"] || "");
-  if (!configured || !safeEqual(providedId, configuredId) || !safeEqual(provided, configured)) {
+  if (!configured || (!hasValidSession(req, configured) && (!safeEqual(providedId, configuredId) || !safeEqual(provided, configured)))) {
     const error = new Error("관리자 인증이 필요합니다.");
     error.status = 401;
     throw error;
   }
-  return provided;
+  return configured;
 }
 
 export default async function handler(req, res) {
@@ -28,9 +61,21 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return json(res, 405, { error: "POST only" });
 
   try {
-    const secret = requireAdmin(req);
     const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
     const action = cleanText(body.action || "dashboard", 30);
+    if (action === "logout") {
+      setAdminCookie(req, res, "", 0, true);
+      return json(res, 200, { ok: true });
+    }
+
+    const secret = requireAdmin(req);
+
+    if (action === "login") {
+      const remember = body.remember === true;
+      const session = createSessionToken(secret, remember);
+      setAdminCookie(req, res, session.token, session.maxAge, remember);
+      return json(res, 200, await rpc("admin_dashboard_payload", { p_secret: secret }));
+    }
 
     if (action === "dashboard") {
       return json(res, 200, await rpc("admin_dashboard_payload", { p_secret: secret }));

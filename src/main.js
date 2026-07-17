@@ -136,12 +136,8 @@ let currentPremiumPreviewCards = [];
 let premiumSocialProof = { reviews: [], accessCount: 0 };
 let adminUsername = "";
 let adminSecret = "";
-try {
-  // Remove credentials cached by older deployments. Admin access is memory-only.
-  window.sessionStorage?.removeItem("pym.adminSecret");
-} catch {
-  // Restricted browser storage does not affect memory-only authentication.
-}
+let adminAuthenticated = null;
+let adminSessionCheck = null;
 safeStorageRemove("pym.agentMessages");
 let agentMessages = [];
 let agentLoading = false;
@@ -213,14 +209,14 @@ function getActiveAdminSection() {
 }
 
 async function adminRequest(action, payload = {}) {
-  if (!adminUsername || !adminSecret) throw Object.assign(new Error("관리자 로그인이 필요합니다."), { status: 401 });
+  const headers = { "Content-Type": "application/json" };
+  if (adminUsername && adminSecret) {
+    headers["X-Admin-ID"] = adminUsername;
+    headers["X-Admin-Secret"] = adminSecret;
+  }
   const response = await fetch(adminApiUrl, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Admin-ID": adminUsername,
-      "X-Admin-Secret": adminSecret
-    },
+    headers,
     body: JSON.stringify({ action, ...payload })
   });
   const result = await response.json().catch(() => ({}));
@@ -230,6 +226,7 @@ async function adminRequest(action, payload = {}) {
     if (response.status === 401) {
       adminUsername = "";
       adminSecret = "";
+      adminAuthenticated = false;
     }
     throw error;
   }
@@ -245,19 +242,20 @@ function renderAdminLogin(message = "") {
       <p class="eyebrow">Secure admin</p>
       <h2 id="admin-login-title">운영센터 로그인</h2>
       <p>주문·구매자 정보와 분석 데이터는 관리자 인증 후에만 표시됩니다.</p>
-      <form data-admin-login-form autocomplete="off">
+      <form data-admin-login-form autocomplete="on">
         <label>
           <span>관리자 ID</span>
-          <input type="text" name="adminId" autocomplete="off" autocapitalize="none" spellcheck="false" required />
+          <input type="text" name="adminId" autocomplete="username" autocapitalize="none" spellcheck="false" required />
         </label>
         <label>
           <span>관리자 비밀번호</span>
-          <input type="password" name="adminSecret" autocomplete="new-password" required />
+          <input type="password" name="adminSecret" autocomplete="current-password" required />
         </label>
+        <label class="admin-remember"><input type="checkbox" name="remember" checked /><span>이 브라우저에서 로그인 기억하기</span></label>
         <button type="submit">운영센터 열기</button>
       </form>
       ${message ? `<p class="admin-login-error" role="alert">${escapeHtml(message)}</p>` : ""}
-      <small>새로고침하거나 이 탭을 닫으면 관리자 인증이 자동으로 해제됩니다.</small>
+      <small>체크하면 이 브라우저에서 30일 동안 별도 로그인 없이 이용할 수 있습니다.</small>
     </section>
   `;
 }
@@ -789,6 +787,7 @@ document.addEventListener("submit", async (event) => {
   const button = loginForm.querySelector("button[type='submit']");
   const candidateId = String(new FormData(loginForm).get("adminId") || "").trim();
   const candidate = String(new FormData(loginForm).get("adminSecret") || "").trim();
+  const remember = new FormData(loginForm).get("remember") === "on";
   if (!candidateId || !candidate) return;
   adminUsername = candidateId;
   adminSecret = candidate;
@@ -797,13 +796,17 @@ document.addEventListener("submit", async (event) => {
     button.textContent = "인증 중...";
   }
   try {
-    const payload = await adminRequest("dashboard");
+    const payload = await adminRequest("login", { remember });
     applyAdminPayload(payload);
+    adminAuthenticated = true;
+    adminUsername = "";
+    adminSecret = "";
     trackEvent("admin_login_success");
     renderAnalyticsAdmin();
   } catch (error) {
     adminUsername = "";
     adminSecret = "";
+    adminAuthenticated = false;
     renderAdminLogin(error.message || "비밀번호를 확인해 주세요.");
   }
 });
@@ -813,7 +816,9 @@ document.addEventListener("click", (event) => {
   if (!logout) return;
   adminUsername = "";
   adminSecret = "";
+  adminAuthenticated = false;
   adminDashboardState.data = null;
+  adminRequest("logout").catch(() => {});
   renderAdminLogin();
 });
 
@@ -2058,7 +2063,7 @@ async function loadRemotePremiumOperatingSettings() {
 
 function applyPremiumOperatingSettings(settings) {
   if (settings.account) safeStorageSet("pym.bankTransferAccount", JSON.stringify(settings.account));
-  if (settings.fileLinks && adminSecret) safeStorageSet("pym.premiumFileLinks", JSON.stringify(settings.fileLinks));
+  if (settings.fileLinks && adminAuthenticated) safeStorageSet("pym.premiumFileLinks", JSON.stringify(settings.fileLinks));
   const currentPrice = getBankTransferAccount().amount || PREMIUM_REGULAR_PRICE;
   document.querySelectorAll("[data-premium-price]").forEach((node) => {
     node.textContent = currentPrice;
@@ -2217,7 +2222,7 @@ async function submitBankTransferOrder(form) {
     if (!response.ok) throw new Error(order.error || "구매 신청을 접수하지 못했습니다.");
     writeBankTransferOrders(mergeBankTransferOrders(readBankTransferOrders(), [order]));
     trackEvent("bank_transfer_order_submit", { ...bankTransferOrderPayload(order), remoteSaved: true });
-    if (!analyticsAdmin.hidden && adminUsername && adminSecret) loadAdminDashboardData();
+    if (!analyticsAdmin.hidden && adminAuthenticated) loadAdminDashboardData();
     renderBankOrderSubmitted(order, { ok: true });
   } catch (error) {
     showToast(error.message || "구매 신청을 접수하지 못했습니다.");
@@ -4172,7 +4177,7 @@ function trackEvent(name, properties = {}) {
   safeStorageSet("pym.analyticsEvents", JSON.stringify(events.slice(-1000)));
   sendRemoteAnalytics(event);
 
-  if (!analyticsAdmin.hidden && adminUsername && adminSecret) {
+  if (!analyticsAdmin.hidden && adminAuthenticated) {
     renderAnalyticsAdmin();
   }
 
@@ -4449,7 +4454,25 @@ function resourcePayload(resource) {
   };
 }
 
-function syncAdminRoute() {
+async function restoreAdminSession() {
+  if (adminSessionCheck) return adminSessionCheck;
+  adminSessionCheck = (async () => {
+    try {
+      const payload = await adminRequest("dashboard");
+      applyAdminPayload(payload);
+      adminAuthenticated = true;
+      return true;
+    } catch {
+      adminAuthenticated = false;
+      return false;
+    } finally {
+      adminSessionCheck = null;
+    }
+  })();
+  return adminSessionCheck;
+}
+
+async function syncAdminRoute() {
   const hash = window.location.hash;
   const isAdmin = isAdminHash(hash);
   const isPremium = hash === "#premium";
@@ -4458,9 +4481,18 @@ function syncAdminRoute() {
   document.body.classList.toggle("admin-mode", isAdmin);
 
   if (isAdmin) {
-    if (!adminUsername || !adminSecret) {
-      renderAdminLogin();
+    if (adminAuthenticated === null) {
+      analyticsContent.innerHTML = `<section class="admin-login-card"><p class="eyebrow">Secure admin</p><h2>로그인 확인 중...</h2><p>이 브라우저의 관리자 인증 상태를 확인하고 있습니다.</p></section>`;
       window.scrollTo({ top: 0, behavior: "auto" });
+      const restored = await restoreAdminSession();
+      if (!isAdminHash(window.location.hash)) return;
+      if (!restored) {
+        renderAdminLogin();
+        return;
+      }
+    }
+    if (!adminAuthenticated) {
+      renderAdminLogin();
       return;
     }
     try {
@@ -5388,7 +5420,7 @@ function adminMetricTemplate(label, value) {
 }
 
 async function loadAdminDashboardData() {
-  if (!adminUsername || !adminSecret) {
+  if (!adminAuthenticated) {
     renderAdminLogin();
     return;
   }
@@ -5407,7 +5439,7 @@ async function loadAdminDashboardData() {
     adminDashboardState.error = "관리자 서버에서 데이터를 불러오지 못해 이 브라우저의 로컬 기록만 표시합니다.";
   } finally {
     adminDashboardState.loading = false;
-    if (adminUsername && adminSecret) renderAnalyticsAdmin();
+    if (adminAuthenticated) renderAnalyticsAdmin();
   }
 }
 

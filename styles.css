@@ -7713,6 +7713,22 @@ body.admin-mode .marketing-spend-form button {
   font-weight: 950;
 }
 
+.admin-login-card .admin-remember {
+  display: flex;
+  grid-template-columns: none;
+  align-items: center;
+  gap: 9px;
+  min-height: 34px;
+  cursor: pointer;
+}
+
+.admin-login-card .admin-remember input {
+  width: 18px;
+  min-height: 18px;
+  margin: 0;
+  accent-color: #3182f6;
+}
+
 @media (max-width: 1180px) {
   body.admin-mode .admin-shell {
     grid-template-columns: 220px minmax(920px, 1fr);
