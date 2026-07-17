@@ -6,6 +6,7 @@ const PREMIUM_SALE_PRICE = "3,900원";
 const PREMIUM_BASE_BUYER_COUNT = 344;
 const PREMIUM_BASE_VIEW_COUNT = 1320;
 const memoryStorage = new Map();
+const adminSessionStorage = new Map();
 
 function safeStorageGet(key) {
   try {
@@ -32,6 +33,33 @@ function safeStorageRemove(key) {
     window.localStorage?.removeItem(key);
   } catch {
     // Ignore storage restrictions.
+  }
+}
+
+function safeSessionGet(key) {
+  try {
+    return window.sessionStorage?.getItem(key) ?? adminSessionStorage.get(key) ?? null;
+  } catch {
+    return adminSessionStorage.get(key) ?? null;
+  }
+}
+
+function safeSessionSet(key, value) {
+  const stringValue = String(value);
+  adminSessionStorage.set(key, stringValue);
+  try {
+    window.sessionStorage?.setItem(key, stringValue);
+  } catch {
+    // Session-only fallback keeps the admin password out of persistent storage.
+  }
+}
+
+function safeSessionRemove(key) {
+  adminSessionStorage.delete(key);
+  try {
+    window.sessionStorage?.removeItem(key);
+  } catch {
+    // Ignore restricted storage environments.
   }
 }
 
@@ -135,6 +163,7 @@ let adminSearchTimer = null;
 let analyticsFlushScheduled = false;
 let currentPremiumPreviewCards = [];
 let premiumSocialProof = { reviews: [], accessCount: 0 };
+let adminSecret = safeSessionGet("pym.adminSecret") || "";
 safeStorageRemove("pym.agentMessages");
 let agentMessages = [];
 let agentLoading = false;
@@ -143,6 +172,8 @@ const analyticsUserId = getOrCreateAnalyticsUserId();
 const analyticsSessionId = createSessionId();
 const supabaseConfig = getSupabaseConfig();
 const agentApiUrl = String(window.PYM_AGENT_API_URL || "/api/pym-agent");
+const orderApiUrl = "/api/orders";
+const adminApiUrl = "/api/admin";
 
 const adminSections = [
   {
@@ -201,6 +232,51 @@ function isAdminHash(hash = window.location.hash) {
 
 function getActiveAdminSection() {
   return adminSections.find((section) => section.hash === window.location.hash) || adminSections[0];
+}
+
+async function adminRequest(action, payload = {}) {
+  if (!adminSecret) throw Object.assign(new Error("관리자 로그인이 필요합니다."), { status: 401 });
+  const response = await fetch(adminApiUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Admin-Secret": adminSecret
+    },
+    body: JSON.stringify({ action, ...payload })
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(result.error || "관리자 요청에 실패했습니다.");
+    error.status = response.status;
+    if (response.status === 401) {
+      adminSecret = "";
+      safeSessionRemove("pym.adminSecret");
+    }
+    throw error;
+  }
+  return result;
+}
+
+function renderAdminLogin(message = "") {
+  analyticsAdmin.hidden = false;
+  document.body.classList.add("admin-mode");
+  analyticsContent.innerHTML = `
+    <section class="admin-login-card" aria-labelledby="admin-login-title">
+      <span class="brand-mark">P</span>
+      <p class="eyebrow">Secure admin</p>
+      <h2 id="admin-login-title">운영센터 로그인</h2>
+      <p>주문·구매자 정보와 분석 데이터는 관리자 인증 후에만 표시됩니다.</p>
+      <form data-admin-login-form>
+        <label>
+          <span>관리자 비밀번호</span>
+          <input type="password" name="adminSecret" autocomplete="current-password" required />
+        </label>
+        <button type="submit">운영센터 열기</button>
+      </form>
+      ${message ? `<p class="admin-login-error" role="alert">${escapeHtml(message)}</p>` : ""}
+      <small>비밀번호는 이 브라우저 탭을 닫으면 자동으로 지워집니다.</small>
+    </section>
+  `;
 }
 
 
@@ -410,6 +486,7 @@ trackEvent("page_view", {
   hash: window.location.hash || "#home",
   resourceCount: resources.length
 });
+trackEvent("home_premium_fixed_impression", { placement: "below_notice" });
 flushRemoteAnalytics();
 loadRemotePremiumOperatingSettings();
 
@@ -722,6 +799,40 @@ document.addEventListener("click", (event) => {
   window.location.hash = "";
 });
 
+document.addEventListener("submit", async (event) => {
+  const loginForm = event.target.closest("[data-admin-login-form]");
+  if (!loginForm) return;
+  event.preventDefault();
+  const button = loginForm.querySelector("button[type='submit']");
+  const candidate = String(new FormData(loginForm).get("adminSecret") || "").trim();
+  if (!candidate) return;
+  adminSecret = candidate;
+  if (button) {
+    button.disabled = true;
+    button.textContent = "인증 중...";
+  }
+  try {
+    const payload = await adminRequest("dashboard");
+    safeSessionSet("pym.adminSecret", candidate);
+    applyAdminPayload(payload);
+    trackEvent("admin_login_success");
+    renderAnalyticsAdmin();
+  } catch (error) {
+    adminSecret = "";
+    safeSessionRemove("pym.adminSecret");
+    renderAdminLogin(error.message || "비밀번호를 확인해 주세요.");
+  }
+});
+
+document.addEventListener("click", (event) => {
+  const logout = event.target.closest("[data-admin-logout]");
+  if (!logout) return;
+  adminSecret = "";
+  safeSessionRemove("pym.adminSecret");
+  adminDashboardState.data = null;
+  renderAdminLogin();
+});
+
 document.addEventListener("click", (event) => {
   const exportButton = event.target.closest("[data-admin-export]");
   if (!exportButton) return;
@@ -869,7 +980,10 @@ document.addEventListener("click", (event) => {
   const checkout = event.target.closest("[data-premium-checkout]");
   if (!checkout) return;
 
-  trackEvent("premium_checkout_click", { productId: checkout.dataset.premiumCheckout || "neuro-series-6" });
+  trackEvent("premium_checkout_click", {
+    productId: checkout.dataset.premiumCheckout || "neuro-series-6",
+    placement: checkout.dataset.checkoutPlacement || "unknown"
+  });
   openBankTransferOrderModal(checkout.dataset.premiumCheckout);
 });
 
@@ -950,20 +1064,6 @@ document.addEventListener("click", (event) => {
   if (!remove) return;
 
   deleteBankTransferOrder(remove.dataset.bankOrderDelete);
-});
-
-document.addEventListener("click", (event) => {
-  const copySql = event.target.closest("[data-premium-settings-sql-copy]");
-  if (!copySql) return;
-
-  writeClipboardText(getPremiumSettingsSql()).then(() => showToast("premium_settings SQL을 복사했어요")).catch(() => { showCopyFallback(getPremiumSettingsSql()); showToast("복사 권한이 막혀 SQL을 열어뒀어요"); });
-});
-
-document.addEventListener("click", (event) => {
-  const copySql = event.target.closest("[data-bank-orders-sql-copy]");
-  if (!copySql) return;
-
-  writeClipboardText(getBankOrdersSql()).then(() => showToast("bank_transfer_orders SQL을 복사했어요")).catch(() => { showCopyFallback(getBankOrdersSql()); showToast("복사 권한이 막혀 SQL을 열어뒀어요"); });
 });
 
 document.addEventListener("click", (event) => {
@@ -1720,13 +1820,13 @@ function renderPremiumScreen() {
   const purchased = isPremiumPurchased(productId);
   const activeOrder = getLatestBankTransferOrder(productId);
   const previewCards = [
-    { module: premiumNeuroModules[0], section: "p.01 왜 중요한가", image: "./assets/previews/neuro-assessment-p01.png", lines: ["시험·실습·임상 연결", "박용민 요점"] },
-    { module: premiumNeuroModules[0], section: "p.02 임상 상황", image: "./assets/previews/neuro-assessment-p02.png", lines: ["GCS 변화", "동공 변화", "생각해보기"] },
-    { module: premiumNeuroModules[0], section: "p.03 병태생리", image: "./assets/previews/neuro-assessment-p03.png", lines: ["Monro-Kellie", "악화 순서"] },
-    { module: premiumNeuroModules[0], section: "p.04 핵심 검사 및 수치", image: "./assets/previews/neuro-assessment-p04.png", lines: ["GCS", "GCS-P", "ICP/CPP"] },
-    { module: premiumNeuroModules[0], section: "p.05 임상추론 흐름", image: "./assets/previews/neuro-assessment-p05.png", lines: ["해석", "우선순위", "보고"] },
-    { module: premiumNeuroModules[0], section: "p.06 간호중재와 근거", image: "./assets/previews/neuro-assessment-p06.png", lines: ["왜 이런 간호를 할까", "목표 및 수행"] },
-    { module: premiumNeuroModules[0], section: "p.08 30초 복습", image: "./assets/previews/neuro-assessment-p08.png", lines: ["체크리스트", "NCLEX Questions"] }
+    { module: premiumNeuroModules[0], section: "p.01 왜 중요한가", image: "./assets/previews/neuro-assessment-p01.webp", lines: ["시험·실습·임상 연결", "박용민 요점"] },
+    { module: premiumNeuroModules[0], section: "p.02 임상 상황", image: "./assets/previews/neuro-assessment-p02.webp", lines: ["GCS 변화", "동공 변화", "생각해보기"] },
+    { module: premiumNeuroModules[0], section: "p.03 병태생리", image: "./assets/previews/neuro-assessment-p03.webp", lines: ["Monro-Kellie", "악화 순서"] },
+    { module: premiumNeuroModules[0], section: "p.04 핵심 검사 및 수치", image: "./assets/previews/neuro-assessment-p04.webp", lines: ["GCS", "GCS-P", "ICP/CPP"] },
+    { module: premiumNeuroModules[0], section: "p.05 임상추론 흐름", image: "./assets/previews/neuro-assessment-p05.webp", lines: ["해석", "우선순위", "보고"] },
+    { module: premiumNeuroModules[0], section: "p.06 간호중재와 근거", image: "./assets/previews/neuro-assessment-p06.webp", lines: ["왜 이런 간호를 할까", "목표 및 수행"] },
+    { module: premiumNeuroModules[0], section: "p.08 30초 복습", image: "./assets/previews/neuro-assessment-p08.webp", lines: ["체크리스트", "NCLEX Questions"] }
   ];
   currentPremiumPreviewCards = previewCards;
 
@@ -1770,10 +1870,10 @@ function renderPremiumScreen() {
           <p>병태생리 이해<br />핵심 요약 정리<br />임상추론 활용<br />간호중재 & 근거</p>
           <strong>BY PARK YONG MIN</strong>
         </div>
-        <img class="premium-brain-image" src="./assets/iicp-brain-cover.png" alt="신경계 임상추론 학습을 상징하는 뇌 이미지" loading="eager" />
+        <img class="premium-brain-image" src="./assets/iicp-brain-cover.webp" alt="신경계 임상추론 학습을 상징하는 뇌 이미지" loading="eager" fetchpriority="high" />
       </div>
       <h2>신경계 임상추론 시리즈 6편</h2>
-      <p class="premium-product-subtitle">GCS부터 TBI까지, 신경계 응급 케이스를 하나의 흐름으로 정리했습니다.</p>
+      <p class="premium-product-subtitle">실습에서 자주 막히는 GCS·ICP·뇌졸중 판단을 30분 안에 하나의 흐름으로 정리하세요.</p>
       <div class="premium-product-meta">
         <span class="sale-live">판매중</span>
         <span>누적 구매 ${formatCount(getPremiumBuyerCount())}명</span>
@@ -1824,6 +1924,7 @@ function renderPremiumScreen() {
         </article>
       </div>
       <p class="premium-preview-caption">01_신경학적 사정의 일부 내용입니다</p>
+      ${purchased ? "" : `<button class="premium-preview-cta" type="button" data-premium-checkout="neuro-series-6" data-checkout-placement="after_preview">나머지 6편 전체 열기 · 3,900원</button>`}
     </section>
 
     <section class="premium-section premium-special-grid">
@@ -1852,9 +1953,9 @@ function renderPremiumScreen() {
       </div>
       <strong class="premium-buyer-proof">${formatCount(getPremiumBuyerCount())}명이 구매하고 있어요 · 조회 ${formatCount(getPremiumDisplayViews())}회</strong>
       <ul>
+        <li>신경계 임상추론 6편 · 총 58페이지</li>
         <li>결제 후 평생 소장</li>
         <li>모바일/PC 열람 가능</li>
-        <li>무제한 열람</li>
         <li>업데이트 시 추가 비용 없음</li>
       </ul>
       ${purchased ? `
@@ -1864,9 +1965,9 @@ function renderPremiumScreen() {
         </div>
         <a class="premium-primary-link" href="#premiumAccess">자료 보러가기</a>
       ` : `
-        <button type="button" data-premium-checkout="neuro-series-6">계좌이체로 구매 신청</button>
+        <button type="button" data-premium-checkout="neuro-series-6" data-checkout-placement="purchase_card">6편 전체 구매하기 · 3,900원</button>
         <button type="button" data-premium-preview="neuro-series-6">구성 미리보기</button>
-        <span>입금 확인 후 주문번호로 자료 열람이 열립니다.</span>
+        <span>신청 후 계좌이체 · 입금 확인 뒤 평생 열람</span>
       `}
     </section>
 
@@ -1882,7 +1983,7 @@ function renderPremiumScreen() {
         </div>
         <a href="#premium">전체 보기</a>
       </div>
-      <p class="premium-review-note">구매 승인 후 자료를 열람한 사용자만 리뷰를 남길 수 있어요. 닉네임은 자동으로 표시됩니다.</p>
+      <p class="premium-review-note">구매 승인과 자료 열람이 확인된 사용자만 작성할 수 있는 인증 리뷰입니다.</p>
       ${purchased ? `
         <form class="premium-review-form" data-premium-review-form>
           <textarea name="review" placeholder="자료를 보고 도움이 된 점을 남겨주세요." maxlength="300" aria-label="리뷰 내용"></textarea>
@@ -1905,7 +2006,14 @@ function renderPremiumScreen() {
       </div>
       <article><strong>Q. 캐러셀과 유료 자료가 다른가요?</strong><span>캐러셀은 요약본이고, 유료 자료는 전체 DOCX 원고와 표·보고 기준까지 포함됩니다.</span></article>
       <article><strong>Q. 결제 후 어떻게 받나요?</strong><span>계좌이체로 구매 신청을 남기면 승인 요청 상태가 됩니다. 입금 확인 후 운영자가 승인하면 주문번호로 확인할 수 있고, 구매완료 자료 영역에 열기 링크가 표시됩니다.</span></article>
+      <article><strong>Q. 휴대폰과 PC에서 모두 볼 수 있나요?</strong><span>네. 주문번호와 구매 신청 이메일, 휴대폰 뒤 4자리로 승인 상태를 확인하면 모바일과 PC에서 모두 열람할 수 있습니다.</span></article>
     </section>
+    ${purchased ? "" : `
+      <aside class="premium-sticky-cta" aria-label="프리미엄 구매 바로가기">
+        <span><del>${PREMIUM_REGULAR_PRICE}</del><strong>${PREMIUM_SALE_PRICE}</strong></span>
+        <button type="button" data-premium-checkout="neuro-series-6" data-checkout-placement="sticky_mobile">6편 전체 구매</button>
+      </aside>
+    `}
   `;
 }
 
@@ -1956,116 +2064,20 @@ function premiumOperatingSettingsPayload() {
 }
 
 async function loadRemotePremiumOperatingSettings() {
-  if (!supabaseConfig.enabled) return;
-
   try {
-    const rows = await supabaseRequest("premium_settings?select=setting_key,account,file_links,updated_at&setting_key=eq.neuro-series-6&limit=1");
-    const row = rows[0];
-    if (row) {
-      safeStorageRemove("pym.premiumSettingsTableMissing");
-      applyPremiumOperatingSettings({
-        account: row.account || {},
-        fileLinks: row.file_links || {},
-        updatedAt: row.updated_at || new Date().toISOString()
-      });
-      return;
-    }
-    safeStorageRemove("pym.premiumSettingsTableMissing");
+    const response = await fetch(`${orderApiUrl}?action=settings`, { headers: { Accept: "application/json" } });
+    if (!response.ok) throw new Error("설정을 불러오지 못했습니다.");
+    const settings = await response.json();
+    if (settings?.account) applyPremiumOperatingSettings({ account: settings.account });
   } catch {
-    safeStorageSet("pym.premiumSettingsTableMissing", "true");
-  }
-
-  try {
-    const rows = await supabaseRequest("analytics_events?select=event_name,created_at,properties&event_name=eq.premium_operating_settings_update&order=created_at.desc&limit=1");
-    const settings = rows[0]?.properties || null;
-    if (!settings) return;
-    applyPremiumOperatingSettings(settings);
-  } catch {
-    // Operating settings can still work locally if Supabase is unavailable.
+    // The last server-approved account remains cached locally when offline.
   }
 }
 
 function applyPremiumOperatingSettings(settings) {
   if (settings.account) safeStorageSet("pym.bankTransferAccount", JSON.stringify(settings.account));
-  if (settings.fileLinks) safeStorageSet("pym.premiumFileLinks", JSON.stringify(settings.fileLinks));
+  if (settings.fileLinks && adminSecret) safeStorageSet("pym.premiumFileLinks", JSON.stringify(settings.fileLinks));
   renderPremiumScreen();
-}
-
-function premiumSettingsTableReady() {
-  return safeStorageGet("pym.premiumSettingsTableMissing") !== "true";
-}
-
-function getPremiumSettingsSql() {
-  return [
-    "create table if not exists public.premium_settings (",
-    "  setting_key text primary key,",
-    "  account jsonb not null default '{}'::jsonb,",
-    "  file_links jsonb not null default '{}'::jsonb,",
-    "  updated_at timestamptz not null default now()",
-    ");",
-    "",
-    "alter table public.premium_settings enable row level security;",
-    "",
-    "drop policy if exists \"premium_settings_public_read\" on public.premium_settings;",
-    "create policy \"premium_settings_public_read\"",
-    "on public.premium_settings for select",
-    "to anon",
-    "using (true);",
-    "",
-    "drop policy if exists \"premium_settings_public_write\" on public.premium_settings;",
-    "create policy \"premium_settings_public_write\"",
-    "on public.premium_settings for insert",
-    "to anon",
-    "with check (true);",
-    "",
-    "drop policy if exists \"premium_settings_public_update\" on public.premium_settings;",
-    "create policy \"premium_settings_public_update\"",
-    "on public.premium_settings for update",
-    "to anon",
-    "using (true)",
-    "with check (true);"
-  ].join("\n");
-}
-
-function bankOrdersTableReady() {
-  return safeStorageGet("pym.bankOrdersTableMissing") !== "true";
-}
-
-function getBankOrdersSql() {
-  return [
-    "create table if not exists public.bank_transfer_orders (",
-    "  id text primary key,",
-    "  product_id text not null,",
-    "  product_title text not null,",
-    "  amount text not null,",
-    "  depositor text not null,",
-    "  email text not null,",
-    "  phone_last4 text,",
-    "  memo text,",
-    "  status text not null default 'pending',",
-    "  created_at timestamptz not null default now(),",
-    "  approved_at timestamptz,",
-    "  updated_at timestamptz not null default now()",
-    ");",
-    "",
-    "create index if not exists bank_transfer_orders_created_at_idx on public.bank_transfer_orders (created_at desc);",
-    "create index if not exists bank_transfer_orders_status_idx on public.bank_transfer_orders (status, created_at desc);",
-    "",
-    "alter table public.bank_transfer_orders enable row level security;",
-    "grant select, insert, update, delete on public.bank_transfer_orders to anon;",
-    "",
-    "drop policy if exists \"Allow anonymous bank order insert\" on public.bank_transfer_orders;",
-    "create policy \"Allow anonymous bank order insert\" on public.bank_transfer_orders for insert to anon with check (true);",
-    "",
-    "drop policy if exists \"Allow anonymous bank order select\" on public.bank_transfer_orders;",
-    "create policy \"Allow anonymous bank order select\" on public.bank_transfer_orders for select to anon using (true);",
-    "",
-    "drop policy if exists \"Allow anonymous bank order update\" on public.bank_transfer_orders;",
-    "create policy \"Allow anonymous bank order update\" on public.bank_transfer_orders for update to anon using (true) with check (true);",
-    "",
-    "drop policy if exists \"Allow anonymous bank order delete\" on public.bank_transfer_orders;",
-    "create policy \"Allow anonymous bank order delete\" on public.bank_transfer_orders for delete to anon using (true);"
-  ].join("\n");
 }
 
 function readBankTransferOrders() {
@@ -2089,18 +2101,8 @@ function mergeBankTransferOrders(...groups) {
   return Array.from(map.values()).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 }
 
-function readDeletedBankOrderIds() {
-  return new Set(readJsonArray("pym.deletedBankOrders").map((id) => String(id || "")).filter(Boolean));
-}
-
-function writeDeletedBankOrderIds(ids) {
-  safeStorageSet("pym.deletedBankOrders", JSON.stringify(Array.from(ids).slice(-500)));
-}
-
 function getAdminBankTransferOrders() {
-  const deleted = readDeletedBankOrderIds();
-  return mergeBankTransferOrders(readBankTransferOrders(), adminDashboardState.data?.bankOrders || [])
-    .filter((order) => !deleted.has(order.id));
+  return mergeBankTransferOrders(readBankTransferOrders(), adminDashboardState.data?.bankOrders || []);
 }
 
 function getFilteredAdminBankTransferOrders() {
@@ -2114,71 +2116,15 @@ function getFilteredAdminBankTransferOrders() {
   });
 }
 
-async function pushBankTransferOrderToSupabase(order) {
-  if (!supabaseConfig.enabled) return { ok: false, reason: "Supabase 연결 없음" };
-  try {
-    await supabaseRequest("bank_transfer_orders?on_conflict=id", {
-      method: "POST",
-      headers: { Prefer: "resolution=merge-duplicates" },
-      body: JSON.stringify(toBankTransferOrderRow(order))
-    });
-    safeStorageRemove("pym.bankOrdersTableMissing");
-    return { ok: true };
-  } catch (error) {
-    safeStorageSet("pym.bankOrdersTableMissing", "true");
-    return { ok: false, reason: error.message || "Supabase 저장 실패" };
-  }
-}
-
-function toBankTransferOrderRow(order) {
-  return {
-    id: order.id,
-    product_id: order.productId,
-    product_title: order.productTitle,
-    amount: order.amount,
-    depositor: order.depositor,
-    email: order.email,
-    phone_last4: order.phoneLast4 || "",
-    memo: order.memo || "",
-    status: order.status || "pending",
-    created_at: order.createdAt,
-    approved_at: order.approvedAt || null,
-    updated_at: new Date().toISOString()
-  };
-}
-
-function fromBankTransferOrderRow(row) {
-  return {
-    id: row.id,
-    productId: row.product_id,
-    productTitle: row.product_title,
-    amount: row.amount,
-    depositor: row.depositor,
-    email: row.email,
-    phoneLast4: row.phone_last4 || "",
-    memo: row.memo || "",
-    status: row.status || "pending",
-    createdAt: row.created_at,
-    approvedAt: row.approved_at || "",
-    updatedAt: row.updated_at || row.approved_at || row.created_at
-  };
-}
-
-
 function bankTransferOrderPayload(order) {
   return {
     orderId: order.id,
     productId: order.productId,
     productTitle: order.productTitle,
     amount: order.amount,
-    depositor: order.depositor,
-    email: order.email,
-    phoneLast4: order.phoneLast4 || "",
-    memo: order.memo || "",
     status: order.status || "pending",
     createdAt: order.createdAt,
-    approvedAt: order.approvedAt || "",
-    fileLinks: order.fileLinks || getPremiumFileLinks()
+    approvedAt: order.approvedAt || ""
   };
 }
 
@@ -2270,31 +2216,30 @@ async function submitBankTransferOrder(form) {
     return;
   }
 
-  const order = {
-    id: createBankOrderCode(),
-    productId,
-    productTitle: "신경계 임상추론 시리즈 6편",
-    amount: getBankTransferAccount().amount,
-    depositor,
-    email,
-    phoneLast4,
-    memo,
-    status: "pending",
-    createdAt: new Date().toISOString(),
-    approvedAt: ""
-  };
   const button = form.querySelector("button[type='submit']");
   if (button) {
     button.disabled = true;
     button.textContent = "접수 중...";
   }
-
-  const orders = [...readBankTransferOrders(), order];
-  writeBankTransferOrders(orders);
-  const remoteResult = await pushBankTransferOrderToSupabase(order);
-  trackEvent("bank_transfer_order_submit", { ...bankTransferOrderPayload(order), remoteSaved: remoteResult.ok });
-  if (!analyticsAdmin.hidden) renderAnalyticsAdmin();
-  renderBankOrderSubmitted(order, remoteResult);
+  try {
+    const response = await fetch(orderApiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "create", productId, depositor, email, phoneLast4, memo })
+    });
+    const order = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(order.error || "구매 신청을 접수하지 못했습니다.");
+    writeBankTransferOrders(mergeBankTransferOrders(readBankTransferOrders(), [order]));
+    trackEvent("bank_transfer_order_submit", { ...bankTransferOrderPayload(order), remoteSaved: true });
+    if (!analyticsAdmin.hidden && adminSecret) loadAdminDashboardData();
+    renderBankOrderSubmitted(order, { ok: true });
+  } catch (error) {
+    showToast(error.message || "구매 신청을 접수하지 못했습니다.");
+    if (button) {
+      button.disabled = false;
+      button.textContent = "구매 신청 접수";
+    }
+  }
 }
 
 function renderBankOrderSubmitted(order, remoteResult = { ok: true }) {
@@ -2318,13 +2263,6 @@ function renderBankOrderSubmitted(order, remoteResult = { ok: true }) {
   showToast("구매 신청이 접수됐어요");
 }
 
-function createBankOrderCode() {
-  const date = new Date();
-  const mmdd = `${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
-  const random = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `PYM-${mmdd}-${random}`;
-}
-
 function renderBankTransferStatusPanel(order) {
   if (!order || isPremiumPurchased(order.productId)) return "";
   return `
@@ -2339,6 +2277,8 @@ function renderBankTransferStatusPanel(order) {
       <p>주문번호 <strong>${escapeHtml(order.id)}</strong> · 입금자명 ${escapeHtml(order.depositor)} · 금액 ${escapeHtml(order.amount)}</p>
       <form class="bank-order-lookup" data-bank-order-lookup-form>
         <input name="orderCode" value="${escapeHtml(order.id)}" autocomplete="off" />
+        <input type="hidden" name="email" value="${escapeHtml(order.email || "")}" />
+        <input type="hidden" name="phoneLast4" value="${escapeHtml(order.phoneLast4 || "")}" />
         <button type="submit">승인 확인</button>
       </form>
     </section>
@@ -2348,11 +2288,27 @@ function renderBankTransferStatusPanel(order) {
 async function verifyBankTransferOrder(form) {
   const formData = new FormData(form);
   const orderCode = String(formData.get("orderCode") || "").trim().toUpperCase();
-  const order = await findBankTransferOrderByCode(orderCode);
-  if (!order) {
-    showToast("주문번호를 찾지 못했어요");
+  const localOrder = readBankTransferOrders().find((item) => String(item.id || "").toUpperCase() === orderCode);
+  const email = String(formData.get("email") || localOrder?.email || "").trim();
+  const phoneLast4 = String(formData.get("phoneLast4") || localOrder?.phoneLast4 || "").trim();
+  if (!orderCode || !email || !/^\d{4}$/.test(phoneLast4)) {
+    showToast("주문번호, 이메일, 휴대폰 뒤 4자리를 입력해 주세요");
     return;
   }
+  let order;
+  try {
+    const response = await fetch(orderApiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "status", orderId: orderCode, email, phoneLast4 })
+    });
+    order = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(order.error || "주문을 찾지 못했습니다.");
+  } catch (error) {
+    showToast(error.message || "주문을 찾지 못했어요");
+    return;
+  }
+  writeBankTransferOrders(mergeBankTransferOrders(readBankTransferOrders().filter((item) => item.id !== order.id), [order]));
   if (order.status !== "approved") {
     showToast("아직 입금 확인 대기 상태예요");
     return;
@@ -2390,15 +2346,26 @@ async function lookupBankTransferOrderByIdentity(form) {
     button.textContent = "조회 중...";
   }
 
-  const orders = await findBankTransferOrdersByIdentity({ depositor, email, phoneLast4 });
+  let order = null;
+  let lookupError = "";
+  try {
+    const response = await fetch(orderApiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "lookup", depositor, email, phoneLast4 })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || "일치하는 구매 신청을 찾지 못했습니다.");
+    order = payload;
+  } catch (error) {
+    lookupError = error.message || "일치하는 구매 신청을 찾지 못했습니다.";
+  }
   if (button) {
     button.disabled = false;
     button.textContent = "주문번호 조회";
   }
-
-  const order = orders[0] || null;
   if (!order) {
-    showToast("일치하는 구매 신청을 찾지 못했어요");
+    showToast(lookupError || "일치하는 구매 신청을 찾지 못했어요");
     return;
   }
 
@@ -2420,93 +2387,21 @@ async function lookupBankTransferOrderByIdentity(form) {
   document.querySelector(order.status === "approved" ? "#premiumAccess" : ".bank-status-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-async function findBankTransferOrdersByIdentity({ depositor, email, phoneLast4 }) {
-  const localMatches = readBankTransferOrders().filter((order) =>
-    normalizeOrderField(order.depositor) === normalizeOrderField(depositor) &&
-    normalizeOrderField(order.email) === normalizeOrderField(email) &&
-    String(order.phoneLast4 || "") === phoneLast4
-  );
-
-  let remoteMatches = [];
-  if (supabaseConfig.enabled) {
-    try {
-      const query = [
-        "select=*",
-        `phone_last4=eq.${encodeURIComponent(phoneLast4)}`,
-        "order=created_at.desc",
-        "limit=50"
-      ].join("&");
-      const rows = await supabaseRequest(`bank_transfer_orders?${query}`);
-      remoteMatches = rows
-        .map(fromBankTransferOrderRow)
-        .filter((order) =>
-          normalizeOrderField(order.depositor) === normalizeOrderField(depositor) &&
-          normalizeOrderField(order.email) === normalizeOrderField(email)
-        );
-      safeStorageRemove("pym.bankOrdersTableMissing");
-    } catch {
-      safeStorageSet("pym.bankOrdersTableMissing", "true");
-    }
-  }
-
-  return mergeBankTransferOrders(remoteMatches, localMatches);
-}
-
-function normalizeOrderField(value) {
-  return String(value || "").trim().toLowerCase();
-}
-
-async function findBankTransferOrderByCode(orderCode) {
-  if (!orderCode) return null;
-  const local = mergeBankTransferOrders(readBankTransferOrders(), adminDashboardState.data?.bankOrders || [])
-    .find((item) => String(item.id || "").toUpperCase() === orderCode);
-
-  if (supabaseConfig.enabled) {
-    try {
-      const rows = await supabaseRequest(`bank_transfer_orders?select=*&id=eq.${encodeURIComponent(orderCode)}&limit=1`);
-      const remote = rows[0] ? fromBankTransferOrderRow(rows[0]) : null;
-      if (remote) {
-        const merged = mergeBankTransferOrders(local ? [local, remote] : [remote])[0];
-        if (merged.status === "approved") {
-          writeBankTransferOrders(mergeBankTransferOrders(readBankTransferOrders().filter((item) => item.id !== merged.id), [merged]));
-        }
-        return merged;
-      }
-    } catch {
-      safeStorageSet("pym.bankOrdersTableMissing", "true");
-    }
-
-    try {
-      const rows = await supabaseRequest("analytics_events?select=event_name,created_at,properties&event_name=in.(bank_transfer_order_submit,bank_transfer_order_approve)&order=created_at.desc&limit=1000");
-      const eventOrder = extractBankTransferOrdersFromEvents(rows.map(normalizeAdminEvent))
-        .find((item) => String(item.id || "").toUpperCase() === orderCode) || null;
-      if (eventOrder) return mergeBankTransferOrders(local ? [local, eventOrder] : [eventOrder])[0];
-    } catch {
-      // Fall back to the local pending receipt below.
-    }
-  }
-
-  return local || null;
-}
-
-function approveBankTransferOrder(orderId) {
+async function approveBankTransferOrder(orderId) {
   const localOrders = readBankTransferOrders();
   const sourceOrder = getAdminBankTransferOrders().find((item) => item.id === orderId) || localOrders.find((item) => item.id === orderId);
   if (!sourceOrder) {
     showToast("주문을 찾지 못했어요");
     return;
   }
-
-  const approvedOrder = { ...sourceOrder, status: "approved", approvedAt: new Date().toISOString(), updatedAt: new Date().toISOString(), fileLinks: getPremiumFileLinks() };
-  const updated = mergeBankTransferOrders(localOrders.filter((order) => order.id !== orderId), [approvedOrder]);
-  writeBankTransferOrders(updated);
-  safeStorageSet(`pym.premiumAccess.${approvedOrder.productId}`, "true");
-  safeStorageSet(`pym.premiumAccessAt.${approvedOrder.productId}`, approvedOrder.approvedAt);
-  pushBankTransferOrderToSupabase(approvedOrder);
-  trackEvent("bank_transfer_order_approve", bankTransferOrderPayload(approvedOrder));
-  showToast("입금 확인 처리했어요");
-  renderAnalyticsAdmin();
-  renderPremiumScreen();
+  try {
+    await adminRequest("approve", { orderId });
+    trackEvent("bank_transfer_order_approve", { orderId, productId: sourceOrder.productId });
+    showToast("입금 확인 처리했어요");
+    await loadAdminDashboardData();
+  } catch (error) {
+    showToast(error.message || "승인 처리에 실패했습니다.");
+  }
 }
 
 async function deleteBankTransferOrder(orderId) {
@@ -2515,27 +2410,15 @@ async function deleteBankTransferOrder(orderId) {
   if (!order) return;
   if (!window.confirm(`${order.id} 구매 신청을 목록에서 삭제할까요? 테스트 데이터 정리에만 사용하세요.`)) return;
 
-  const deleted = readDeletedBankOrderIds();
-  deleted.add(orderId);
-  writeDeletedBankOrderIds(deleted);
-  safeStorageSet("pym.bankTransferOrders", JSON.stringify(readBankTransferOrders().filter((item) => item.id !== orderId)));
-  if (adminDashboardState.data?.bankOrders) {
-    adminDashboardState.data.bankOrders = adminDashboardState.data.bankOrders.filter((item) => item.id !== orderId);
+  try {
+    await adminRequest("delete", { orderId });
+    safeStorageSet("pym.bankTransferOrders", JSON.stringify(readBankTransferOrders().filter((item) => item.id !== orderId)));
+    trackEvent("bank_transfer_order_delete", { orderId });
+    showToast("구매 신청을 안전하게 삭제했어요");
+    await loadAdminDashboardData();
+  } catch (error) {
+    showToast(error.message || "주문 삭제에 실패했습니다.");
   }
-  trackEvent("bank_transfer_order_delete", { orderId });
-
-  let remoteDeleted = false;
-  if (supabaseConfig.enabled) {
-    try {
-      await supabaseRequest(`bank_transfer_orders?id=eq.${encodeURIComponent(orderId)}`, { method: "DELETE" });
-      remoteDeleted = true;
-    } catch {
-      remoteDeleted = false;
-    }
-  }
-
-  renderAnalyticsAdmin();
-  showToast(remoteDeleted ? "구매 신청을 서버와 목록에서 삭제했어요" : "이 기기 목록에서 숨겼어요. 서버 삭제 권한은 Supabase 정책을 확인해주세요");
 }
 
 async function copyBankTransferOrder(orderId) {
@@ -2613,6 +2496,8 @@ function renderPremiumAccessPanel(purchased) {
         <p>계좌이체 후 운영자 승인이 완료되면 주문번호로 PDF 6편 열람 영역이 열립니다.</p>
         <form class="bank-order-lookup" data-bank-order-lookup-form>
           <input name="orderCode" placeholder="주문번호 입력 (예: PYM-0625-AB12)" autocomplete="off" />
+          <input name="email" type="email" placeholder="구매 신청 이메일" autocomplete="email" />
+          <input name="phoneLast4" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="휴대폰 뒤 4자리" />
           <button type="submit">승인 확인</button>
         </form>
         <div class="bank-order-divider"><span>주문번호를 잊었나요?</span></div>
@@ -2663,7 +2548,7 @@ function getPremiumDisplayViews() {
 }
 
 function getPremiumReviews() {
-  return mergePremiumReviews(premiumSocialProof.reviews, readJsonArray("pym.premiumReviews"));
+  return mergePremiumReviews(premiumSocialProof.reviews);
 }
 
 function mergePremiumReviews(...sources) {
@@ -2706,13 +2591,17 @@ function randomPremiumReviewerName() {
 async function loadPremiumSocialProof() {
   const localEvents = readAnalyticsEvents().map(normalizeAdminEvent);
   let events = localEvents;
-  if (supabaseConfig.enabled) {
-    try {
-      const rows = await supabaseRequest("analytics_events?select=event_id,event_name,created_at,properties&event_name=in.(premium_review_submit,premium_secure_file_click)&order=created_at.desc&limit=1000");
-      events = mergeAdminEvents(rows, localEvents);
-    } catch {
-      events = localEvents;
+  try {
+    const response = await fetch(`${orderApiUrl}?action=social`, { headers: { Accept: "application/json" } });
+    if (response.ok) {
+      const social = await response.json();
+      premiumSocialProof.accessCount = Number(social.accessCount || 0);
+      premiumSocialProof.reviews = Array.isArray(social.reviews) ? social.reviews : [];
+      renderPremiumScreen();
+      return;
     }
+  } catch {
+    // Fall through to this device's recent events.
   }
 
   premiumSocialProof.accessCount = events.filter((event) => event.event_name === "premium_secure_file_click").length;
@@ -2728,32 +2617,48 @@ async function loadPremiumSocialProof() {
   renderPremiumScreen();
 }
 
-function submitPremiumReview(form) {
+async function submitPremiumReview(form) {
   const productId = "neuro-series-6";
-  if (!isPremiumPurchased(productId)) {
+  const approvedOrder = readBankTransferOrders().find((order) => order.productId === productId && order.status === "approved" && order.email && order.phoneLast4);
+  if (!isPremiumPurchased(productId) || !approvedOrder) {
     showToast("구매 승인 후 리뷰를 남길 수 있어요");
     return;
   }
 
   const formData = new FormData(form);
-  const name = randomPremiumReviewerName();
   const body = String(formData.get("review") || "").trim();
   if (body.length < 5) {
     showToast("리뷰 내용을 조금만 더 적어주세요");
     return;
   }
 
-  const review = { name, body, createdAt: new Date().toISOString() };
-  const reviews = readJsonArray("pym.premiumReviews");
-  reviews.push(review);
-  safeStorageSet("pym.premiumReviews", JSON.stringify(reviews.slice(-30)));
-  premiumSocialProof.reviews = mergePremiumReviews([review], premiumSocialProof.reviews);
-  form.reset();
-  const list = document.querySelector("#premiumReviewList");
-  if (list) list.innerHTML = renderPremiumReviews();
-  trackEvent("premium_review_submit", { productId, name, body, bodyLength: body.length });
-  flushRemoteAnalytics({ silent: true, limit: 20 });
-  showToast("리뷰가 등록됐어요");
+  const button = form.querySelector("button[type='submit']");
+  if (button) button.disabled = true;
+  try {
+    const response = await fetch(orderApiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "review",
+        orderId: approvedOrder.id,
+        email: approvedOrder.email,
+        phoneLast4: approvedOrder.phoneLast4,
+        body
+      })
+    });
+    const review = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(review.error || "리뷰를 등록하지 못했습니다.");
+    premiumSocialProof.reviews = mergePremiumReviews([review], premiumSocialProof.reviews);
+    form.reset();
+    const list = document.querySelector("#premiumReviewList");
+    if (list) list.innerHTML = renderPremiumReviews();
+    trackEvent("premium_review_submit", { productId, bodyLength: body.length, verifiedPurchase: true });
+    showToast("구매 인증 리뷰가 등록됐어요");
+  } catch (error) {
+    showToast(error.message || "리뷰를 등록하지 못했습니다.");
+  } finally {
+    if (button) button.disabled = false;
+  }
 }
 function openPremiumPreviewGallery(index = 0) {
   const cards = currentPremiumPreviewCards.filter((card) => card.image);
@@ -3372,31 +3277,6 @@ async function supabaseRequest(path, options = {}) {
   }
 
   return response.json();
-}
-
-async function supabaseCount(path) {
-  const separator = path.includes("?") ? "&" : "?";
-  const response = await fetch(`${supabaseConfig.url}/rest/v1/${path}${separator}limit=1`, {
-    method: "GET",
-    headers: {
-      apikey: supabaseConfig.anonKey,
-      Authorization: `Bearer ${supabaseConfig.anonKey}`,
-      "Content-Type": "application/json",
-      Prefer: "count=exact"
-    }
-  });
-
-  if (!response.ok) {
-    const error = new Error(`Supabase count failed: ${response.status}`);
-    error.status = response.status;
-    throw error;
-  }
-
-  const contentRange = response.headers.get("content-range") || "";
-  const total = Number(contentRange.split("/")[1]);
-  if (Number.isFinite(total)) return total;
-  const body = await response.json().catch(() => []);
-  return Array.isArray(body) ? body.length : 0;
 }
 
 function getCommentNickname() {
@@ -4029,25 +3909,18 @@ async function loadContentStats() {
   mergeLocalResourceViewStats();
   mergeLocalTrendViewStats();
   renderTrendScreen();
-
-  if (!supabaseConfig.enabled) return;
-
   try {
-    const resourceRows = await supabaseRequest("analytics_popular_resources?select=resource_id,open_count");
+    const response = await fetch(`${orderApiUrl}?action=content-stats`, { headers: { Accept: "application/json" } });
+    if (!response.ok) throw new Error("통계 조회 실패");
+    const payload = await response.json();
+    const resourceRows = Array.isArray(payload.resources) ? payload.resources : [];
     resourceStats = new Map(resourceRows
       .filter((row) => row.resource_id)
       .map((row) => [row.resource_id, { views: Number(row.open_count || 0) }]));
     mergeLocalResourceViewStats();
     renderResults();
     renderDetail(activeResource);
-  } catch {
-    mergeLocalResourceViewStats();
-    renderResults();
-    renderDetail(activeResource);
-  }
-
-  try {
-    const resourceDiscussionRows = await supabaseRequest("resource_discussion_stats?select=resource_id,like_count,comment_count");
+    const resourceDiscussionRows = Array.isArray(payload.resourceDiscussion) ? payload.resourceDiscussion : [];
     resourceDiscussionStats = new Map(resourceDiscussionRows
       .filter((row) => row.resource_id)
       .map((row) => [row.resource_id, {
@@ -4056,12 +3929,7 @@ async function loadContentStats() {
       }]));
     renderResults();
     renderDetail(activeResource);
-  } catch {
-    mergeLocalResourceDiscussionStats();
-  }
-
-  try {
-    const trendRows = await supabaseRequest("trend_article_stats?select=article_id,view_count,comment_count,like_count");
+    const trendRows = Array.isArray(payload.trends) ? payload.trends : [];
     const nextTrendStats = new Map(trendStats);
     trendRows
       .filter((row) => row.article_id)
@@ -4077,8 +3945,12 @@ async function loadContentStats() {
     mergeLocalTrendViewStats();
     renderTrendScreen();
   } catch {
+    mergeLocalResourceViewStats();
+    mergeLocalResourceDiscussionStats();
     mergeLocalTrendViewStats();
     loadTrendCommentCounts();
+    renderResults();
+    renderDetail(activeResource);
     renderTrendScreen();
   }
 }
@@ -4487,40 +4359,21 @@ async function flushRemoteAnalyticsOneByOne(events) {
 }
 
 async function postSupabaseEvents(events) {
-  const payload = events.map(toSupabaseEvent);
-  const response = await fetch(`${supabaseConfig.url}/rest/v1/analytics_events`, {
+  const response = await fetch("/api/analytics", {
     method: "POST",
     headers: {
-      apikey: supabaseConfig.anonKey,
-      Authorization: `Bearer ${supabaseConfig.anonKey}`,
-      "Content-Type": "application/json",
-      Prefer: "return=minimal"
+      "Content-Type": "application/json"
     },
-    body: JSON.stringify(payload),
-    keepalive: payload.length === 1
+    body: JSON.stringify({ events }),
+    keepalive: events.length === 1
   });
 
   if (!response.ok) {
-    const error = new Error(`Supabase insert failed: ${response.status}`);
+    const payload = await response.json().catch(() => ({}));
+    const error = new Error(payload.error || `Analytics insert failed: ${response.status}`);
     error.status = response.status;
     throw error;
   }
-}
-
-function toSupabaseEvent(event) {
-  return {
-    event_id: event.id,
-    event_name: event.name,
-    anonymous_user_id: event.userId,
-    session_id: event.sessionId,
-    path: event.path,
-    hash: event.hash,
-    referrer: event.referrer,
-    user_agent: event.userAgent,
-    viewport: event.viewport,
-    properties: event.properties,
-    created_at: event.createdAt
-  };
 }
 
 function getSupabaseConfig() {
@@ -4614,6 +4467,11 @@ function syncAdminRoute() {
   document.body.classList.toggle("admin-mode", isAdmin);
 
   if (isAdmin) {
+    if (!adminSecret) {
+      renderAdminLogin();
+      window.scrollTo({ top: 0, behavior: "auto" });
+      return;
+    }
     try {
       renderAnalyticsAdmin();
       trackEvent("admin_view");
@@ -4734,7 +4592,10 @@ function renderAnalyticsAdmin() {
 function adminHeaderTemplate(ctx) {
   return `
     <section class="admin-hero">
-      <p class="eyebrow">${escapeHtml(ctx.activeSection.eyebrow)}</p>
+      <div class="admin-hero-row">
+        <p class="eyebrow">${escapeHtml(ctx.activeSection.eyebrow)}</p>
+        <button type="button" data-admin-logout>로그아웃</button>
+      </div>
       <h2>${escapeHtml(ctx.activeSection.title)}</h2>
       <p>${escapeHtml(ctx.activeSection.description)}</p>
     </section>
@@ -5412,15 +5273,7 @@ function premiumOperatingSettingsAdminTemplate() {
         </div>
         <button type="submit">계좌/자료 링크 저장</button>
       </form>
-      <p class="admin-note">저장하면 Supabase premium_settings 전용 테이블에 우선 저장하고, 테이블이 없을 때만 이벤트 로그를 백업으로 사용합니다.</p>
-      ${premiumSettingsTableReady() ? "" : `
-        <div class="premium-settings-warning">
-          <strong>premium_settings 테이블이 아직 없거나 권한이 막혀 있어요.</strong>
-          <span>Supabase SQL Editor에서 아래 SQL을 한 번 실행하면 계좌/자료 링크가 안정적으로 저장됩니다.</span>
-          <button type="button" data-premium-settings-sql-copy>SQL 복사</button>
-          <pre>${escapeHtml(getPremiumSettingsSql())}</pre>
-        </div>
-      `}
+      <p class="admin-note">계좌와 유료 자료 링크는 관리자 인증을 거친 서버에서만 저장·조회됩니다. 공개 화면에는 계좌 정보만 전달됩니다.</p>
     </section>
   `;
 }
@@ -5441,47 +5294,19 @@ async function savePremiumOperatingSettings(form) {
 
   safeStorageSet("pym.bankTransferAccount", JSON.stringify(account));
   safeStorageSet("pym.premiumFileLinks", JSON.stringify(fileLinks));
-  const settingsEvent = trackEvent("premium_operating_settings_update", { account, fileLinks, updatedAt: new Date().toISOString() });
+  trackEvent("premium_operating_settings_update", { updatedAt: new Date().toISOString(), fileCount: Object.keys(fileLinks).length });
   const button = form.querySelector("button[type='submit']");
   if (button) {
     button.disabled = true;
     button.textContent = "저장 중...";
   }
 
-  let synced = 0;
-  let settingsSynced = false;
-  if (supabaseConfig.enabled) {
-    try {
-      await supabaseRequest("premium_settings?on_conflict=setting_key", {
-        method: "POST",
-        headers: { Prefer: "resolution=merge-duplicates" },
-        body: JSON.stringify({
-          setting_key: "neuro-series-6",
-          account,
-          file_links: fileLinks,
-          updated_at: new Date().toISOString()
-        })
-      });
-      safeStorageRemove("pym.premiumSettingsTableMissing");
-      settingsSynced = true;
-    } catch {
-      safeStorageSet("pym.premiumSettingsTableMissing", "true");
-    }
-
-    try {
-      await postSupabaseEvents([settingsEvent]);
-      markSupabaseSent([settingsEvent.id]);
-      synced = 1;
-    } catch (error) {
-      if (error.status === 409) {
-        markSupabaseSent([settingsEvent.id]);
-        synced = 1;
-      } else {
-        synced = await flushRemoteAnalytics({ silent: true, limit: 20 });
-      }
-    }
+  try {
+    await adminRequest("save-settings", { account, fileLinks });
+    showToast("계좌와 자료 링크를 안전하게 저장했어요");
+  } catch (error) {
+    showToast(error.message || "운영 설정 저장에 실패했습니다.");
   }
-  showToast(settingsSynced ? "계좌와 자료 링크를 premium_settings에 저장했어요" : synced ? "이벤트 로그에 저장했어요. premium_settings 테이블을 확인해주세요" : "이 기기에 저장했어요. Supabase 연결을 확인해주세요");
 
   if (button) {
     button.disabled = false;
@@ -5520,14 +5345,6 @@ function bankTransferOrdersAdminTemplate() {
           <option value="approved" ${adminOrderState.status === "approved" ? "selected" : ""}>승인완료</option>
         </select>
       </div>
-      ${bankOrdersTableReady() ? "" : `
-        <div class="premium-settings-warning bank-order-warning">
-          <strong>핸드폰 구매 신청이 어드민에 안 뜨면 이 SQL이 필요해요.</strong>
-          <span>Supabase SQL Editor에서 bank_transfer_orders 테이블과 권한을 먼저 만들어야 모든 기기 신청이 같은 목록에 모입니다.</span>
-          <button type="button" data-bank-orders-sql-copy>bank_transfer_orders SQL 복사</button>
-          <pre>${escapeHtml(getBankOrdersSql())}</pre>
-        </div>
-      `}
       ${visibleOrders.length ? `
         <div class="bank-admin-table-wrap">
           <table class="bank-admin-table">
@@ -5580,76 +5397,45 @@ function adminMetricTemplate(label, value) {
 }
 
 async function loadAdminDashboardData() {
-  if (!supabaseConfig.enabled) {
-    adminDashboardState.data = buildAdminDashboardDataFromEvents(readAnalyticsEvents(), []);
-    adminDashboardState.error = "Supabase 연결 전이라 이 브라우저의 로컬 기록을 표시 중이에요.";
-    renderAnalyticsAdmin();
+  if (!adminSecret) {
+    renderAdminLogin();
     return;
   }
-
   adminDashboardState.loading = true;
   adminDashboardState.error = "";
   renderAnalyticsAdmin();
-
-  await flushRemoteAnalytics({ silent: true, limit: 120 });
-
   try {
-    const [rawEvents, trendComments, resourceComments, bankOrders, searchTermRows, noResultRows, popularResourceRows, exactCounts] = await Promise.all([
-      supabaseRequest("analytics_events?select=event_id,event_name,anonymous_user_id,created_at,properties&order=created_at.desc&limit=5000").catch(() => []),
-      supabaseRequest("trend_comments?select=id,article_id,nickname,body,likes,created_at&hidden=eq.false&order=created_at.desc&limit=1000").catch(() => []),
-      supabaseRequest("resource_comments?select=id,resource_id,nickname,body,likes,created_at&hidden=eq.false&order=created_at.desc&limit=1000").catch(() => []),
-      supabaseRequest("bank_transfer_orders?select=*&order=created_at.desc&limit=300").catch(() => { safeStorageSet("pym.bankOrdersTableMissing", "true"); return []; }),
-      supabaseRequest("analytics_search_terms?select=query,search_count,last_searched_at&order=search_count.desc&limit=2000").catch(() => []),
-      supabaseRequest("analytics_no_result_terms?select=query,no_result_count,last_searched_at&order=no_result_count.desc&limit=2000").catch(() => []),
-      supabaseRequest("analytics_popular_resources?select=resource_id,resource_title,open_count,last_opened_at&order=open_count.desc&limit=5000").catch(() => []),
-      loadAdminExactCounts().catch(() => ({}))
-    ]);
-
-    const mergedRawEvents = mergeAdminEvents(rawEvents, readAnalyticsEvents());
-    const aggregateRowsAvailable = searchTermRows.length || noResultRows.length || popularResourceRows.length;
-    if (!rawEvents.length && aggregateRowsAvailable) {
-      adminDashboardState.error = "원본 이벤트 조회 권한이 제한되어 집계 테이블 기준으로 표시 중이에요. 검색어·자료 조회수는 최신 집계값이고, 페이지뷰/배너 상세는 원본 이벤트 select 정책이 필요합니다.";
+    const payload = await adminRequest("dashboard");
+    applyAdminPayload(payload);
+  } catch (error) {
+    if (error.status === 401) {
+      renderAdminLogin(error.message);
+      return;
     }
-    adminDashboardState.data = buildAdminDashboardDataFromEvents(mergedRawEvents, [
-      ...trendComments.map((row) => ({ ...row, comment_type: "trend" })),
-      ...resourceComments.map((row) => ({ ...row, comment_type: "resource", article_id: row.resource_id }))
-    ], bankOrders.map(fromBankTransferOrderRow), {
-      searchTerms: normalizeAdminRows(searchTermRows, "query", "search_count", "last_searched_at"),
-      noResults: normalizeAdminRows(noResultRows, "query", "no_result_count", "last_searched_at"),
-      popularResources: normalizeAdminRows(popularResourceRows, "resource_id", "open_count", "last_opened_at"),
-      exactCounts
-    });
-  } catch {
     adminDashboardState.data = buildAdminDashboardDataFromEvents(readAnalyticsEvents(), []);
-    adminDashboardState.error = "Supabase 원본 이벤트를 불러오지 못해 이 브라우저의 로컬 기록을 표시 중이에요. Supabase 테스트를 눌러 연결을 확인해 주세요.";
+    adminDashboardState.error = "관리자 서버에서 데이터를 불러오지 못해 이 브라우저의 로컬 기록만 표시합니다.";
   } finally {
     adminDashboardState.loading = false;
-    renderAnalyticsAdmin();
+    if (adminSecret) renderAnalyticsAdmin();
   }
 }
 
-async function loadAdminExactCounts() {
-  const [
-    totalEvents,
-    totalPageViews,
-    premiumViews,
-    bannerClicks,
-    fileOpens
-  ] = await Promise.all([
-    supabaseCount("analytics_events?select=event_id"),
-    supabaseCount("analytics_events?select=event_id&event_name=eq.page_view"),
-    supabaseCount("analytics_events?select=event_id&event_name=eq.premium_view"),
-    supabaseCount("analytics_events?select=event_id&event_name=eq.home_premium_banner_click"),
-    supabaseCount("analytics_events?select=event_id&event_name=eq.premium_secure_file_click")
-  ]);
-
-  return {
-    totalEvents,
-    totalPageViews,
-    premiumViews,
-    bannerClicks,
-    fileOpens
-  };
+function applyAdminPayload(payload = {}) {
+  const rawEvents = Array.isArray(payload.rawEvents) ? payload.rawEvents : [];
+  const trendComments = Array.isArray(payload.trendComments) ? payload.trendComments : [];
+  const resourceComments = Array.isArray(payload.resourceComments) ? payload.resourceComments : [];
+  const bankOrders = Array.isArray(payload.bankOrders) ? payload.bankOrders : [];
+  const mergedRawEvents = mergeAdminEvents(rawEvents, readAnalyticsEvents());
+  const comments = [
+    ...trendComments.map((row) => ({ ...row, comment_type: "trend" })),
+    ...resourceComments.map((row) => ({ ...row, comment_type: "resource", article_id: row.resource_id }))
+  ];
+  adminDashboardState.data = buildAdminDashboardDataFromEvents(mergedRawEvents, comments, bankOrders, {
+    exactCounts: payload.exactCounts || {}
+  });
+  adminDashboardState.error = "";
+  if (payload.settings?.account) safeStorageSet("pym.bankTransferAccount", JSON.stringify(payload.settings.account));
+  if (payload.settings?.fileLinks) safeStorageSet("pym.premiumFileLinks", JSON.stringify(payload.settings.fileLinks));
 }
 
 function mergeAdminEvents(...sources) {

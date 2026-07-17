@@ -7,11 +7,16 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="PYM Search" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="description" content="간호 실습과 국가고시에서 필요한 임상추론 자료를 질환명·검사명으로 빠르게 검색하고 학습하세요." />
+    <meta property="og:title" content="PYM Search | 간호 임상추론 자료 검색" />
+    <meta property="og:description" content="실습 직전 3분, 바로 써먹는 간호 임상추론 자료와 프리미엄 학습 시리즈." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://park-yongmin-search.vercel.app/" />
     <title>PYM Searching Agent</title>
     <link rel="manifest" href="./manifest.webmanifest?v=20260714-3" />
     <link rel="apple-touch-icon" href="./assets/thumb-neuro.png" />
     <link rel="icon" href="./assets/thumb-neuro.png" />
-    <link rel="stylesheet" href="./styles.css?v=20260714-3" />
+    <link rel="stylesheet" href="./styles.css?v=20260717-4" />
   </head>
   <body>
     <header class="topbar">
@@ -44,6 +49,21 @@
             </div>
           </form>
           <article class="clinical-card" id="homeNoticeCarousel" aria-label="홈 공지와 추천 자료"></article>
+          <article class="home-premium-card" aria-label="신경계 임상추론 프리미엄">
+            <div>
+              <p><span>BEST</span> 실습·국시 대비</p>
+              <h2>GCS부터 TBI까지<br />신경계 판단 흐름을 30분에</h2>
+              <ul>
+                <li>6편 · 58페이지</li>
+                <li>실제 자료 미리보기 제공</li>
+                <li>구매 후 평생 열람</li>
+              </ul>
+            </div>
+            <div class="home-premium-action">
+              <span><del>9,900원</del><strong>3,900원</strong></span>
+              <button type="button" data-home-premium-banner="fixed_home_card">구성 먼저 보기</button>
+            </div>
+          </article>
           <div class="quick-tags" aria-label="추천 검색어">
             <button type="button" data-query="ECG">ECG</button>
             <button type="button" data-query="신경계">신경계</button>
@@ -189,6 +209,6 @@
       window.PYM_SUPABASE_ANON_KEY = "sb_publishable_azcwJigJPfzpdcnNKFBm6g_dA_HQU-F";
       window.PYM_AGENT_API_URL = "https://park-yongmin-search.vercel.app/api/pym-agent";
     </script>
-    <script src="./src/main.js?v=20260714-3"></script>
+    <script src="./src/main.js?v=20260717-4"></script>
   </body>
 </html>

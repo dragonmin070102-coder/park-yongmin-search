@@ -1,3 +1,5 @@
+import { env, rpc } from "./_lib/supabase.js";
+
 const DEFAULT_SITE_URL = "https://park-yongmin-search.vercel.app";
 
 export const config = {
@@ -8,51 +10,12 @@ function json(res, status, payload) {
   res.status(status).json(payload);
 }
 
-function env(name, fallback = "") {
-  return String(process.env[name] || fallback).trim();
-}
-
-function normalizeSupabaseUrl(url) {
-  return String(url || "").trim().replace(/\/$/, "");
-}
-
 function authOk(req) {
-  const secret = env("BANK_ORDER_AUTOMATION_SECRET") || env("CRON_SECRET");
-  if (!secret) return true;
+  const secret = env("BANK_ORDER_AUTOMATION_SECRET") || env("CRON_SECRET") || env("ADMIN_ACCESS_SECRET");
+  if (!secret) return false;
   const authorization = String(req.headers.authorization || "");
   const headerSecret = String(req.headers["x-automation-secret"] || "");
   return authorization === `Bearer ${secret}` || headerSecret === secret;
-}
-
-function requireConfig() {
-  const supabaseUrl = normalizeSupabaseUrl(env("SUPABASE_URL") || env("PYM_SUPABASE_URL"));
-  const serviceKey = env("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !serviceKey) {
-    throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.");
-  }
-  return { supabaseUrl, serviceKey };
-}
-
-async function supabaseRequest(path, options = {}) {
-  const { supabaseUrl, serviceKey } = requireConfig();
-  const response = await fetch(`${supabaseUrl}/rest/v1/${path}`, {
-    ...options,
-    headers: {
-      apikey: serviceKey,
-      Authorization: `Bearer ${serviceKey}`,
-      "Content-Type": "application/json",
-      ...(options.headers || {})
-    }
-  });
-
-  if (!response.ok) {
-    const body = await response.text().catch(() => "");
-    throw new Error(`Supabase ${response.status}: ${body}`);
-  }
-
-  if (response.status === 204) return null;
-  const text = await response.text();
-  return text ? JSON.parse(text) : null;
 }
 
 function fromOrderRow(row) {
@@ -95,28 +58,19 @@ function orderFromWebhookBody(body) {
 }
 
 async function fetchPendingOrders(limit = 20) {
-  const rows = await supabaseRequest([
-    "bank_transfer_orders?select=*",
-    "status=eq.pending",
-    "order=created_at.asc",
-    `limit=${limit}`
-  ].join("&"));
-  return Array.isArray(rows) ? rows.map(fromOrderRow).filter(Boolean) : [];
+  const payload = await rpc("admin_dashboard_payload", { p_secret: env("ADMIN_ACCESS_SECRET") });
+  return (Array.isArray(payload?.bankOrders) ? payload.bankOrders : [])
+    .filter((order) => order.status === "pending")
+    .slice(0, Math.max(1, Math.min(Number(limit) || 20, 100)));
 }
 
 async function approveOrder(order) {
-  const now = new Date().toISOString();
-  const rows = await supabaseRequest(`bank_transfer_orders?id=eq.${encodeURIComponent(order.id)}&status=eq.pending`, {
-    method: "PATCH",
-    headers: { Prefer: "return=representation" },
-    body: JSON.stringify({
-      status: "approved",
-      approved_at: now,
-      updated_at: now
-    })
+  const result = await rpc("admin_update_bank_order", {
+    p_secret: env("ADMIN_ACCESS_SECRET"),
+    p_order_id: order.id,
+    p_action: "approve"
   });
-  const approved = Array.isArray(rows) && rows[0] ? fromOrderRow(rows[0]) : null;
-  return approved || { ...order, status: "approved", approvedAt: now, updatedAt: now };
+  return { ...order, ...result, status: "approved" };
 }
 
 async function postSlack(order, status) {

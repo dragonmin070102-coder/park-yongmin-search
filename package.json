@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "check": "node --check src/main.js && node --check api/pym-agent.js && node --check api/bank-order-automation.js"
+    "check": "node --check src/main.js && node --check api/pym-agent.js && node --check api/orders.js && node --check api/admin.js && node --check api/analytics.js && node --check api/bank-order-automation.js && node --check api/_lib/supabase.js"
   },
   "dependencies": {
     "openai": "^6.15.0"
