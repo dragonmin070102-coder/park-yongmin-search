@@ -4172,7 +4172,7 @@ function trackEvent(name, properties = {}) {
   safeStorageSet("pym.analyticsEvents", JSON.stringify(events.slice(-1000)));
   sendRemoteAnalytics(event);
 
-  if (!analyticsAdmin.hidden) {
+  if (!analyticsAdmin.hidden && adminUsername && adminSecret) {
     renderAnalyticsAdmin();
   }
 
