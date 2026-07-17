@@ -8023,3 +8023,36 @@ body.admin-mode .admin-hero-row button {
     margin-left: 8px;
   }
 }
+
+/* Keep the admin login and dashboard inside the mobile viewport. */
+@media (max-width: 900px) {
+  body.admin-mode {
+    overflow-x: hidden !important;
+  }
+
+  body.admin-mode .analytics-admin {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 14px 44px !important;
+  }
+
+  body.admin-mode .admin-top,
+  body.admin-mode #analyticsContent,
+  body.admin-mode .admin-shell,
+  body.admin-mode .admin-sidebar,
+  body.admin-mode .admin-workspace {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  body.admin-mode .admin-shell {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body.admin-mode .admin-side-nav {
+    max-width: 100%;
+  }
+}
