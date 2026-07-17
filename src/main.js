@@ -245,19 +245,19 @@ function renderAdminLogin(message = "") {
       <p class="eyebrow">Secure admin</p>
       <h2 id="admin-login-title">운영센터 로그인</h2>
       <p>주문·구매자 정보와 분석 데이터는 관리자 인증 후에만 표시됩니다.</p>
-      <form data-admin-login-form>
+      <form data-admin-login-form autocomplete="off">
         <label>
           <span>관리자 ID</span>
-          <input type="text" name="adminId" autocomplete="username" autocapitalize="none" spellcheck="false" required />
+          <input type="text" name="adminId" autocomplete="off" autocapitalize="none" spellcheck="false" required />
         </label>
         <label>
           <span>관리자 비밀번호</span>
-          <input type="password" name="adminSecret" autocomplete="current-password" required />
+          <input type="password" name="adminSecret" autocomplete="new-password" required />
         </label>
         <button type="submit">운영센터 열기</button>
       </form>
       ${message ? `<p class="admin-login-error" role="alert">${escapeHtml(message)}</p>` : ""}
-      <small>비밀번호는 이 브라우저 탭을 닫으면 자동으로 지워집니다.</small>
+      <small>새로고침하거나 이 탭을 닫으면 관리자 인증이 자동으로 해제됩니다.</small>
     </section>
   `;
 }
