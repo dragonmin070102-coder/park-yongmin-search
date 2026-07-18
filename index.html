@@ -2,6 +2,23 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      (() => {
+        const isLegacyHost = window.location.hostname === "dragonmin070102-coder.github.io";
+        if (!isLegacyHost) return;
+
+        const redirectAdminRoute = () => {
+          if (!/^#admin(?:$|-)/.test(window.location.hash)) return;
+          const target = new URL("https://park-yongmin-search.vercel.app/");
+          target.search = window.location.search;
+          target.hash = window.location.hash;
+          window.location.replace(target.href);
+        };
+
+        window.addEventListener("hashchange", redirectAdminRoute);
+        redirectAdminRoute();
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#3182f6" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
