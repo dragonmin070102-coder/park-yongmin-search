@@ -1,6 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import crypto from "node:crypto";
 import OpenAI from "openai";
+import { env, requestIp, rpc } from "./_lib/supabase.js";
 
 const MODEL = process.env.NVIDIA_MODEL || "moonshotai/kimi-k2.6";
 const NIM_BASE_URL = "https://integrate.api.nvidia.com/v1";
@@ -9,10 +11,36 @@ const RERANK_MODEL = process.env.NVIDIA_RERANK_MODEL || "nvidia/llama-nemotron-r
 const RERANK_URL = process.env.NVIDIA_RERANK_URL || "https://ai.api.nvidia.com/v1/retrieval/nvidia/llama-nemotron-rerank-1b-v2/reranking";
 const RERANK_TIMEOUT_MS = Number(process.env.NVIDIA_RERANK_TIMEOUT_MS || 7000);
 const RERANK_ENABLED = process.env.NVIDIA_RERANK_ENABLED !== "false";
+const DEFAULT_ALLOWED_ORIGIN = "https://park-yongmin-search.vercel.app";
 
 export const config = {
   maxDuration: 30
 };
+
+function allowedOrigins() {
+  return new Set(env("PYM_AGENT_ALLOWED_ORIGINS", env("PYM_AGENT_ALLOWED_ORIGIN", DEFAULT_ALLOWED_ORIGIN))
+    .split(",")
+    .map((value) => value.trim().replace(/\/$/, ""))
+    .filter(Boolean));
+}
+
+function applyCors(req, res) {
+  const origin = String(req.headers.origin || "").replace(/\/$/, "");
+  const allowed = allowedOrigins();
+  res.setHeader("Vary", "Origin");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  if (!origin) return true;
+  if (!allowed.has(origin)) return false;
+  res.setHeader("Access-Control-Allow-Origin", origin);
+  return true;
+}
+
+function hashClient(req) {
+  const secret = env("AGENT_HASH_SECRET") || env("ORDER_HASH_SECRET") || env("ADMIN_ACCESS_SECRET");
+  if (!secret) return "";
+  return crypto.createHmac("sha256", secret).update(requestIp(req)).digest("hex");
+}
 
 function normalizeResourceData(payload) {
   const items = Array.isArray(payload) ? payload : payload.resources;
@@ -205,9 +233,12 @@ async function withTimeout(promise, ms) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", process.env.PYM_AGENT_ALLOWED_ORIGIN || "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  if (!applyCors(req, res)) {
+    res.status(403).json({ error: "허용되지 않은 요청 출처입니다." });
+    return;
+  }
 
   if (req.method === "OPTIONS") {
     res.status(204).end();
@@ -224,6 +255,12 @@ export default async function handler(req, res) {
     return;
   }
 
+  const clientHash = hashClient(req);
+  if (!clientHash) {
+    res.status(503).json({ error: "AI 요청 보호용 비밀키가 설정되지 않았어요." });
+    return;
+  }
+
   let body;
   try {
     body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
@@ -234,6 +271,21 @@ export default async function handler(req, res) {
   const question = String(body.question || "").trim();
   if (!question) {
     res.status(400).json({ error: "질문을 입력해주세요." });
+    return;
+  }
+  if (question.length > 600) {
+    res.status(400).json({ error: "질문은 600자 이하로 입력해주세요." });
+    return;
+  }
+
+  try {
+    await rpc("consume_pym_agent_request", {
+      p_secret: env("ADMIN_ACCESS_SECRET"),
+      p_client_hash: clientHash
+    });
+  } catch (error) {
+    const status = String(error?.message || "").includes("너무 많") ? 429 : 503;
+    res.status(status).json({ error: status === 429 ? error.message : "AI 요청 보호 기능을 확인하지 못했어요." });
     return;
   }
 

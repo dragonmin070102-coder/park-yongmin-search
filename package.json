@@ -4,9 +4,10 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "check": "node --check src/main.js && node --check api/pym-agent.js && node --check api/orders.js && node --check api/admin.js && node --check api/analytics.js && node --check api/bank-order-automation.js && node --check api/_lib/supabase.js"
+    "check": "node --check src/main.js && node --check api/pym-agent.js && node --check api/orders.js && node --check api/admin.js && node --check api/analytics.js && node --check api/bank-order-automation.js && node --check api/_lib/supabase.js && node --check analytics/export.mjs",
+    "analytics:export": "node --env-file=.env.admin.local analytics/export.mjs"
   },
   "dependencies": {
-    "openai": "^6.15.0"
+    "openai": "6.15.0"
   }
 }

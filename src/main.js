@@ -34,7 +34,7 @@ function safeStorageRemove(key) {
   }
 }
 
-const FALLBACK_RESOURCE_DATA = {"updatedAt":"2026-06-22T23:35:00.000+09:00","resources":[{"id":"acs-ecg","title":"ACS + ECG","displayTitle":"ACS와 ECG","type":"심혈관","format":"PDF","source":"박용민 컨텐츠 정리본 PDF","url":"https://drive.google.com/file/d/1xfPlC4hBOCJJtfLiDMn3_9XrshpEjdHd/view?usp=drivesdk","tags":["ACS","ECG","STEMI","NSTEMI","협심증","심근경색","흉통","흉통 4단계","Troponin","ECG vector","심혈관","감별정리","핵심"],"summary":"급성관상동맥증후군을 ECG 변화와 연결해서 볼 수 있는 자료입니다.","points":["흉통 환자를 ACS 관점으로 분류할 때 유용합니다.","ECG 키워드로 같이 검색되도록 묶어두면 심근경색 자료와 연결성이 좋습니다.","영상에서 짧게 설명하고 자세한 판단 기준은 원본 PDF로 넘기기 좋은 자료입니다."],"useCase":"흉통, ACS, ECG 판독 흐름을 한 번에 찾게 하고 싶을 때","confidence":"파일 확인","system":"심혈관","intent":"감별정리","stage":"핵심","evidence":"본문에서 흉통 4단계 구조를 좁아짐, 터짐, 부분막힘, 완전막힘으로 정리하고 Stable angina, Unstable angina, NSTEMI, STEMI를 비교합니다.","related":["mi","acls"],"keywords":["흉통 4단계","Troponin","NSTEMI","STEMI","ECG vector"],"rank":0},{"id":"mi","title":"Myocardial ischemia and infarction","displayTitle":"심근허혈 vs 심근경색","type":"심혈관","format":"PDF","source":"박용민 컨텐츠 정리본 PDF","url":"https://drive.google.com/file/d/1aTqToxtbH1B9Sqr00j2nQ4Lx21ed6r1v/view?usp=drivesdk","tags":["MI","ischemia","infarction","ECG","ST elevation","ST depression","NTG","plaque","흉통","협심증","심근경색","ST 변화","plaque rupture","NTG 반응","심혈관","개념이해","심화"],"summary":"stable plaque와 unstable plaque의 차이에서 시작해 허혈과 경색이 왜 다르게 나타나는지 설명하는 자료입니다.","points":["허혈은 산소 공급이 수요보다 부족해지는 상태이며, 보통 휴식이나 NTG에 반응합니다.","경색은 plaque rupture와 혈전 형성으로 혈관이 막혀 심근 손상이 진행되는 상황입니다.","자료에서는 ischemia는 ST depression, infarction은 ST elevation으로 연결해 ECG 원리를 설명합니다."],"useCase":"협심증과 심근경색 차이, ST 변화 원리, 흉통 환자 설명 자료가 필요할 때","confidence":"본문 확인","system":"심혈관","intent":"개념이해","stage":"심화","evidence":"본문에서 stable plaque와 vulnerable plaque, ischemia와 infarction, ST depression/elevation의 차이를 연결해 설명합니다.","related":["acs-ecg","acls"],"keywords":["협심증","심근경색","ST 변화","plaque rupture","NTG 반응"],"rank":1},{"id":"iicp","title":"IICP management","displayTitle":"두개내압 상승 관리","type":"신경계","format":"PDF","source":"박용민 컨텐츠 정리본 PDF","url":"https://drive.google.com/file/d/1c0o7fDaGoYst9PbLAj83FG1zWXVH1cjq/view?usp=drivesdk","tags":["IICP","ICP","두개내압","신경계","뇌압","의식","간호중재","의식 변화","신경계 사정","중환자","핵심"],"summary":"두개내압 상승 상황에서 관찰해야 할 변화와 관리 방향을 찾기 좋은 자료입니다.","points":["신경계 환자 사정과 우선순위 간호를 연결하기 좋습니다.","의식 변화, 활력징후, 체위, 자극 최소화 같은 검색어와 함께 노출되면 좋습니다.","신경계 질환 폴더 자료와 묶어 추천하면 체류 시간이 늘어납니다."],"useCase":"IICP 간호중재, 신경계 중환자 사정, 케이스 스터디 보조","confidence":"파일 확인","system":"신경계","intent":"간호중재","stage":"핵심","evidence":"Drive에 IICP management PDF로 확인된 자료입니다. 신경계 사정과 두개내압 상승 관리 자료로 분류했습니다.","related":["gbs","als","ms"],"keywords":["두개내압","의식 변화","신경계 사정","중환자"],"rank":2},{"id":"ast-alt-ratio","title":"AST:ALT 수치비교 해석","displayTitle":"AST/ALT 수치 비교","type":"검사수치","format":"PDF","source":"박용민 컨텐츠 정리본 PDF","url":"https://drive.google.com/file/d/1JyQF5XsHs48UPl_GTM3SJpba5J1DDcMu/view?usp=drivesdk","tags":["AST","ALT","간수치","검사수치","liver","비교","AST/ALT ratio","미토콘드리아 손상","세포질 손상","검사해석","핵심"],"summary":"AST와 ALT를 따로 외우는 대신 수치 비교와 해석 흐름으로 볼 수 있는 자료입니다.","points":["검사수치 검색의 대표 입구로 두기 좋습니다.","AST 단독, ALT 단독 자료와 상호 추천되도록 묶었습니다.","간호학과 학생들이 케이스 lab data 해석할 때 바로 찾을 가능성이 큽니다."],"useCase":"lab 해석, 간수치 비교, 케이스 스터디 검사 결과 설명","confidence":"파일 확인","system":"검사수치","intent":"검사해석","stage":"핵심","evidence":"본문에서 AST/ALT 비율을 단순 간수치 상승이 아니라 간세포와 미토콘드리아 중 어디서부터 손상됐는지 읽는 지표로 설명합니다.","related":["ast","alt"],"keywords":["AST/ALT ratio","미토콘드리아 손상","세포질 손상","간수치"],"rank":3},{"id":"pneumothorax-cxr","title":"pneumothorax에서의 CXR","displayTitle":"기흉 CXR 읽기","type":"호흡기","format":"PDF","source":"박용민 컨텐츠 정리본 PDF","url":"https://drive.google.com/file/d/1Mx8exaX4IpWS7KvAR9EEvOSoLo3PFDYP/view?usp=drivesdk","tags":["pneumothorax","기흉","CXR","Chest X-ray","흉부","호흡곤란","흉부 영상","호흡기","영상판독","기초"],"summary":"기흉을 흉부 X-ray에서 어떻게 봐야 하는지 연결해 보여줄 수 있는 영상 보조 자료입니다.","points":["CXR 검색 시 ACS/ECG와 별도로 흉부 영상 자료로 노출되게 구성했습니다.","기흉의 임상 증상과 영상 소견을 연결하는 카드형 설명에 적합합니다.","학생들이 Chest PA/AP, CXR 같은 실무형 콘텐츠에서 같이 찾을 가능성이 큽니다."],"useCase":"기흉 영상 소견, 흉부 X-ray 기초 설명, 실습 전 빠른 확인","confidence":"파일 확인","system":"호흡기","intent":"영상판독","stage":"기초","evidence":"Drive에 pneumothorax에서의 CXR PDF로 확인된 자료입니다. 흉부 X-ray와 기흉 검색에 우선 노출되도록 분류했습니다.","related":["acs-ecg","pneumonia-case-study","abga"],"keywords":["기흉","CXR","Chest X-ray","흉부 영상"],"rank":4},{"id":"gbs","title":"GBS 임상추론 박용민","displayTitle":"길랭-바레 증후군 임상추론","type":"신경계","format":"PDF","source":"신경계 질환 폴더","url":"https://drive.google.com/file/d/1qI6H7NXcWDEIq5Hq8eGJSyYGWozFN9jp/view?usp=drivesdk","tags":["GBS","Guillain-Barre","길랭바레","신경계","상행성 마비","임상추론","호흡근","심화"],"summary":"GBS를 신경계 임상추론 콘텐츠로 연결하는 자료입니다.","points":["상행성 마비, 호흡근 침범, 신경계 감별 키워드와 잘 맞습니다.","콘텐츠 분석 문서에서 판단형 콘텐츠는 댓글 반응이 좋은 축으로 확인됐습니다.","학생들이 감별 포인트를 찾을 때 상세 PDF로 연결하기 좋습니다."],"useCase":"GBS 감별, 신경계 응급 사정, 호흡근 약화 포인트","confidence":"파일 확인","system":"신경계","intent":"임상추론","stage":"심화","evidence":"신경계 질환 폴더에서 GBS 임상추론 PDF로 확인된 자료입니다. 상행성 마비와 호흡근 침범 감별 키워드로 분류했습니다.","related":["mg","als","ms","khsim-simulation"],"keywords":["GBS","길랭바레","상행성 마비","호흡근"],"rank":5},{"id":"mg","title":"MG 임상추론 박용민","displayTitle":"중증근무력증 임상추론","type":"신경계","format":"PDF","source":"신경계 질환 폴더","url":"https://drive.google.com/file/d/1H4nkqNIevngtKMr56ajvp8TWRzKSGbJu/view?usp=drivesdk","tags":["MG","myasthenia gravis","중증근무력증","신경계","근력저하","임상추론","호흡근","심화"],"summary":"MG를 임상추론 방식으로 정리한 신경계 질환 자료입니다.","points":["근력저하, 피로, 호흡근 약화 같은 키워드와 연결되도록 설계했습니다.","GBS, ALS와 비교해 찾는 사용자를 고려해 신경계 묶음으로 배치했습니다.","간호학과 케이스에서 증상 변화와 우선순위 설명에 유용합니다."],"useCase":"중증근무력증 감별, 신경근 질환 정리","confidence":"파일 확인","system":"신경계","intent":"임상추론","stage":"심화","evidence":"신경계 질환 폴더에서 MG 임상추론 PDF로 확인된 자료입니다. 근력저하와 신경근 질환 감별로 분류했습니다.","related":["gbs","als","ms"],"keywords":["MG","중증근무력증","근력저하","호흡근"],"rank":6},{"id":"als","title":"ALS 임상추론 박용민","displayTitle":"ALS 임상추론","type":"신경계","format":"PDF","source":"신경계 질환 폴더","url":"https://drive.google.com/file/d/1GanISYp5A5b3zPlj0fY37zjlJ3VGdH6r/view?usp=drivesdk","tags":["ALS","amyotrophic lateral sclerosis","루게릭","신경계","운동신경원","임상추론","진행성 근력저하","심화"],"summary":"ALS를 신경계 임상추론 흐름으로 찾을 수 있는 자료입니다.","points":["운동신경원 질환과 진행성 근력저하 키워드로 검색되게 구성했습니다.","MS, MG, GBS와 비교 검색될 수 있게 신경계 카테고리에 묶었습니다.","긴 설명보다 원본 자료로 넘어가는 길을 분명하게 보여주는 카드가 좋습니다."],"useCase":"ALS 개념 정리, 신경계 질환 비교, 임상추론 학습","confidence":"파일 확인","system":"신경계","intent":"임상추론","stage":"심화","evidence":"신경계 질환 폴더에서 ALS 임상추론 PDF로 확인된 자료입니다. 운동신경원 질환과 진행성 근력저하로 분류했습니다.","related":["mg","gbs","ms"],"keywords":["ALS","루게릭","운동신경원","진행성 근력저하"],"rank":7},{"id":"ms","title":"MS 임상추론 박용민","displayTitle":"다발성경화증 임상추론","type":"신경계","format":"PDF","source":"신경계 질환 폴더","url":"https://drive.google.com/file/d/16RhNgiR8NTJI8bTgxJYpi-pihKDqZahY/view?usp=drivesdk","tags":["MS","multiple sclerosis","다발성경화증","신경계","임상추론","신경계 감별","심화"],"summary":"MS를 신경계 임상추론 관점에서 찾을 수 있는 자료입니다.","points":["신경계 감별 학습에서 MG, GBS, ALS, PD 자료와 같이 추천하기 좋습니다.","질환명 약어로 검색해도 나오도록 태그를 넣었습니다.","학생들이 헷갈리는 신경계 질환 묶음의 한 축으로 쓰기 좋습니다."],"useCase":"신경계 질환 감별, MS 케이스 정리, 임상추론 학습","confidence":"파일 확인","system":"신경계","intent":"임상추론","stage":"심화","evidence":"신경계 질환 폴더에서 MS 임상추론 PDF로 확인된 자료입니다. 신경계 질환 감별 묶음에 포함했습니다.","related":["mg","gbs","als","pd"],"keywords":["MS","다발성경화증","신경계 감별"],"rank":8},{"id":"pd","title":"PD 임상추론 박용민","displayTitle":"파킨슨병 임상추론","type":"신경계","format":"PDF","source":"신경계 질환 폴더","url":"https://drive.google.com/file/d/1wW1zdJ06-cJzHl6b1PkdQWKzmntl58tg/view?usp=drivesdk","tags":["PD","Parkinson disease","파킨슨병","신경계","운동증상","임상추론","서동","강직","심화"],"summary":"파킨슨병을 임상추론 관점에서 학습할 수 있는 자료입니다.","points":["떨림, 서동, 강직 등 운동증상 검색과 연결하기 좋습니다.","신경계 질환 폴더의 다른 임상추론 PDF와 함께 보여주면 좋습니다.","노인간호와 신경계 케이스 모두에서 찾을 수 있게 태그를 넓게 잡았습니다."],"useCase":"파킨슨병 증상 이해, 신경계 케이스 스터디","confidence":"파일 확인","system":"신경계","intent":"임상추론","stage":"심화","evidence":"신경계 질환 폴더에서 PD 임상추론 PDF로 확인된 자료입니다. 운동증상과 노인 신경계 케이스로 분류했습니다.","related":["ms","mg","gbs"],"keywords":["PD","파킨슨병","운동증상","서동","강직"],"rank":9},{"id":"thyroidectomy","title":"thyroidectomy","displayTitle":"갑상선절제술","type":"수술간호","format":"PDF","source":"박용민 컨텐츠 정리본 PDF","url":"https://drive.google.com/file/d/1zwkzOFX8v9nLOIs47W_kUJC9Sx5hKmAj/view?usp=drivesdk","tags":["thyroidectomy","갑상선절제술","수술간호","합병증","칼슘","기도","출혈","저칼슘혈증","간호중재","핵심"],"summary":"갑상선절제술 전후 간호와 합병증 포인트를 찾는 데 쓸 수 있는 자료입니다.","points":["수술간호 카테고리의 시작 자료로 좋습니다.","기도, 출혈, 저칼슘혈증 같은 핵심 키워드와 연결될 수 있습니다.","케이스 과제에서 수술 후 관찰 포인트를 찾는 사용자에게 적합합니다."],"useCase":"수술 전후 간호, 갑상선 수술 합병증 확인","confidence":"파일 확인","system":"수술간호","intent":"간호중재","stage":"핵심","evidence":"Drive에 thyroidectomy PDF로 확인된 자료입니다. 갑상선절제술 전후 관찰과 합병증 키워드로 분류했습니다.","related":[],"keywords":["갑상선절제술","기도","출혈","저칼슘혈증"],"rank":10},{"id":"ast","title":"Aspartate aminotransferase","displayTitle":"AST 설명","type":"검사수치","format":"PDF","source":"박용민 컨텐츠 정리본 PDF","url":"https://drive.google.com/file/d/1ukDpuad1OtJHQR2_4TjRwlZq8X5hk0-Z/view?usp=drivesdk","tags":["AST","Aspartate aminotransferase","간수치","검사","lab","검사수치","검사해석","기초"],"summary":"AST가 무엇을 반영하는지 따로 확인할 수 있는 검사수치 자료입니다.","points":["AST/ALT 비교 자료로 넘어가기 전 기초 설명 카드로 쓰기 좋습니다.","검사수치 카테고리에 묶어 두면 검색 경험이 깔끔합니다.","ALT 자료와 나란히 보여주면 학습자가 차이를 빠르게 잡을 수 있습니다."],"useCase":"AST 단독 개념 확인, 검사 결과 해석 보조","confidence":"파일 확인","system":"검사수치","intent":"검사해석","stage":"기초","evidence":"Drive에 Aspartate aminotransferase PDF로 확인된 자료입니다. AST 단독 개념과 AST/ALT 비교 전 기초 자료로 분류했습니다.","related":["ast-alt-ratio","alt"],"keywords":["AST","Aspartate aminotransferase","간수치"],"rank":11},{"id":"alt","title":"Alanine aminotransferase","displayTitle":"ALT 설명","type":"검사수치","format":"PDF","source":"박용민 컨텐츠 정리본 PDF","url":"https://drive.google.com/file/d/1sVakiSM1lqXKwiAvbaxGBXWds5d6zwKw/view?usp=drivesdk","tags":["ALT","Alanine aminotransferase","간수치","검사","lab","검사수치","검사해석","기초"],"summary":"ALT의 의미와 간 관련 검사 해석을 찾을 수 있는 자료입니다.","points":["AST 자료와 함께 검사수치 검색의 기본 묶음으로 좋습니다.","케이스 스터디에서 lab abnormality 설명으로 연결하기 좋습니다.","비교형 자료보다 먼저 보는 기초 카드로 배치할 수 있습니다."],"useCase":"ALT 단독 개념 확인, 간수치 해석 보조","confidence":"파일 확인","system":"검사수치","intent":"검사해석","stage":"기초","evidence":"Drive에 Alanine aminotransferase PDF로 확인된 자료입니다. ALT 단독 개념과 AST/ALT 비교 전 기초 자료로 분류했습니다.","related":["ast-alt-ratio","ast"],"keywords":["ALT","Alanine aminotransferase","간수치"],"rank":12},{"id":"siadh","title":"SIADH clinical reasoning","displayTitle":"SIADH 임상추론","type":"검사수치","format":"PDF","source":"박용민 임상추론 PDF","url":"https://drive.google.com/file/d/14E7UgDyYbJ6oTIbslcwLhhbku2SYn8qy/view?usp=drivesdk","tags":["SIADH","항이뇨호르몬 부적절분비 증후군","Syndrome of Inappropriate Antidiuretic Hormone secretion","저나트륨혈증","hyponatremia","ADH","소세포폐암","SCLC","혈장 삼투압","요 삼투압","농축뇨","수분제한","I/O","LOC","검사수치","임상추론","심화"],"summary":"ADH 과다분비로 수분 재흡수가 증가해 부종 없는 희석성 저나트륨혈증이 나타나는 SIADH 임상추론 자료입니다.","points":["소세포폐암 환자에서 부종 없이 체중이 늘고 Na가 낮아지며 소변이 농축되는 패턴을 SIADH로 연결합니다.","혈장 삼투압은 낮은데 요 삼투압은 높은 부조화가 핵심 단서이며, SIADH와 DI 감별에 유용합니다.","간호 우선순위는 의식수준 확인, 매일 체중, 정확한 I/O이며 Na < 120, 의식변화, 발작, 과교정은 즉시 보고해야 합니다."],"useCase":"저나트륨혈증 감별, SIADH/DI 비교, 소세포폐암 환자 전해질 이상, 실습 중 LOC·I/O 사정 포인트 확인","confidence":"본문 확인","system":"검사수치","intent":"임상추론","stage":"심화","evidence":"Drive에 새로 업로드된 SIADH_임상추론_박용민 PDF에서 ADH 과다분비, 희석성 저나트륨혈증, 부종 없는 체중 증가, 혈장/요 삼투압 부조화, 간호 사정과 보고 기준을 확인했습니다.","related":["iicp","pneumothorax-cxr","ast-alt-ratio"],"keywords":["SIADH","저나트륨혈증","hyponatremia","ADH","SCLC","소세포폐암","혈장 삼투압","요 삼투압","농축뇨","수분제한","LOC","I/O","삼투성 탈수초증후군","ODS"],"rank":13},{"id":"abga","title":"ABGA arterial blood gas analysis","displayTitle":"ABGA 동맥혈가스분석","type":"검사수치","format":"PDF","source":"박용민 임상추론 PDF","url":"./assets/pdfs/abga-arterial-blood-gas-analysis.pdf","tags":["ABGA","ABG","동맥혈가스분석","Arterial Blood Gas Analysis","pH","PaCO2","HCO3","PaO2","SaO2","Base Excess","BE","ROME","호흡성 산증","대사성 산증","보상","부분 보상","COPD","저산소혈증","CO2 narcosis","Allen test","검사수치","임상추론","핵심"],"summary":"pH, PaCO2, HCO3, PaO2로 산염기 불균형과 보상 여부를 추론하는 ABGA 임상추론 자료입니다.","points":["ROME 법칙으로 호흡성/대사성 문제를 구분하고 pH 정상범위 여부로 완전 보상과 부분 보상을 판단합니다.","COPD 사례에서 pH 7.32, PaCO2 58, HCO3 28, PaO2 56을 부분 보상된 호흡성 산증과 저산소혈증으로 연결합니다.","PaO2 60mmHg 미만, 의식수준 저하, 호흡양상 악화, 청색증은 ABGA 결과와 함께 즉시 보고해야 할 기준으로 정리합니다."],"useCase":"ABGA 해석 순서, 산염기 불균형 감별, COPD 호흡성 산증, 실습 중 ABGA 보고 기준 확인","confidence":"본문 확인","system":"검사수치","intent":"임상추론","stage":"핵심","evidence":"로컬로 제공된 ABGA_동맥혈가스분석 PDF에서 정상범위, ROME 법칙, Base Excess, COPD 사례, 부분 보상된 호흡성 산증, 저산소혈증, 간호 우선순위와 보고 기준을 확인했습니다.","related":["pneumothorax-cxr","gbs","siadh","ast-alt-ratio","acls","pneumonia-case-study","khsim-simulation"],"keywords":["ABGA","ABG","동맥혈가스분석","pH","PaCO2","HCO3","PaO2","Base Excess","BE","ROME","호흡성 산증","부분 보상","COPD","저산소혈증","CO2 narcosis","Allen test"],"rank":14},{"id":"acls","title":"ACLS clinical reasoning","displayTitle":"ACLS 임상추론","type":"심혈관","format":"PDF","source":"박용민 임상추론 PDF","url":"./assets/pdfs/acls-clinical-reasoning.pdf","image":"./assets/acls-clinical-reasoning.png","tags":["ACLS","Advanced Cardiovascular Life Support","심정지","CPR","BLS","고품질 CPR","리듬분석","제세동","비제세동","VF","pVT","Asystole","PEA","Epinephrine","Amiodarone","ROSC","응급간호","심혈관","임상추론","핵심"],"summary":"심정지 상황에서 고품질 CPR, 리듬 분석, 제세동·비제세동 알고리즘을 임상 흐름으로 연결하는 ACLS 임상추론 자료입니다.","points":["심정지 환자에서 의식·호흡·맥박 확인 후 고품질 CPR과 도움 요청으로 이어지는 초기 대응 흐름을 정리합니다.","VF/pVT처럼 제세동이 필요한 리듬과 Asystole/PEA처럼 비제세동 리듬을 구분해 ACLS 알고리즘으로 연결합니다.","Epinephrine, Amiodarone, ROSC 이후 사정처럼 신규간호사와 간호학생이 헷갈리기 쉬운 역할과 보고 포인트를 확인하기 좋습니다."],"useCase":"ACLS 알고리즘, 심정지 초기 대응, 제세동/비제세동 리듬 감별, 응급실·중환자실 실습 전 빠른 확인","confidence":"파일 확인","system":"심혈관","intent":"임상추론","stage":"핵심","evidence":"로컬로 제공된 ACLS_임상추론_박용민 PDF를 사이트 자료로 추가했습니다. 심정지 대응, CPR, 리듬 분석, ACLS 약물과 ROSC 이후 사정을 중심 키워드로 분류했습니다.","related":["acs-ecg","mi","abga","pneumonia-case-study","khsim-simulation"],"keywords":["ACLS","심정지","CPR","고품질 CPR","리듬분석","제세동","비제세동","VF","pVT","Asystole","PEA","Epinephrine","Amiodarone","ROSC"],"rank":15},{"id":"pneumonia-case-study","title":"Pneumonia case study clinical reasoning","displayTitle":"폐렴 케이스스터디 임상추론","type":"호흡기","format":"Google Doc","source":"박용민 임상추론 Google Doc","url":"https://docs.google.com/document/d/1Ok0jMz-Ik6OI0ePrd20sdxd1ITsM9JYt/edit","bannerTitle":"폐렴 케이스스터디, 이렇게 쓰면 망합니다","bannerDescription":"WBC 15,000을 적고 끝내면 검사 결과 정리예요. 수치 → 의미 → 병태생리 → 간호진단으로 연결해야 케이스가 살아납니다.","bannerAction":"망하지 않는 흐름 보기","bannerSourceLabel":"원본 문서","tags":["폐렴","Pneumonia","케이스스터디","임상추론","가스교환 장애","기도 청결","SpO2","ABGA","WBC","CRP","Procalcitonin","CURB-65","객담","항생제","반좌위","산소요법","패혈증","호흡기","핵심"],"summary":"폐렴 케이스를 단순 검사 결과 정리가 아니라 수치, 의미, 병태생리, 간호진단으로 연결하는 임상추론 자료입니다.","points":["폐렴의 핵심을 폐포 염증과 삼출액으로 인한 가스교환 장애로 잡고 SpO2, ABGA, WBC, CRP를 연결합니다.","실습생 케이스가 약해지는 지점인 수치 나열, 해석 누락, 병태생리 연결 부족을 피하는 흐름을 정리합니다.","산소요법, 반좌위, 객담 배출, 항생제 전 배양 채취, SpO2 저하와 의식변화 보고 기준까지 케이스에 바로 연결하기 좋습니다."],"useCase":"폐렴 케이스스터디, 호흡기 실습, SpO2/ABGA 해석, 가스교환 장애 간호진단, 보고 기준 정리","confidence":"본문 확인","system":"호흡기","intent":"임상추론","stage":"핵심","evidence":"Drive 문서 폐렴_케이스스터디_임상추론에서 WBC, CRP, SpO2, ABGA, CURB-65, 수치 해석, 병태생리 연결, 간호진단과 보고 기준을 확인했습니다.","related":["pneumothorax-cxr","abga","acls","khsim-simulation"],"keywords":["폐렴","Pneumonia","케이스스터디","WBC 15000","SpO2 89","CRP","ABGA","CURB-65","가스교환 장애","비효과적 기도청결","항생제","객담 배양","반좌위","산소요법","패혈증"],"rank":16},{"id":"khsim-simulation","title":"KHSIM nursing simulation","displayTitle":"KHSIM 간호 시뮬레이션","type":"시뮬레이션","format":"Web App","source":"PYM KHSIM GitHub Pages","url":"https://dragonmin070102-coder.github.io/KHSIM/","tags":["KHSIM","시뮬레이션","간호술기","환자 시나리오","실습","응급상황","PC 권장","태블릿 권장","임상추론"],"summary":"실제 환자 시나리오처럼 화면을 보며 간호 판단을 연습하는 KHSIM 시뮬레이션입니다. 모바일보다 태블릿이나 PC에서 체험하는 것을 권장합니다.","points":["KHSIM은 검색 자료를 읽고 끝나는 것이 아니라 환자 상태를 보며 판단을 연습하는 체험형 콘텐츠입니다.","모바일에서는 화면과 조작 영역이 좁아 제대로 체험하기 어렵기 때문에 태블릿 또는 PC 환경을 권장합니다.","ABGA, ACLS, 호흡기 케이스처럼 판단 흐름이 필요한 자료와 연결해 학습 루트로 확장하기 좋습니다."],"useCase":"실습 전 시뮬레이션 체험, 간호 판단 연습, 박용민 PDF 학습 후 적용 훈련","confidence":"서비스 연결","system":"시뮬레이션","intent":"실습훈련","stage":"체험","evidence":"PYM에서 연결 중인 KHSIM GitHub Pages 시뮬레이션 서비스입니다. 모바일보다 큰 화면에서 안정적으로 체험하도록 안내합니다.","related":["abga","acls","pneumonia-case-study","gbs"],"keywords":["KHSIM","간호 시뮬레이션","시뮬레이션","실습훈련","환자 시나리오","PC","태블릿"],"rank":17}]};
+const FALLBACK_RESOURCE_DATA = {"updatedAt":"2026-06-22T23:35:00.000+09:00","resources":[{"id":"acs-ecg","title":"ACS + ECG","displayTitle":"ACS와 ECG","type":"심혈관","format":"PDF","source":"박용민 컨텐츠 정리본 PDF","url":"https://drive.google.com/file/d/1xfPlC4hBOCJJtfLiDMn3_9XrshpEjdHd/view?usp=drivesdk","tags":["ACS","ECG","STEMI","NSTEMI","협심증","심근경색","흉통","흉통 4단계","Troponin","ECG vector","심혈관","감별정리","핵심"],"summary":"급성관상동맥증후군을 ECG 변화와 연결해서 볼 수 있는 자료입니다.","points":["흉통 환자를 ACS 관점으로 분류할 때 유용합니다.","ECG 키워드로 같이 검색되도록 묶어두면 심근경색 자료와 연결성이 좋습니다.","영상에서 짧게 설명하고 자세한 판단 기준은 원본 PDF로 넘기기 좋은 자료입니다."],"useCase":"흉통, ACS, ECG 판독 흐름을 한 번에 찾게 하고 싶을 때","confidence":"파일 확인","system":"심혈관","intent":"감별정리","stage":"핵심","evidence":"본문에서 흉통 4단계 구조를 좁아짐, 터짐, 부분막힘, 완전막힘으로 정리하고 Stable angina, Unstable angina, NSTEMI, STEMI를 비교합니다.","related":["mi","acls"],"keywords":["흉통 4단계","Troponin","NSTEMI","STEMI","ECG vector"],"rank":0},{"id":"mi","title":"Myocardial ischemia and infarction","displayTitle":"심근허혈 vs 심근경색","type":"심혈관","format":"PDF","source":"박용민 컨텐츠 정리본 PDF","url":"https://drive.google.com/file/d/1aTqToxtbH1B9Sqr00j2nQ4Lx21ed6r1v/view?usp=drivesdk","tags":["MI","ischemia","infarction","ECG","ST elevation","ST depression","NTG","plaque","흉통","협심증","심근경색","ST 변화","plaque rupture","NTG 반응","심혈관","개념이해","심화"],"summary":"stable plaque와 unstable plaque의 차이에서 시작해 허혈과 경색이 왜 다르게 나타나는지 설명하는 자료입니다.","points":["허혈은 산소 공급이 수요보다 부족해지는 상태이며, 보통 휴식이나 NTG에 반응합니다.","경색은 plaque rupture와 혈전 형성으로 혈관이 막혀 심근 손상이 진행되는 상황입니다.","자료에서는 ischemia는 ST depression, infarction은 ST elevation으로 연결해 ECG 원리를 설명합니다."],"useCase":"협심증과 심근경색 차이, ST 변화 원리, 흉통 환자 설명 자료가 필요할 때","confidence":"본문 확인","system":"심혈관","intent":"개념이해","stage":"심화","evidence":"본문에서 stable plaque와 vulnerable plaque, ischemia와 infarction, ST depression/elevation의 차이를 연결해 설명합니다.","related":["acs-ecg","acls"],"keywords":["협심증","심근경색","ST 변화","plaque rupture","NTG 반응"],"rank":1},{"id":"iicp","title":"IICP management","displayTitle":"두개내압 상승 관리","type":"신경계","format":"PDF","source":"박용민 컨텐츠 정리본 PDF","url":"https://drive.google.com/file/d/1c0o7fDaGoYst9PbLAj83FG1zWXVH1cjq/view?usp=drivesdk","tags":["IICP","ICP","두개내압","신경계","뇌압","의식","간호중재","의식 변화","신경계 사정","중환자","핵심"],"summary":"두개내압 상승 상황에서 관찰해야 할 변화와 관리 방향을 찾기 좋은 자료입니다.","points":["신경계 환자 사정과 우선순위 간호를 연결하기 좋습니다.","의식 변화, 활력징후, 체위, 자극 최소화 같은 검색어와 함께 노출되면 좋습니다.","신경계 질환 폴더 자료와 묶어 추천하면 체류 시간이 늘어납니다."],"useCase":"IICP 간호중재, 신경계 중환자 사정, 케이스 스터디 보조","confidence":"파일 확인","system":"신경계","intent":"간호중재","stage":"핵심","evidence":"Drive에 IICP management PDF로 확인된 자료입니다. 신경계 사정과 두개내압 상승 관리 자료로 분류했습니다.","related":["gbs","als","ms"],"keywords":["두개내압","의식 변화","신경계 사정","중환자"],"rank":2},{"id":"ast-alt-ratio","title":"AST:ALT 수치비교 해석","displayTitle":"AST/ALT 수치 비교","type":"검사수치","format":"PDF","source":"박용민 컨텐츠 정리본 PDF","url":"https://drive.google.com/file/d/1JyQF5XsHs48UPl_GTM3SJpba5J1DDcMu/view?usp=drivesdk","tags":["AST","ALT","간수치","검사수치","liver","비교","AST/ALT ratio","미토콘드리아 손상","세포질 손상","검사해석","핵심"],"summary":"AST와 ALT를 따로 외우는 대신 수치 비교와 해석 흐름으로 볼 수 있는 자료입니다.","points":["검사수치 검색의 대표 입구로 두기 좋습니다.","AST 단독, ALT 단독 자료와 상호 추천되도록 묶었습니다.","간호학과 학생들이 케이스 lab data 해석할 때 바로 찾을 가능성이 큽니다."],"useCase":"lab 해석, 간수치 비교, 케이스 스터디 검사 결과 설명","confidence":"파일 확인","system":"검사수치","intent":"검사해석","stage":"핵심","evidence":"본문에서 AST/ALT 비율을 단순 간수치 상승이 아니라 간세포와 미토콘드리아 중 어디서부터 손상됐는지 읽는 지표로 설명합니다.","related":["ast","alt"],"keywords":["AST/ALT ratio","미토콘드리아 손상","세포질 손상","간수치"],"rank":3},{"id":"pneumothorax-cxr","title":"pneumothorax에서의 CXR","displayTitle":"기흉 CXR 읽기","type":"호흡기","format":"PDF","source":"박용민 컨텐츠 정리본 PDF","url":"https://drive.google.com/file/d/1Mx8exaX4IpWS7KvAR9EEvOSoLo3PFDYP/view?usp=drivesdk","tags":["pneumothorax","기흉","CXR","Chest X-ray","흉부","호흡곤란","흉부 영상","호흡기","영상판독","기초"],"summary":"기흉을 흉부 X-ray에서 어떻게 봐야 하는지 연결해 보여줄 수 있는 영상 보조 자료입니다.","points":["CXR 검색 시 ACS/ECG와 별도로 흉부 영상 자료로 노출되게 구성했습니다.","기흉의 임상 증상과 영상 소견을 연결하는 카드형 설명에 적합합니다.","학생들이 Chest PA/AP, CXR 같은 실무형 콘텐츠에서 같이 찾을 가능성이 큽니다."],"useCase":"기흉 영상 소견, 흉부 X-ray 기초 설명, 실습 전 빠른 확인","confidence":"파일 확인","system":"호흡기","intent":"영상판독","stage":"기초","evidence":"Drive에 pneumothorax에서의 CXR PDF로 확인된 자료입니다. 흉부 X-ray와 기흉 검색에 우선 노출되도록 분류했습니다.","related":["acs-ecg","pneumonia-case-study","abga"],"keywords":["기흉","CXR","Chest X-ray","흉부 영상"],"rank":4},{"id":"gbs","title":"GBS 임상추론 박용민","displayTitle":"길랭-바레 증후군 임상추론","type":"신경계","format":"PDF","source":"신경계 질환 폴더","url":"https://drive.google.com/file/d/1qI6H7NXcWDEIq5Hq8eGJSyYGWozFN9jp/view?usp=drivesdk","tags":["GBS","Guillain-Barre","길랭바레","신경계","상행성 마비","임상추론","호흡근","심화"],"summary":"GBS를 신경계 임상추론 콘텐츠로 연결하는 자료입니다.","points":["상행성 마비, 호흡근 침범, 신경계 감별 키워드와 잘 맞습니다.","콘텐츠 분석 문서에서 판단형 콘텐츠는 댓글 반응이 좋은 축으로 확인됐습니다.","학생들이 감별 포인트를 찾을 때 상세 PDF로 연결하기 좋습니다."],"useCase":"GBS 감별, 신경계 응급 사정, 호흡근 약화 포인트","confidence":"파일 확인","system":"신경계","intent":"임상추론","stage":"심화","evidence":"신경계 질환 폴더에서 GBS 임상추론 PDF로 확인된 자료입니다. 상행성 마비와 호흡근 침범 감별 키워드로 분류했습니다.","related":["mg","als","ms","khsim-simulation"],"keywords":["GBS","길랭바레","상행성 마비","호흡근"],"rank":5},{"id":"mg","title":"MG 임상추론 박용민","displayTitle":"중증근무력증 임상추론","type":"신경계","format":"PDF","source":"신경계 질환 폴더","url":"https://drive.google.com/file/d/1H4nkqNIevngtKMr56ajvp8TWRzKSGbJu/view?usp=drivesdk","tags":["MG","myasthenia gravis","중증근무력증","신경계","근력저하","임상추론","호흡근","심화"],"summary":"MG를 임상추론 방식으로 정리한 신경계 질환 자료입니다.","points":["근력저하, 피로, 호흡근 약화 같은 키워드와 연결되도록 설계했습니다.","GBS, ALS와 비교해 찾는 사용자를 고려해 신경계 묶음으로 배치했습니다.","간호학과 케이스에서 증상 변화와 우선순위 설명에 유용합니다."],"useCase":"중증근무력증 감별, 신경근 질환 정리","confidence":"파일 확인","system":"신경계","intent":"임상추론","stage":"심화","evidence":"신경계 질환 폴더에서 MG 임상추론 PDF로 확인된 자료입니다. 근력저하와 신경근 질환 감별로 분류했습니다.","related":["gbs","als","ms"],"keywords":["MG","중증근무력증","근력저하","호흡근"],"rank":6},{"id":"als","title":"ALS 임상추론 박용민","displayTitle":"ALS 임상추론","type":"신경계","format":"PDF","source":"신경계 질환 폴더","url":"https://drive.google.com/file/d/1GanISYp5A5b3zPlj0fY37zjlJ3VGdH6r/view?usp=drivesdk","tags":["ALS","amyotrophic lateral sclerosis","루게릭","신경계","운동신경원","임상추론","진행성 근력저하","심화"],"summary":"ALS를 신경계 임상추론 흐름으로 찾을 수 있는 자료입니다.","points":["운동신경원 질환과 진행성 근력저하 키워드로 검색되게 구성했습니다.","MS, MG, GBS와 비교 검색될 수 있게 신경계 카테고리에 묶었습니다.","긴 설명보다 원본 자료로 넘어가는 길을 분명하게 보여주는 카드가 좋습니다."],"useCase":"ALS 개념 정리, 신경계 질환 비교, 임상추론 학습","confidence":"파일 확인","system":"신경계","intent":"임상추론","stage":"심화","evidence":"신경계 질환 폴더에서 ALS 임상추론 PDF로 확인된 자료입니다. 운동신경원 질환과 진행성 근력저하로 분류했습니다.","related":["mg","gbs","ms"],"keywords":["ALS","루게릭","운동신경원","진행성 근력저하"],"rank":7},{"id":"ms","title":"MS 임상추론 박용민","displayTitle":"다발성경화증 임상추론","type":"신경계","format":"PDF","source":"신경계 질환 폴더","url":"https://drive.google.com/file/d/16RhNgiR8NTJI8bTgxJYpi-pihKDqZahY/view?usp=drivesdk","tags":["MS","multiple sclerosis","다발성경화증","신경계","임상추론","신경계 감별","심화"],"summary":"MS를 신경계 임상추론 관점에서 찾을 수 있는 자료입니다.","points":["신경계 감별 학습에서 MG, GBS, ALS, PD 자료와 같이 추천하기 좋습니다.","질환명 약어로 검색해도 나오도록 태그를 넣었습니다.","학생들이 헷갈리는 신경계 질환 묶음의 한 축으로 쓰기 좋습니다."],"useCase":"신경계 질환 감별, MS 케이스 정리, 임상추론 학습","confidence":"파일 확인","system":"신경계","intent":"임상추론","stage":"심화","evidence":"신경계 질환 폴더에서 MS 임상추론 PDF로 확인된 자료입니다. 신경계 질환 감별 묶음에 포함했습니다.","related":["mg","gbs","als","pd"],"keywords":["MS","다발성경화증","신경계 감별"],"rank":8},{"id":"pd","title":"PD 임상추론 박용민","displayTitle":"파킨슨병 임상추론","type":"신경계","format":"PDF","source":"신경계 질환 폴더","url":"https://drive.google.com/file/d/1wW1zdJ06-cJzHl6b1PkdQWKzmntl58tg/view?usp=drivesdk","tags":["PD","Parkinson disease","파킨슨병","신경계","운동증상","임상추론","서동","강직","심화"],"summary":"파킨슨병을 임상추론 관점에서 학습할 수 있는 자료입니다.","points":["떨림, 서동, 강직 등 운동증상 검색과 연결하기 좋습니다.","신경계 질환 폴더의 다른 임상추론 PDF와 함께 보여주면 좋습니다.","노인간호와 신경계 케이스 모두에서 찾을 수 있게 태그를 넓게 잡았습니다."],"useCase":"파킨슨병 증상 이해, 신경계 케이스 스터디","confidence":"파일 확인","system":"신경계","intent":"임상추론","stage":"심화","evidence":"신경계 질환 폴더에서 PD 임상추론 PDF로 확인된 자료입니다. 운동증상과 노인 신경계 케이스로 분류했습니다.","related":["ms","mg","gbs"],"keywords":["PD","파킨슨병","운동증상","서동","강직"],"rank":9},{"id":"thyroidectomy","title":"thyroidectomy","displayTitle":"갑상선절제술","type":"수술간호","format":"PDF","source":"박용민 컨텐츠 정리본 PDF","url":"https://drive.google.com/file/d/1zwkzOFX8v9nLOIs47W_kUJC9Sx5hKmAj/view?usp=drivesdk","tags":["thyroidectomy","갑상선절제술","수술간호","합병증","칼슘","기도","출혈","저칼슘혈증","간호중재","핵심"],"summary":"갑상선절제술 전후 간호와 합병증 포인트를 찾는 데 쓸 수 있는 자료입니다.","points":["수술간호 카테고리의 시작 자료로 좋습니다.","기도, 출혈, 저칼슘혈증 같은 핵심 키워드와 연결될 수 있습니다.","케이스 과제에서 수술 후 관찰 포인트를 찾는 사용자에게 적합합니다."],"useCase":"수술 전후 간호, 갑상선 수술 합병증 확인","confidence":"파일 확인","system":"수술간호","intent":"간호중재","stage":"핵심","evidence":"Drive에 thyroidectomy PDF로 확인된 자료입니다. 갑상선절제술 전후 관찰과 합병증 키워드로 분류했습니다.","related":[],"keywords":["갑상선절제술","기도","출혈","저칼슘혈증"],"rank":10},{"id":"ast","title":"Aspartate aminotransferase","displayTitle":"AST 설명","type":"검사수치","format":"PDF","source":"박용민 컨텐츠 정리본 PDF","url":"https://drive.google.com/file/d/1ukDpuad1OtJHQR2_4TjRwlZq8X5hk0-Z/view?usp=drivesdk","tags":["AST","Aspartate aminotransferase","간수치","검사","lab","검사수치","검사해석","기초"],"summary":"AST가 무엇을 반영하는지 따로 확인할 수 있는 검사수치 자료입니다.","points":["AST/ALT 비교 자료로 넘어가기 전 기초 설명 카드로 쓰기 좋습니다.","검사수치 카테고리에 묶어 두면 검색 경험이 깔끔합니다.","ALT 자료와 나란히 보여주면 학습자가 차이를 빠르게 잡을 수 있습니다."],"useCase":"AST 단독 개념 확인, 검사 결과 해석 보조","confidence":"파일 확인","system":"검사수치","intent":"검사해석","stage":"기초","evidence":"Drive에 Aspartate aminotransferase PDF로 확인된 자료입니다. AST 단독 개념과 AST/ALT 비교 전 기초 자료로 분류했습니다.","related":["ast-alt-ratio","alt"],"keywords":["AST","Aspartate aminotransferase","간수치"],"rank":11},{"id":"alt","title":"Alanine aminotransferase","displayTitle":"ALT 설명","type":"검사수치","format":"PDF","source":"박용민 컨텐츠 정리본 PDF","url":"https://drive.google.com/file/d/1sVakiSM1lqXKwiAvbaxGBXWds5d6zwKw/view?usp=drivesdk","tags":["ALT","Alanine aminotransferase","간수치","검사","lab","검사수치","검사해석","기초"],"summary":"ALT의 의미와 간 관련 검사 해석을 찾을 수 있는 자료입니다.","points":["AST 자료와 함께 검사수치 검색의 기본 묶음으로 좋습니다.","케이스 스터디에서 lab abnormality 설명으로 연결하기 좋습니다.","비교형 자료보다 먼저 보는 기초 카드로 배치할 수 있습니다."],"useCase":"ALT 단독 개념 확인, 간수치 해석 보조","confidence":"파일 확인","system":"검사수치","intent":"검사해석","stage":"기초","evidence":"Drive에 Alanine aminotransferase PDF로 확인된 자료입니다. ALT 단독 개념과 AST/ALT 비교 전 기초 자료로 분류했습니다.","related":["ast-alt-ratio","ast"],"keywords":["ALT","Alanine aminotransferase","간수치"],"rank":12},{"id":"siadh","title":"SIADH clinical reasoning","displayTitle":"SIADH 임상추론","type":"검사수치","format":"PDF","source":"박용민 임상추론 PDF","url":"https://drive.google.com/file/d/14E7UgDyYbJ6oTIbslcwLhhbku2SYn8qy/view?usp=drivesdk","tags":["SIADH","항이뇨호르몬 부적절분비 증후군","Syndrome of Inappropriate Antidiuretic Hormone secretion","저나트륨혈증","hyponatremia","ADH","소세포폐암","SCLC","혈장 삼투압","요 삼투압","농축뇨","수분제한","I/O","LOC","검사수치","임상추론","심화"],"summary":"ADH 과다분비로 수분 재흡수가 증가해 부종 없는 희석성 저나트륨혈증이 나타나는 SIADH 임상추론 자료입니다.","points":["소세포폐암 환자에서 부종 없이 체중이 늘고 Na가 낮아지며 소변이 농축되는 패턴을 SIADH로 연결합니다.","혈장 삼투압은 낮은데 요 삼투압은 높은 부조화가 핵심 단서이며, SIADH와 DI 감별에 유용합니다.","간호 우선순위는 의식수준 확인, 매일 체중, 정확한 I/O이며 Na < 120, 의식변화, 발작, 과교정은 즉시 보고해야 합니다."],"useCase":"저나트륨혈증 감별, SIADH/DI 비교, 소세포폐암 환자 전해질 이상, 실습 중 LOC·I/O 사정 포인트 확인","confidence":"본문 확인","system":"검사수치","intent":"임상추론","stage":"심화","evidence":"Drive에 새로 업로드된 SIADH_임상추론_박용민 PDF에서 ADH 과다분비, 희석성 저나트륨혈증, 부종 없는 체중 증가, 혈장/요 삼투압 부조화, 간호 사정과 보고 기준을 확인했습니다.","related":["iicp","pneumothorax-cxr","ast-alt-ratio"],"keywords":["SIADH","저나트륨혈증","hyponatremia","ADH","SCLC","소세포폐암","혈장 삼투압","요 삼투압","농축뇨","수분제한","LOC","I/O","삼투성 탈수초증후군","ODS"],"rank":13},{"id":"abga","title":"ABGA arterial blood gas analysis","displayTitle":"ABGA 동맥혈가스분석","type":"검사수치","format":"PDF","source":"박용민 임상추론 PDF","url":"./assets/pdfs/abga-arterial-blood-gas-analysis.pdf","tags":["ABGA","ABG","동맥혈가스분석","Arterial Blood Gas Analysis","pH","PaCO2","HCO3","PaO2","SaO2","Base Excess","BE","ROME","호흡성 산증","대사성 산증","보상","부분 보상","COPD","저산소혈증","CO2 narcosis","Allen test","검사수치","임상추론","핵심"],"summary":"pH, PaCO2, HCO3, PaO2로 산염기 불균형과 보상 여부를 추론하는 ABGA 임상추론 자료입니다.","points":["ROME 법칙으로 호흡성/대사성 문제를 구분하고 pH 정상범위 여부로 완전 보상과 부분 보상을 판단합니다.","COPD 사례에서 pH 7.32, PaCO2 58, HCO3 28, PaO2 56을 부분 보상된 호흡성 산증과 저산소혈증으로 연결합니다.","PaO2 60mmHg 미만, 의식수준 저하, 호흡양상 악화, 청색증은 ABGA 결과와 함께 즉시 보고해야 할 기준으로 정리합니다."],"useCase":"ABGA 해석 순서, 산염기 불균형 감별, COPD 호흡성 산증, 실습 중 ABGA 보고 기준 확인","confidence":"본문 확인","system":"검사수치","intent":"임상추론","stage":"핵심","evidence":"로컬로 제공된 ABGA_동맥혈가스분석 PDF에서 정상범위, ROME 법칙, Base Excess, COPD 사례, 부분 보상된 호흡성 산증, 저산소혈증, 간호 우선순위와 보고 기준을 확인했습니다.","related":["pneumothorax-cxr","gbs","siadh","ast-alt-ratio","acls","pneumonia-case-study","khsim-simulation"],"keywords":["ABGA","ABG","동맥혈가스분석","pH","PaCO2","HCO3","PaO2","Base Excess","BE","ROME","호흡성 산증","부분 보상","COPD","저산소혈증","CO2 narcosis","Allen test"],"rank":14},{"id":"acls","title":"ACLS clinical reasoning","displayTitle":"ACLS 임상추론","type":"심혈관","format":"PDF","source":"박용민 임상추론 PDF","url":"./assets/pdfs/acls-clinical-reasoning.pdf","image":"./assets/acls-clinical-reasoning.jpg","tags":["ACLS","Advanced Cardiovascular Life Support","심정지","CPR","BLS","고품질 CPR","리듬분석","제세동","비제세동","VF","pVT","Asystole","PEA","Epinephrine","Amiodarone","ROSC","응급간호","심혈관","임상추론","핵심"],"summary":"심정지 상황에서 고품질 CPR, 리듬 분석, 제세동·비제세동 알고리즘을 임상 흐름으로 연결하는 ACLS 임상추론 자료입니다.","points":["심정지 환자에서 의식·호흡·맥박 확인 후 고품질 CPR과 도움 요청으로 이어지는 초기 대응 흐름을 정리합니다.","VF/pVT처럼 제세동이 필요한 리듬과 Asystole/PEA처럼 비제세동 리듬을 구분해 ACLS 알고리즘으로 연결합니다.","Epinephrine, Amiodarone, ROSC 이후 사정처럼 신규간호사와 간호학생이 헷갈리기 쉬운 역할과 보고 포인트를 확인하기 좋습니다."],"useCase":"ACLS 알고리즘, 심정지 초기 대응, 제세동/비제세동 리듬 감별, 응급실·중환자실 실습 전 빠른 확인","confidence":"파일 확인","system":"심혈관","intent":"임상추론","stage":"핵심","evidence":"로컬로 제공된 ACLS_임상추론_박용민 PDF를 사이트 자료로 추가했습니다. 심정지 대응, CPR, 리듬 분석, ACLS 약물과 ROSC 이후 사정을 중심 키워드로 분류했습니다.","related":["acs-ecg","mi","abga","pneumonia-case-study","khsim-simulation"],"keywords":["ACLS","심정지","CPR","고품질 CPR","리듬분석","제세동","비제세동","VF","pVT","Asystole","PEA","Epinephrine","Amiodarone","ROSC"],"rank":15},{"id":"pneumonia-case-study","title":"Pneumonia case study clinical reasoning","displayTitle":"폐렴 케이스스터디 임상추론","type":"호흡기","format":"Google Doc","source":"박용민 임상추론 Google Doc","url":"https://docs.google.com/document/d/1Ok0jMz-Ik6OI0ePrd20sdxd1ITsM9JYt/edit","bannerTitle":"폐렴 케이스스터디, 이렇게 쓰면 망합니다","bannerDescription":"WBC 15,000을 적고 끝내면 검사 결과 정리예요. 수치 → 의미 → 병태생리 → 간호진단으로 연결해야 케이스가 살아납니다.","bannerAction":"망하지 않는 흐름 보기","bannerSourceLabel":"원본 문서","tags":["폐렴","Pneumonia","케이스스터디","임상추론","가스교환 장애","기도 청결","SpO2","ABGA","WBC","CRP","Procalcitonin","CURB-65","객담","항생제","반좌위","산소요법","패혈증","호흡기","핵심"],"summary":"폐렴 케이스를 단순 검사 결과 정리가 아니라 수치, 의미, 병태생리, 간호진단으로 연결하는 임상추론 자료입니다.","points":["폐렴의 핵심을 폐포 염증과 삼출액으로 인한 가스교환 장애로 잡고 SpO2, ABGA, WBC, CRP를 연결합니다.","실습생 케이스가 약해지는 지점인 수치 나열, 해석 누락, 병태생리 연결 부족을 피하는 흐름을 정리합니다.","산소요법, 반좌위, 객담 배출, 항생제 전 배양 채취, SpO2 저하와 의식변화 보고 기준까지 케이스에 바로 연결하기 좋습니다."],"useCase":"폐렴 케이스스터디, 호흡기 실습, SpO2/ABGA 해석, 가스교환 장애 간호진단, 보고 기준 정리","confidence":"본문 확인","system":"호흡기","intent":"임상추론","stage":"핵심","evidence":"Drive 문서 폐렴_케이스스터디_임상추론에서 WBC, CRP, SpO2, ABGA, CURB-65, 수치 해석, 병태생리 연결, 간호진단과 보고 기준을 확인했습니다.","related":["pneumothorax-cxr","abga","acls","khsim-simulation"],"keywords":["폐렴","Pneumonia","케이스스터디","WBC 15000","SpO2 89","CRP","ABGA","CURB-65","가스교환 장애","비효과적 기도청결","항생제","객담 배양","반좌위","산소요법","패혈증"],"rank":16},{"id":"khsim-simulation","title":"KHSIM nursing simulation","displayTitle":"KHSIM 간호 시뮬레이션","type":"시뮬레이션","format":"Web App","source":"PYM KHSIM GitHub Pages","url":"https://dragonmin070102-coder.github.io/KHSIM/","tags":["KHSIM","시뮬레이션","간호술기","환자 시나리오","실습","응급상황","PC 권장","태블릿 권장","임상추론"],"summary":"실제 환자 시나리오처럼 화면을 보며 간호 판단을 연습하는 KHSIM 시뮬레이션입니다. 모바일보다 태블릿이나 PC에서 체험하는 것을 권장합니다.","points":["KHSIM은 검색 자료를 읽고 끝나는 것이 아니라 환자 상태를 보며 판단을 연습하는 체험형 콘텐츠입니다.","모바일에서는 화면과 조작 영역이 좁아 제대로 체험하기 어렵기 때문에 태블릿 또는 PC 환경을 권장합니다.","ABGA, ACLS, 호흡기 케이스처럼 판단 흐름이 필요한 자료와 연결해 학습 루트로 확장하기 좋습니다."],"useCase":"실습 전 시뮬레이션 체험, 간호 판단 연습, 박용민 PDF 학습 후 적용 훈련","confidence":"서비스 연결","system":"시뮬레이션","intent":"실습훈련","stage":"체험","evidence":"PYM에서 연결 중인 KHSIM GitHub Pages 시뮬레이션 서비스입니다. 모바일보다 큰 화면에서 안정적으로 체험하도록 안내합니다.","related":["abga","acls","pneumonia-case-study","gbs"],"keywords":["KHSIM","간호 시뮬레이션","시뮬레이션","실습훈련","환자 시나리오","PC","태블릿"],"rank":17}]};
 
 let resources = normalizeResourceData(await loadResourceData());
 
@@ -118,13 +118,14 @@ let resourceStats = new Map();
 let trendStats = new Map();
 let resourceDiscussionStats = new Map();
 let noticeTouchStart = null;
-let lastNoticeImpression = "";
+const noticeImpressionsThisSession = new Set();
 let adminDashboardState = {
   period: "all",
   query: "",
   loading: false,
   data: null,
-  error: ""
+  error: "",
+  materialRequests: []
 };
 let adminOrderState = {
   query: "",
@@ -132,8 +133,11 @@ let adminOrderState = {
 };
 let adminSearchTimer = null;
 let analyticsFlushScheduled = false;
+let analyticsFlushInFlight = null;
 let currentPremiumPreviewCards = [];
+let currentPremiumProductId = "lab-series-6";
 let premiumSocialProof = { reviews: [], accessCount: 0 };
+const verifiedPremiumProducts = new Set();
 let adminUsername = "";
 let adminSecret = "";
 let adminAuthenticated = null;
@@ -301,7 +305,7 @@ const trendArticles = [
     hook: "ABGA, 숫자 5개를 어떤 순서로 봐야 할까?",
     title: "ABG 5단계 해석법, 이번 주 다시 정리하기",
     summary: "ABGA는 pH, PaO2, PaCO2, HCO3, BE를 단계적으로 보면 산증/알칼리증과 호흡성/대사성 원인을 빠르게 구분할 수 있어요.",
-    image: "./assets/thumb-lab.png",
+    image: "./assets/thumb-lab.jpg",
     tags: ["ABGA", "산염기", "보상기전"],
     sourceUrl: "https://nurse-link.co.kr/community/campus_talk/126520249",
     relatedIds: ["abga", "pneumothorax-cxr", "siadh"],
@@ -328,7 +332,7 @@ const trendArticles = [
     hook: "ACLS 업데이트, 간호학생은 뭘 먼저 봐야 할까?",
     title: "2025 AHA ACLS·소생술 가이드라인, 2026년 교육 현장 반영",
     summary: "2025년 발표된 AHA 소생술 가이드라인이 2026년 교육 자료와 강사 업데이트에 순차 반영되고 있어요.",
-    image: "./assets/thumb-cardio.png",
+    image: "./assets/thumb-cardio.jpg",
     tags: ["ACLS", "CPR", "고품질 흉부압박"],
     sourceUrl: "https://cpraedcourse.com/blog/aha-acls-guidelines/",
     relatedIds: ["acs-ecg", "mi", "abga"],
@@ -354,7 +358,7 @@ const trendArticles = [
     hook: "뇌졸중 환자 사정, 왜 NIHSS로 말해야 할까?",
     title: "뇌졸중 환자 사정의 핵심, NIHSS 활용 재조명",
     summary: "국내 뇌졸중 진료지침은 초기 중증도 평가에 NIHSS 사용을 권고하며, 체계적 신경학적 사정의 중요성을 강조해요.",
-    image: "./assets/thumb-neuro.png",
+    image: "./assets/thumb-neuro.jpg",
     tags: ["NIHSS", "뇌졸중", "신경계 사정"],
     sourceUrl: "https://www.stroke.or.kr/guidelines/view.php?sid=33",
     relatedIds: ["iicp", "gbs", "ms"],
@@ -378,7 +382,7 @@ const trendArticles = [
     hook: "간호사는 왜 AI를 덜 쓰고 있을까?",
     title: "간호 AI보다 먼저 필요한 건 간호사용 도구",
     summary: "최근 조사에서 간호사는 의사보다 AI 활용률이 낮았고, 간호 업무에 맞춘 도구 부족이 주요 원인으로 언급됐어요.",
-    image: "./assets/trend-ai-tools.png",
+    image: "./assets/trend-ai-tools.jpg",
     tags: ["AI", "간호업무", "디지털전환"],
     sourceUrl: "https://www.axios.com/2026/05/12/nurse-ai-adoption-lags-doctors-survey",
     relatedIds: ["siadh", "gbs", "acs-ecg"],
@@ -404,7 +408,7 @@ const trendArticles = [
     hook: "간호 인력 부족은 왜 환자 안전 문제가 될까?",
     title: "근무환경 개선이 간호 인력 유지의 핵심",
     summary: "간호 인력 부족은 단순한 근무 피로 문제가 아니라 낙상, 감염, 보고 지연 같은 환자 안전 문제와 연결돼요.",
-    image: "./assets/trend-patient-safety.png",
+    image: "./assets/trend-patient-safety.jpg",
     tags: ["근무환경", "인력관리", "환자안전"],
     sourceUrl: "https://www.theguardian.com/society/2026/may/18/nhs-nurses-believe-lack-of-staff-putting-patients-at-risk-survey-finds",
     relatedIds: ["iicp", "pneumothorax-cxr", "gbs"],
@@ -428,7 +432,7 @@ const trendArticles = [
     hook: "암 환자가 늘면 간호사는 무엇을 준비해야 할까?",
     title: "간호사 교육의 미래, 실습과 시뮬레이션 강화",
     summary: "암 환자 증가와 진료 인력 부족 전망은 항암, 감염, 전해질 이상, 응급징후 학습의 중요성을 키우고 있어요.",
-    image: "./assets/trend-cancer-lab.png",
+    image: "./assets/trend-cancer-lab.jpg",
     tags: ["교육", "시뮬레이션", "핵심역량"],
     sourceUrl: "https://www.theguardian.com/society/2026/may/31/world-cancer-workforce-crisis-100m-staff-shortfall-report",
     relatedIds: ["siadh", "ast-alt-ratio", "alt"],
@@ -467,8 +471,11 @@ trackEvent("page_view", {
   hash: window.location.hash || "#home",
   resourceCount: resources.length
 });
-trackEvent("home_premium_fixed_impression", { placement: "below_notice" });
-flushRemoteAnalytics();
+trackEvent("home_premium_fixed_impression", {
+  placement: "below_notice",
+  productId: "lab-series-6"
+});
+flushRemoteAnalytics().catch(() => {});
 loadRemotePremiumOperatingSettings();
 
 categoryGrid.addEventListener("click", (event) => {
@@ -634,9 +641,10 @@ document.addEventListener("click", (event) => {
   if (!premiumBanner) return;
 
   event.preventDefault();
+  currentPremiumProductId = "lab-series-6";
   trackEvent("home_premium_banner_click", {
     placement: premiumBanner.dataset.homePremiumBanner || "home_notice",
-    productId: "neuro-series-6"
+    productId: "lab-series-6"
   });
   window.location.hash = "premium";
   setPremiumMode();
@@ -905,7 +913,7 @@ document.addEventListener("submit", (event) => {
   safeStorageSet("pym.supabaseAnonKey", key);
   Object.assign(supabaseConfig, { url, anonKey: key, enabled: true });
   trackEvent("supabase_config_save");
-  flushRemoteAnalytics();
+  flushRemoteAnalytics().catch(() => {});
   renderAnalyticsAdmin();
   showToast("Supabase 연결 정보를 저장했어요");
 });
@@ -924,6 +932,44 @@ document.addEventListener("submit", (event) => {
 
   event.preventDefault();
   savePremiumOperatingSettings(form);
+});
+
+document.addEventListener("submit", async (event) => {
+  const form = event.target.closest("[data-premium-material-request-form]");
+  if (!form) return;
+  event.preventDefault();
+  const button = form.querySelector("button[type='submit']");
+  const formData = new FormData(form);
+  const payload = {
+    action: "material-request",
+    name: String(formData.get("name") || "").trim(),
+    email: String(formData.get("email") || "").trim(),
+    topic: String(formData.get("topic") || "").trim(),
+    details: String(formData.get("details") || "").trim()
+  };
+  if (button) {
+    button.disabled = true;
+    button.textContent = "요청 전송 중...";
+  }
+  try {
+    const response = await fetch(orderApiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || "추가자료 요청을 보내지 못했습니다.");
+    form.reset();
+    trackEvent("premium_material_request_submit", { topic: payload.topic });
+    showToast("추가자료 요청을 접수했어요");
+  } catch (error) {
+    showToast(error.message || "추가자료 요청을 보내지 못했습니다.");
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = "추가자료 요청 보내기";
+    }
+  }
 });
 
 document.addEventListener("submit", (event) => {
@@ -947,7 +993,9 @@ document.addEventListener("click", (event) => {
   const productCard = event.target.closest("[data-premium-product]");
   if (!productCard) return;
 
-  trackEvent("premium_product_select", { productId: productCard.dataset.premiumProduct });
+  currentPremiumProductId = productCard.dataset.premiumProduct || "lab-series-6";
+  trackEvent("premium_product_select", { productId: currentPremiumProductId });
+  renderPremiumScreen();
   document.querySelector("#premiumProductDetail")?.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
@@ -958,10 +1006,14 @@ window.addEventListener("error", (event) => {
 window.addEventListener("unhandledrejection", (event) => {
   if (isAdminHash(window.location.hash)) renderAdminFallback(event.reason instanceof Error ? event.reason : new Error(String(event.reason || "Promise rejection")));
 });
-window.addEventListener("pagehide", () => flushRemoteAnalytics({ silent: true, limit: 20 }));
+window.addEventListener("pagehide", () => flushRemoteAnalytics({ silent: true, limit: 20, keepalive: true }).catch(() => {}));
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden") {
-    flushRemoteAnalytics({ silent: true, limit: 20 });
+    window.clearInterval(noticeTimer);
+    flushRemoteAnalytics({ silent: true, limit: 20, keepalive: true }).catch(() => {});
+  } else {
+    renderHomeNoticeCarousel();
+    startNoticeRotation();
   }
 });
 
@@ -974,31 +1026,6 @@ document.addEventListener("click", (event) => {
     placement: checkout.dataset.checkoutPlacement || "unknown"
   });
   openBankTransferOrderModal(checkout.dataset.premiumCheckout);
-});
-
-document.addEventListener("click", (event) => {
-  const reset = event.target.closest("[data-premium-test-reset]");
-  if (!reset) return;
-
-  resetPremiumPurchaseTest(reset.dataset.premiumTestReset || "neuro-series-6");
-  if (isAdminHash(window.location.hash)) renderAnalyticsAdmin();
-});
-
-document.addEventListener("click", (event) => {
-  const complete = event.target.closest("[data-premium-test-complete]");
-  if (!complete) return;
-
-  completePremiumPurchase(complete.dataset.premiumTestComplete || "neuro-series-6");
-  renderAnalyticsAdmin();
-});
-
-document.addEventListener("click", (event) => {
-  const open = event.target.closest("[data-premium-test-open]");
-  if (!open) return;
-
-  window.location.hash = "premium";
-  setPremiumMode();
-  window.setTimeout(() => document.querySelector("#premiumAccess")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
 });
 
 document.addEventListener("submit", (event) => {
@@ -1059,9 +1086,10 @@ document.addEventListener("click", (event) => {
   const secureFile = event.target.closest("[data-premium-secure-file]");
   if (!secureFile) return;
 
-  const file = premiumDownloadFiles.find((item) => String(item.number) === String(secureFile.dataset.premiumSecureFile));
+  const productId = secureFile.dataset.premiumProductId || currentPremiumProductId;
+  const file = getPremiumProduct(productId).files.find((item) => String(item.number) === String(secureFile.dataset.premiumSecureFile));
   trackEvent("premium_secure_file_click", {
-    productId: "neuro-series-6",
+    productId,
     fileNumber: secureFile.dataset.premiumSecureFile,
     fileTitle: file?.title || "",
     action: secureFile.dataset.premiumSecureAction || "open"
@@ -1350,7 +1378,7 @@ function setPremiumMode() {
   document.body.classList.remove("agent-mode");
   activeTab = "premium";
   renderBottomTabs();
-  trackEvent("premium_view", { productId: "neuro-series-6" });
+  trackEvent("premium_view", { productId: currentPremiumProductId });
 }
 
 function setAgentMode() {
@@ -1423,14 +1451,15 @@ function renderHomeNoticeCarousel() {
     </div>
   `;
 
-  const impressionKey = `${activeNoticeIndex}:${notice.id || notice.label}`;
-  if (lastNoticeImpression !== impressionKey) {
-    lastNoticeImpression = impressionKey;
+  const impressionKey = String(notice.id || notice.label);
+  if (document.visibilityState === "visible" && !noticeImpressionsThisSession.has(impressionKey)) {
+    noticeImpressionsThisSession.add(impressionKey);
     trackEvent("home_notice_impression", {
       id: notice.id || "",
       label: notice.label,
       index: activeNoticeIndex,
-      tone: notice.tone
+      tone: notice.tone,
+      dedupeScope: "notice_per_session"
     });
   }
 }
@@ -1480,7 +1509,7 @@ function getHomeNotices() {
         action: resource.bannerAction || copy.action,
         sourceLabel: resource.bannerSourceLabel || "원본 자료",
         sourceUrl: resource.url,
-        image: visualMeta(resource).image || "./assets/thumb-lab.png",
+        image: visualMeta(resource).image || "./assets/thumb-lab.jpg",
         tone: "update"
       };
     })
@@ -1497,7 +1526,7 @@ function getHomeNotices() {
       action: "답 보기",
       sourceLabel: "관련 PDF",
       sourceUrl: recommended.url,
-      image: "./assets/nurse-guide.png",
+      image: "./assets/nurse-guide.jpg",
       tone: "recommend"
     },
     {
@@ -1510,7 +1539,7 @@ function getHomeNotices() {
       sourceLabel: "요약 보기",
       sourceUrl: trendArticle.sourceUrl,
       articleId: trendArticle.id,
-      image: trendArticle.image || "./assets/thumb-lab.png",
+      image: trendArticle.image || "./assets/thumb-lab.jpg",
       tone: "trend"
     }
   ];
@@ -1617,7 +1646,93 @@ const premiumDownloadFiles = [
   { number: "06", title: "외상성 뇌손상", pages: 10, fileName: "neuro-06-tbi.docx" }
 ];
 
+const premiumLabModules = [
+  {
+    number: "01",
+    title: "ABGA 산염기 해석",
+    subtitle: "pH · PaCO₂ · HCO₃⁻ · AG · 보상",
+    pages: 16,
+    hook: "pH부터 원인까지, 산염기 결과를 5단계로 읽습니다.",
+    preview: "ABGA를 pH → 일차성 장애 → 보상 → 음이온차 → 원인의 순서로 해석하고 DKA 사례에 연결합니다.",
+    paid: ["Winter 공식", "음이온차", "혼합장애", "보고 문장"]
+  },
+  {
+    number: "02",
+    title: "전해질과 SIADH",
+    subtitle: "Na · 혈장/요 삼투압 · 희석성 저나트륨",
+    pages: 16,
+    hook: "부종은 없는데 Na가 떨어지는 이유를 수분 이동으로 풉니다.",
+    preview: "저나트륨혈증의 중증도를 판단하고 혈장·요 삼투압의 부조화를 SIADH 임상추론으로 연결합니다.",
+    paid: ["SIADH 감별", "신경학적 위험", "I/O·체중", "즉시 보고 기준"]
+  },
+  {
+    number: "03",
+    title: "간수치 AST·ALT",
+    subtitle: "간세포 손상 · 담즙정체 · 비율 해석",
+    pages: 16,
+    hook: "수치가 높다는 사실보다 어떤 패턴으로 올랐는지가 중요합니다.",
+    preview: "AST와 ALT를 단독 숫자가 아닌 손상 위치와 패턴으로 읽고 임상 상황에 맞게 해석합니다.",
+    paid: ["AST/ALT 패턴", "간세포 손상", "추가검사", "간호 우선순위"]
+  },
+  {
+    number: "04",
+    title: "신장기능 BUN·Cr와 AKI",
+    subtitle: "BUN/Cr · eGFR · 소변량 · AKI",
+    pages: 16,
+    hook: "Cr 한 번보다 추세와 소변량이 신장의 현재를 더 빨리 말해줍니다.",
+    preview: "BUN·Cr·eGFR과 소변량을 함께 보고 신전성·신성·신후성 AKI의 흐름을 구분합니다.",
+    paid: ["AKI 감별", "소변량 기준", "수액 판단", "신독성 약물 점검"]
+  },
+  {
+    number: "05",
+    title: "혈당·케톤과 DKA",
+    subtitle: "고혈당 · 케톤 · AG · 칼륨",
+    pages: 16,
+    hook: "높아 보이는 칼륨 뒤에 숨은 총체내 칼륨 고갈을 읽습니다.",
+    preview: "고혈당·케톤·고음이온차 산증을 DKA로 연결하고 수액·인슐린 치료 중 칼륨 위험을 추론합니다.",
+    paid: ["DKA 패턴", "수액 우선순위", "K 모니터링", "치료 반응 추적"]
+  },
+  {
+    number: "06",
+    title: "염증·CBC와 패혈증",
+    subtitle: "WBC · CRP · lactate · qSOFA",
+    pages: 16,
+    hook: "열이 없어도 젖산과 활력징후는 패혈증을 먼저 경고합니다.",
+    preview: "감염 신호와 조직 저관류를 겹쳐 읽고 노인 패혈증의 초기 대응과 보고 기준을 정리합니다.",
+    paid: ["qSOFA", "젖산 해석", "Hour-1 흐름", "쇼크 경계"]
+  }
+];
+
+const premiumLabFiles = [
+  { number: "01", title: "ABGA 산염기 5단계 해석", pages: 16, fileName: "lab-01-abga" },
+  { number: "02", title: "전해질·저나트륨혈증·SIADH", pages: 16, fileName: "lab-02-electrolytes-siadh" },
+  { number: "03", title: "간수치 AST·ALT 해석", pages: 16, fileName: "lab-03-ast-alt" },
+  { number: "04", title: "신장기능 BUN·Cr와 AKI", pages: 16, fileName: "lab-04-bun-cr-aki" },
+  { number: "05", title: "혈당·케톤과 DKA", pages: 16, fileName: "lab-05-dka" },
+  { number: "06", title: "염증·CBC와 패혈증", pages: 16, fileName: "lab-06-cbc-sepsis" }
+];
+
 const premiumProducts = [
+  {
+    id: "lab-series-6",
+    icon: "L",
+    title: "검사수치 임상추론",
+    label: "신규 6편",
+    price: PREMIUM_REGULAR_PRICE,
+    status: "판매중",
+    description: "ABGA부터 패혈증까지",
+    modules: premiumLabModules,
+    files: premiumLabFiles,
+    category: "검사수치 시리즈",
+    heading: "검사수치",
+    coverEyebrow: "검사수치 시리즈 01",
+    subtitle: "ABGA부터 패혈증까지, 검사지 한 장을 위에서 아래로 읽는 임상추론 흐름을 완성하세요.",
+    coverImage: "./assets/thumb-lab.png",
+    coverAlt: "검사수치 임상추론 학습 자료 표지",
+    updated: "2026.07",
+    difficulty: "기초·중급",
+    studyTime: "45분"
+  },
   {
     id: "neuro-series-6",
     icon: "N",
@@ -1625,7 +1740,18 @@ const premiumProducts = [
     label: "6편 시리즈",
     price: PREMIUM_REGULAR_PRICE,
     status: "판매중",
-    description: "GCS부터 TBI까지"
+    description: "GCS부터 TBI까지",
+    modules: premiumNeuroModules,
+    files: premiumDownloadFiles,
+    category: "신경계 시리즈",
+    heading: "신경계",
+    coverEyebrow: "신경계 시리즈 01",
+    subtitle: "실습에서 자주 막히는 GCS·ICP·뇌졸중 판단을 30분 안에 하나의 흐름으로 정리하세요.",
+    coverImage: "./assets/iicp-brain-cover.webp",
+    coverAlt: "신경계 임상추론 학습을 상징하는 뇌 이미지",
+    updated: "2026.06",
+    difficulty: "중급",
+    studyTime: "30분"
   },
   {
     id: "respiratory-series",
@@ -1646,6 +1772,12 @@ const premiumProducts = [
     description: "ACS·패혈증·DKA"
   }
 ];
+
+function getPremiumProduct(productId = currentPremiumProductId) {
+  return premiumProducts.find((product) => product.id === productId && product.status === "판매중")
+    || premiumProducts.find((product) => product.id === "lab-series-6")
+    || premiumProducts[0];
+}
 
 
 function renderAgentScreen() {
@@ -1804,21 +1936,25 @@ async function submitAgentQuestion(form) {
 function renderPremiumScreen() {
   if (!premiumScreen) return;
 
-  const featured = premiumNeuroModules[1];
-  const productId = "neuro-series-6";
-  const displayPrice = getBankTransferAccount().amount || PREMIUM_REGULAR_PRICE;
-  const hasDiscount = displayPrice !== PREMIUM_REGULAR_PRICE;
+  const product = getPremiumProduct(currentPremiumProductId);
+  const modules = product.modules;
+  const files = product.files;
+  const featured = modules[0];
+  const productId = product.id;
+  const pricing = getPremiumPricing(productId);
+  const displayPrice = pricing.saleAmount;
+  const hasDiscount = pricing.hasDiscount;
   const purchased = isPremiumPurchased(productId);
   const activeOrder = getLatestBankTransferOrder(productId);
-  const previewCards = [
-    { module: premiumNeuroModules[0], section: "p.01 왜 중요한가", image: "./assets/previews/neuro-assessment-p01.webp", lines: ["시험·실습·임상 연결", "박용민 요점"] },
-    { module: premiumNeuroModules[0], section: "p.02 임상 상황", image: "./assets/previews/neuro-assessment-p02.webp", lines: ["GCS 변화", "동공 변화", "생각해보기"] },
-    { module: premiumNeuroModules[0], section: "p.03 병태생리", image: "./assets/previews/neuro-assessment-p03.webp", lines: ["Monro-Kellie", "악화 순서"] },
-    { module: premiumNeuroModules[0], section: "p.04 핵심 검사 및 수치", image: "./assets/previews/neuro-assessment-p04.webp", lines: ["GCS", "GCS-P", "ICP/CPP"] },
-    { module: premiumNeuroModules[0], section: "p.05 임상추론 흐름", image: "./assets/previews/neuro-assessment-p05.webp", lines: ["해석", "우선순위", "보고"] },
-    { module: premiumNeuroModules[0], section: "p.06 간호중재와 근거", image: "./assets/previews/neuro-assessment-p06.webp", lines: ["왜 이런 간호를 할까", "목표 및 수행"] },
-    { module: premiumNeuroModules[0], section: "p.08 30초 복습", image: "./assets/previews/neuro-assessment-p08.webp", lines: ["체크리스트", "NCLEX Questions"] }
-  ];
+  const previewCards = productId === "neuro-series-6" ? [
+    { module: modules[0], section: "p.01 왜 중요한가", image: "./assets/previews/neuro-assessment-p01.webp", lines: ["시험·실습·임상 연결", "박용민 요점"] },
+    { module: modules[0], section: "p.02 임상 상황", image: "./assets/previews/neuro-assessment-p02.webp", lines: ["GCS 변화", "동공 변화", "생각해보기"] },
+    { module: modules[0], section: "p.03 병태생리", image: "./assets/previews/neuro-assessment-p03.webp", lines: ["Monro-Kellie", "악화 순서"] },
+    { module: modules[0], section: "p.04 핵심 검사 및 수치", image: "./assets/previews/neuro-assessment-p04.webp", lines: ["GCS", "GCS-P", "ICP/CPP"] },
+    { module: modules[0], section: "p.05 임상추론 흐름", image: "./assets/previews/neuro-assessment-p05.webp", lines: ["해석", "우선순위", "보고"] },
+    { module: modules[0], section: "p.06 간호중재와 근거", image: "./assets/previews/neuro-assessment-p06.webp", lines: ["왜 이런 간호를 할까", "목표 및 수행"] },
+    { module: modules[0], section: "p.08 30초 복습", image: "./assets/previews/neuro-assessment-p08.webp", lines: ["체크리스트", "NCLEX Questions"] }
+  ] : modules.map((module) => ({ module, section: `${module.number} · ${module.title}`, lines: module.paid.slice(0, 2) }));
   currentPremiumPreviewCards = previewCards;
 
   premiumScreen.innerHTML = `
@@ -1845,36 +1981,36 @@ function renderPremiumScreen() {
             <strong>${escapeHtml(product.title)}</strong>
             <em>${escapeHtml(product.label)}</em>
             <small>${escapeHtml(product.description)}</small>
-            <b>${escapeHtml(product.status === "판매중" && product.id === productId ? displayPrice : (product.status === "판매중" ? product.price : product.status))}</b>
+            <b>${escapeHtml(product.status === "판매중" ? getPremiumPricing(product.id).saleAmount : product.status)}</b>
           </button>
         `).join("")}
       </div>
     </section>
 
     <section class="premium-product-hero" id="premiumProductDetail" aria-labelledby="premium-title">
-      <p class="premium-breadcrumb">홈 프리미엄 › 신경계 시리즈 › ${escapeHtml(featured.title)}</p>
+      <p class="premium-breadcrumb">홈 프리미엄 › ${escapeHtml(product.category)} › ${escapeHtml(featured.title)}</p>
       <div class="premium-cover-card">
         <div class="premium-cover-copy">
           <span>BEST</span>
-          <em>신경계 시리즈 01</em>
-          <h1 id="premium-title">신경계<br />임상추론</h1>
+          <em>${escapeHtml(product.coverEyebrow)}</em>
+          <h1 id="premium-title">${escapeHtml(product.heading)}<br />임상추론</h1>
           <p>병태생리 이해<br />핵심 요약 정리<br />임상추론 활용<br />간호중재 & 근거</p>
           <strong>BY PARK YONG MIN</strong>
         </div>
-        <img class="premium-brain-image" src="./assets/iicp-brain-cover.webp" alt="신경계 임상추론 학습을 상징하는 뇌 이미지" loading="eager" fetchpriority="high" />
+        <img class="premium-brain-image" src="${escapeHtml(product.coverImage)}" alt="${escapeHtml(product.coverAlt)}" loading="eager" fetchpriority="high" />
       </div>
-      <h2>신경계 임상추론 시리즈 6편</h2>
-      <p class="premium-product-subtitle">실습에서 자주 막히는 GCS·ICP·뇌졸중 판단을 30분 안에 하나의 흐름으로 정리하세요.</p>
+      <h2>${escapeHtml(product.title)} 시리즈 6편</h2>
+      <p class="premium-product-subtitle">${escapeHtml(product.subtitle)}</p>
       <div class="premium-product-meta">
         <span class="sale-live">판매중</span>
-        <span>누적 구매 ${formatCount(getPremiumBuyerCount())}명</span>
+        <span>누적 구매 ${formatCount(getPremiumBuyerCount(productId))}명</span>
         <span>조회 ${formatCount(getPremiumDisplayViews())}회</span>
       </div>
       <div class="premium-spec-grid">
         <article><strong>PDF 자료</strong><span>6편 · 96섹션</span></article>
-        <article><strong>최종 업데이트</strong><span>2026.06</span></article>
-        <article><strong>난이도</strong><span>중급</span></article>
-        <article><strong>학습 시간</strong><span>30분</span></article>
+        <article><strong>최종 업데이트</strong><span>${escapeHtml(product.updated)}</span></article>
+        <article><strong>난이도</strong><span>${escapeHtml(product.difficulty)}</span></article>
+        <article><strong>학습 시간</strong><span>${escapeHtml(product.studyTime)}</span></article>
       </div>
     </section>
 
@@ -1886,7 +2022,7 @@ function renderPremiumScreen() {
         </div>
       </div>
       <div class="premium-module-list commerce">
-        ${premiumNeuroModules.map((module) => `
+        ${modules.map((module) => `
           <article>
             <span>${escapeHtml(module.number)}</span>
             <div>
@@ -1914,8 +2050,8 @@ function renderPremiumScreen() {
           <span>🔒</span>
         </article>
       </div>
-      <p class="premium-preview-caption">01_신경학적 사정의 일부 내용입니다</p>
-      ${purchased ? "" : `<button class="premium-preview-cta" type="button" data-premium-checkout="neuro-series-6" data-checkout-placement="after_preview">나머지 6편 전체 열기 · ${escapeHtml(displayPrice)}</button>`}
+      <p class="premium-preview-caption">${escapeHtml(featured.number)}_${escapeHtml(featured.title)}의 일부 내용입니다</p>
+      ${purchased ? "" : `<button class="premium-preview-cta" type="button" data-premium-checkout="${escapeHtml(productId)}" data-checkout-placement="after_preview">6편 전체 열기 · ${escapeHtml(displayPrice)}</button>`}
     </section>
 
     <section class="premium-section premium-special-grid">
@@ -1938,13 +2074,13 @@ function renderPremiumScreen() {
     <section class="premium-purchase-card">
       <p>프리미엄 자료</p>
       <div class="premium-price-row">
-        ${hasDiscount ? `<span>${PREMIUM_REGULAR_PRICE}</span>` : ""}
+        ${hasDiscount ? `<span>${escapeHtml(pricing.regularAmount)}</span>` : ""}
         <h2>${escapeHtml(displayPrice)}</h2>
         ${hasDiscount ? "<em>오픈 할인</em>" : ""}
       </div>
-      <strong class="premium-buyer-proof">${formatCount(getPremiumBuyerCount())}명이 구매하고 있어요 · 조회 ${formatCount(getPremiumDisplayViews())}회</strong>
+      <strong class="premium-buyer-proof">${formatCount(getPremiumBuyerCount(productId))}명이 구매하고 있어요 · 조회 ${formatCount(getPremiumDisplayViews())}회</strong>
       <ul>
-        <li>신경계 임상추론 6편 · 총 58페이지</li>
+        <li>${escapeHtml(product.title)} 6편 · 총 ${files.reduce((sum, file) => sum + Number(file.pages || 0), 0)}페이지</li>
         <li>결제 후 평생 소장</li>
         <li>모바일/PC 열람 가능</li>
         <li>업데이트 시 추가 비용 없음</li>
@@ -1952,17 +2088,17 @@ function renderPremiumScreen() {
       ${purchased ? `
         <div class="premium-purchase-complete">
           <strong>구매완료</strong>
-          <span>신경계 임상추론 시리즈 6편 자료가 열렸어요.</span>
+          <span>${escapeHtml(product.title)} 시리즈 6편 자료가 열렸어요.</span>
         </div>
         <a class="premium-primary-link" href="#premiumAccess">자료 보러가기</a>
       ` : `
-        <button type="button" data-premium-checkout="neuro-series-6" data-checkout-placement="purchase_card">6편 전체 구매하기 · ${escapeHtml(displayPrice)}</button>
-        <button type="button" data-premium-preview="neuro-series-6">구성 미리보기</button>
+        <button type="button" data-premium-checkout="${escapeHtml(productId)}" data-checkout-placement="purchase_card">6편 전체 구매하기 · ${escapeHtml(displayPrice)}</button>
+        <button type="button" data-premium-preview="${escapeHtml(productId)}">구성 미리보기</button>
         <span>신청 후 계좌이체 · 입금 확인 뒤 평생 열람</span>
       `}
     </section>
 
-    ${renderPremiumAccessPanel(purchased)}
+    ${renderPremiumAccessPanel(purchased, productId, files)}
 
     ${renderBankTransferStatusPanel(activeOrder)}
 
@@ -1988,6 +2124,25 @@ function renderPremiumScreen() {
       </div>
     </section>
 
+    <section class="premium-section premium-material-request">
+      <div class="premium-section-head">
+        <div>
+          <p class="eyebrow">Content request</p>
+          <h2>추가자료 요청</h2>
+        </div>
+      </div>
+      <p class="premium-request-intro">새로 보고 싶은 질환·검사·간호 주제를 알려주세요. 다음 자료 제작에 반영할게요.</p>
+      <form data-premium-material-request-form>
+        <div class="premium-request-grid">
+          <label><span>성함</span><input name="name" maxlength="80" required placeholder="성함을 입력해주세요" /></label>
+          <label><span>이메일</span><input name="email" type="email" maxlength="160" required placeholder="답변 받을 이메일" /></label>
+        </div>
+        <label><span>요청 주제</span><input name="topic" maxlength="120" required placeholder="예: 심전도 판독, 패혈증 간호" /></label>
+        <label><span>필요한 내용</span><textarea name="details" maxlength="1000" required placeholder="어떤 상황에서 필요한지 자세히 적어주세요"></textarea></label>
+        <button type="submit">추가자료 요청 보내기</button>
+      </form>
+    </section>
+
     <section class="premium-section premium-qa">
       <div class="premium-section-head">
         <div>
@@ -2001,8 +2156,8 @@ function renderPremiumScreen() {
     </section>
     ${purchased ? "" : `
       <aside class="premium-sticky-cta" aria-label="프리미엄 구매 바로가기">
-        <span>${hasDiscount ? `<del>${PREMIUM_REGULAR_PRICE}</del>` : ""}<strong>${escapeHtml(displayPrice)}</strong></span>
-        <button type="button" data-premium-checkout="neuro-series-6" data-checkout-placement="sticky_mobile">6편 전체 구매</button>
+        <span>${hasDiscount ? `<del>${escapeHtml(pricing.regularAmount)}</del>` : ""}<strong>${escapeHtml(displayPrice)}</strong></span>
+        <button type="button" data-premium-checkout="${escapeHtml(productId)}" data-checkout-placement="sticky_mobile">6편 전체 구매</button>
       </aside>
     `}
   `;
@@ -2030,22 +2185,42 @@ const DEFAULT_BANK_TRANSFER_ACCOUNT = {
   bank: "입금 계좌 설정 필요",
   holder: "박용민",
   number: "계좌번호를 입력해주세요",
+  regularAmount: PREMIUM_REGULAR_PRICE,
+  saleAmount: PREMIUM_REGULAR_PRICE,
   amount: PREMIUM_REGULAR_PRICE
 };
 
 
-function getBankTransferAccount() {
-  return { ...DEFAULT_BANK_TRANSFER_ACCOUNT, ...readJsonObject("pym.bankTransferAccount") };
+function getBankTransferAccount(productId = currentPremiumProductId) {
+  const legacyAccount = readJsonObject("pym.bankTransferAccount");
+  const productAccount = readJsonObject(`pym.bankTransferAccount.${productId}`);
+  return { ...DEFAULT_BANK_TRANSFER_ACCOUNT, ...legacyAccount, ...productAccount };
 }
 
-function getPremiumFileLinks() {
-  return readJsonObject("pym.premiumFileLinks");
+function formatPremiumPrice(value, fallback) {
+  const amount = parseWonAmount(value);
+  return amount > 0 ? `${amount.toLocaleString("ko-KR")}원` : fallback;
+}
+
+function getPremiumPricing(productId = currentPremiumProductId) {
+  const account = getBankTransferAccount(productId);
+  const regularAmount = formatPremiumPrice(account.regularAmount, PREMIUM_REGULAR_PRICE);
+  const saleAmount = formatPremiumPrice(account.saleAmount || account.amount, regularAmount);
+  return {
+    regularAmount,
+    saleAmount,
+    hasDiscount: parseWonAmount(regularAmount) > parseWonAmount(saleAmount)
+  };
+}
+
+function getPremiumFileLinks(productId = currentPremiumProductId) {
+  return readJsonObject(`pym.premiumFileLinks.${productId}`);
 }
 
 function premiumOperatingSettingsPayload() {
   return {
-    account: getBankTransferAccount(),
-    fileLinks: getPremiumFileLinks(),
+    account: getBankTransferAccount("neuro-series-6"),
+    fileLinks: getPremiumFileLinks("neuro-series-6"),
     updatedAt: new Date().toISOString()
   };
 }
@@ -2055,7 +2230,7 @@ async function loadRemotePremiumOperatingSettings() {
     const response = await fetch(`${orderApiUrl}?action=settings`, { headers: { Accept: "application/json" } });
     if (!response.ok) throw new Error("설정을 불러오지 못했습니다.");
     const settings = await response.json();
-    if (settings?.account) applyPremiumOperatingSettings({ account: settings.account });
+    if (settings?.account || settings?.products) applyPremiumOperatingSettings(settings);
   } catch {
     // The last server-approved account remains cached locally when offline.
   }
@@ -2063,8 +2238,11 @@ async function loadRemotePremiumOperatingSettings() {
 
 function applyPremiumOperatingSettings(settings) {
   if (settings.account) safeStorageSet("pym.bankTransferAccount", JSON.stringify(settings.account));
-  if (settings.fileLinks && adminAuthenticated) safeStorageSet("pym.premiumFileLinks", JSON.stringify(settings.fileLinks));
-  const currentPrice = getBankTransferAccount().amount || PREMIUM_REGULAR_PRICE;
+  Object.entries(settings.products || {}).forEach(([productId, productSettings]) => {
+    if (productSettings?.account) safeStorageSet(`pym.bankTransferAccount.${productId}`, JSON.stringify(productSettings.account));
+  });
+  if (settings.fileLinks && adminAuthenticated) safeStorageSet("pym.premiumFileLinks.neuro-series-6", JSON.stringify(settings.fileLinks));
+  const currentPrice = getPremiumPricing("lab-series-6").saleAmount;
   document.querySelectorAll("[data-premium-price]").forEach((node) => {
     node.textContent = currentPrice;
   });
@@ -2093,7 +2271,7 @@ function mergeBankTransferOrders(...groups) {
 }
 
 function getAdminBankTransferOrders() {
-  return mergeBankTransferOrders(readBankTransferOrders(), adminDashboardState.data?.bankOrders || []);
+  return mergeBankTransferOrders(adminDashboardState.data?.bankOrders || []);
 }
 
 function getFilteredAdminBankTransferOrders() {
@@ -2119,35 +2297,6 @@ function bankTransferOrderPayload(order) {
   };
 }
 
-function orderFromAnalyticsEvent(event) {
-  const props = event.properties || {};
-  const orderId = props.orderId || props.id;
-  if (!orderId) return null;
-  const approved = event.event_name === "bank_transfer_order_approve" || props.status === "approved";
-  return {
-    id: orderId,
-    productId: props.productId || "neuro-series-6",
-    productTitle: props.productTitle || "신경계 임상추론 시리즈 6편",
-    amount: props.amount || getBankTransferAccount().amount,
-    depositor: props.depositor || "입금자명 미기록",
-    email: props.email || "이메일 미기록",
-    phoneLast4: props.phoneLast4 || "",
-    memo: props.memo || "",
-    status: approved ? "approved" : "pending",
-    createdAt: props.createdAt || event.created_at,
-    approvedAt: approved ? (props.approvedAt || event.created_at) : "",
-    updatedAt: event.created_at,
-    fileLinks: props.fileLinks || {}
-  };
-}
-
-function extractBankTransferOrdersFromEvents(events) {
-  return mergeBankTransferOrders(events
-    .filter((event) => ["bank_transfer_order_submit", "bank_transfer_order_approve"].includes(event.event_name))
-    .map(orderFromAnalyticsEvent)
-    .filter(Boolean));
-}
-
 function getLatestBankTransferOrder(productId) {
   return readBankTransferOrders()
     .filter((order) => order.productId === productId)
@@ -2155,18 +2304,19 @@ function getLatestBankTransferOrder(productId) {
 }
 
 function openBankTransferOrderModal(productId) {
+  const product = getPremiumProduct(productId);
   previewModal.hidden = false;
   previewModal.setAttribute("aria-labelledby", "bankTransferTitle");
   modalContent.innerHTML = `
     <div class="bank-order-modal">
       <p class="eyebrow">Bank transfer</p>
-      <h2 id="bankTransferTitle">신경계 시리즈 구매 신청</h2>
+      <h2 id="bankTransferTitle">${escapeHtml(product.title)} 구매 신청</h2>
       <p>입금자 정보를 남기고 아래 계좌로 이체하면 운영자가 입금 확인 후 자료 열람을 승인합니다.</p>
       <div class="bank-account-card">
-        <span>입금액</span><strong>${escapeHtml(getBankTransferAccount().amount)}</strong>
-        <span>은행</span><strong>${escapeHtml(getBankTransferAccount().bank)}</strong>
-        <span>계좌</span><strong>${escapeHtml(getBankTransferAccount().number)}</strong>
-        <span>예금주</span><strong>${escapeHtml(getBankTransferAccount().holder)}</strong>
+        <span>입금액</span><strong>${escapeHtml(getBankTransferAccount(productId).amount)}</strong>
+        <span>은행</span><strong>${escapeHtml(getBankTransferAccount(productId).bank)}</strong>
+        <span>계좌</span><strong>${escapeHtml(getBankTransferAccount(productId).number)}</strong>
+        <span>예금주</span><strong>${escapeHtml(getBankTransferAccount(productId).holder)}</strong>
       </div>
       <form class="bank-order-form" data-bank-order-form>
         <input type="hidden" name="productId" value="${escapeHtml(productId)}" />
@@ -2243,9 +2393,9 @@ function renderBankOrderSubmitted(order, remoteResult = { ok: true }) {
       ${remoteResult.ok ? "" : `<p class="bank-order-warning-text">서버 저장이 막혀 이 기기에만 접수됐어요. 운영자에게 주문번호를 보내주세요.</p>`}
       <div class="bank-account-card">
         <span>입금액</span><strong>${escapeHtml(order.amount)}</strong>
-        <span>은행</span><strong>${escapeHtml(getBankTransferAccount().bank)}</strong>
-        <span>계좌</span><strong>${escapeHtml(getBankTransferAccount().number)}</strong>
-        <span>예금주</span><strong>${escapeHtml(getBankTransferAccount().holder)}</strong>
+        <span>은행</span><strong>${escapeHtml(getBankTransferAccount(order.productId).bank)}</strong>
+        <span>계좌</span><strong>${escapeHtml(getBankTransferAccount(order.productId).number)}</strong>
+        <span>예금주</span><strong>${escapeHtml(getBankTransferAccount(order.productId).holder)}</strong>
       </div>
       <button type="button" data-close-modal>확인</button>
     </div>
@@ -2305,10 +2455,9 @@ async function verifyBankTransferOrder(form) {
     return;
   }
   if (order.fileLinks && Object.keys(order.fileLinks).length) {
-    safeStorageSet("pym.premiumFileLinks", JSON.stringify(order.fileLinks));
+    safeStorageSet(`pym.premiumFileLinks.${order.productId}`, JSON.stringify(order.fileLinks));
   }
-  safeStorageSet(`pym.premiumAccess.${order.productId}`, "true");
-  safeStorageSet(`pym.premiumAccessAt.${order.productId}`, order.approvedAt || new Date().toISOString());
+  verifiedPremiumProducts.add(order.productId);
   trackEvent("bank_transfer_order_verified", { orderId: order.id, productId: order.productId });
   showToast("승인 확인 완료! 자료가 열렸어요");
   renderPremiumScreen();
@@ -2365,10 +2514,9 @@ async function lookupBankTransferOrderByIdentity(form) {
 
   if (order.status === "approved") {
     if (order.fileLinks && Object.keys(order.fileLinks).length) {
-      safeStorageSet("pym.premiumFileLinks", JSON.stringify(order.fileLinks));
+      safeStorageSet(`pym.premiumFileLinks.${order.productId}`, JSON.stringify(order.fileLinks));
     }
-    safeStorageSet(`pym.premiumAccess.${order.productId}`, "true");
-    safeStorageSet(`pym.premiumAccessAt.${order.productId}`, order.approvedAt || new Date().toISOString());
+    verifiedPremiumProducts.add(order.productId);
     showToast(`주문번호 ${order.id} 승인완료. 자료가 열렸어요`);
   } else {
     showToast(`주문번호는 ${order.id} 입니다. 아직 입금 확인 대기 상태예요`);
@@ -2413,7 +2561,7 @@ async function deleteBankTransferOrder(orderId) {
 }
 
 async function copyBankTransferOrder(orderId) {
-  const order = readBankTransferOrders().find((item) => item.id === orderId);
+  const order = getAdminBankTransferOrders().find((item) => item.id === orderId);
   if (!order) return;
   const text = [
     `주문번호: ${order.id}`,
@@ -2432,34 +2580,11 @@ async function copyBankTransferOrder(orderId) {
 }
 
 function isPremiumPurchased(productId) {
-  if (safeStorageGet(`pym.premiumAccess.${productId}`) === "true") return true;
-  return readBankTransferOrders().some((order) => order.productId === productId && order.status === "approved");
+  return verifiedPremiumProducts.has(productId);
 }
 
-function completePremiumPurchase(productId) {
-  safeStorageSet(`pym.premiumAccess.${productId}`, "true");
-  safeStorageSet(`pym.premiumAccessAt.${productId}`, new Date().toISOString());
-  trackEvent("premium_purchase_complete", { productId });
-  showToast("구매완료! 자료가 열렸어요");
-  renderPremiumScreen();
-  document.querySelector("#premiumAccess")?.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function resetPremiumPurchaseTest(productId) {
-  safeStorageRemove("pym.premiumAccess." + productId);
-  safeStorageRemove("pym.premiumAccessAt." + productId);
-  safeStorageRemove("pym.premiumAccess.");
-  safeStorageRemove("pym.premiumAccessAt.");
-  const remainingOrders = readBankTransferOrders().filter((order) => order.productId !== productId);
-  writeBankTransferOrders(remainingOrders);
-  trackEvent("premium_purchase_test_reset", { productId });
-  showToast("구매 테스트 상태를 초기화했어요");
-  renderPremiumScreen();
-  document.querySelector("#premium")?.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function premiumFileHref(file) {
-  const overrideMap = getPremiumFileLinks();
+function premiumFileHref(file, productId) {
+  const overrideMap = getPremiumFileLinks(productId);
   const override = overrideMap[file.number] || overrideMap[file.fileName] || "";
   if (override) return override;
   return `./assets/premium/${file.fileName}`;
@@ -2474,7 +2599,7 @@ function readJsonObject(key) {
   }
 }
 
-function renderPremiumAccessPanel(purchased) {
+function renderPremiumAccessPanel(purchased, productId, files) {
   if (!purchased) {
     return `
       <section class="premium-section premium-access-card locked" id="premiumAccess">
@@ -2513,14 +2638,14 @@ function renderPremiumAccessPanel(purchased) {
         <span class="premium-access-badge">OPEN</span>
       </div>
       <div class="premium-download-list">
-        ${premiumDownloadFiles.map((file) => `
+        ${files.map((file) => `
           <article>
             <div>
               <strong>${escapeHtml(file.number)}. ${escapeHtml(file.title)}</strong>
               <span>${Number(file.pages)}페이지 · PDF</span>
             </div>
             <div class="premium-download-actions">
-              <a href="${escapeHtml(premiumFileHref(file))}" target="_blank" rel="noreferrer" data-premium-secure-file="${escapeHtml(file.number)}" data-premium-secure-action="open">열기</a>
+              <a href="${escapeHtml(premiumFileHref(file, productId))}" target="_blank" rel="noreferrer" data-premium-secure-file="${escapeHtml(file.number)}" data-premium-product-id="${escapeHtml(productId)}" data-premium-secure-action="open">열기</a>
             </div>
           </article>
         `).join("")}
@@ -2529,9 +2654,9 @@ function renderPremiumAccessPanel(purchased) {
   `;
 }
 
-function getPremiumBuyerCount() {
-  const approvedOrders = readBankTransferOrders().filter((order) => order.productId === "neuro-series-6" && order.status === "approved").length;
-  return PREMIUM_BASE_BUYER_COUNT + approvedOrders;
+function getPremiumBuyerCount(productId = currentPremiumProductId) {
+  const approvedOrders = readBankTransferOrders().filter((order) => order.productId === productId && order.status === "approved").length;
+  return (productId === "neuro-series-6" ? PREMIUM_BASE_BUYER_COUNT : 0) + approvedOrders;
 }
 
 function getPremiumDisplayViews() {
@@ -2609,7 +2734,7 @@ async function loadPremiumSocialProof() {
 }
 
 async function submitPremiumReview(form) {
-  const productId = "neuro-series-6";
+  const productId = currentPremiumProductId;
   const approvedOrder = readBankTransferOrders().find((order) => order.productId === productId && order.status === "approved" && order.email && order.phoneLast4);
   if (!isPremiumPurchased(productId) || !approvedOrder) {
     showToast("구매 승인 후 리뷰를 남길 수 있어요");
@@ -2689,7 +2814,7 @@ function openPremiumPreviewGallery(index = 0) {
     if (target) target.scrollIntoView({ behavior: "auto", inline: "start", block: "nearest" });
   });
 
-  trackEvent("premium_preview_gallery_open", { productId: "neuro-series-6", startIndex });
+  trackEvent("premium_preview_gallery_open", { productId: currentPremiumProductId, startIndex });
 }
 
 renderPremiumScreen();
@@ -2697,19 +2822,21 @@ syncAdminRoute();
 loadPremiumSocialProof();
 
 function openPremiumPreviewModal() {
+  const product = getPremiumProduct(currentPremiumProductId);
+  const modules = product.modules;
   previewModal.setAttribute("aria-labelledby", "premiumPreviewTitle");
   modalContent.innerHTML = `
     <div class="premium-preview-modal">
       <p class="eyebrow">Package preview</p>
-      <h2 id="premiumPreviewTitle">신경계 임상추론 6편 구성</h2>
-      <p class="premium-preview-lead">실제 DOCX 6편 기준으로 구성한 미리보기입니다. 무료 화면에서는 각 편의 학습 방향과 일부 핵심 흐름만 보여주고, 전체 원고와 표·보고 문장은 구매 후 제공하는 구조입니다.</p>
+      <h2 id="premiumPreviewTitle">${escapeHtml(product.title)} 6편 구성</h2>
+      <p class="premium-preview-lead">실제 학습자료 6편 기준으로 구성한 미리보기입니다. 무료 화면에서는 각 편의 학습 방향과 일부 핵심 흐름만 보여주고, 전체 원고와 표·보고 문장은 구매 후 제공합니다.</p>
       <div class="premium-preview-summary">
-        <article><strong>6편</strong><span>Tier 0·1 응급 신경계</span></article>
+        <article><strong>6편</strong><span>${escapeHtml(product.category)}</span></article>
         <article><strong>96섹션</strong><span>각 편 16섹션 원고</span></article>
         <article><strong>72장</strong><span>12슬라이드 캐러셀 6세트</span></article>
       </div>
       <div class="premium-preview-list">
-        ${premiumNeuroModules.map((module) => `
+        ${modules.map((module) => `
           <article>
             <div class="premium-preview-num">${escapeHtml(module.number)}</div>
             <div>
@@ -2735,7 +2862,7 @@ function openPremiumPreviewModal() {
       </section>
       <div class="premium-preview-actions">
         <button type="button" data-close-modal>닫기</button>
-        <button type="button" data-premium-checkout="neuro-series-6">패키지 구매하기</button>
+        <button type="button" data-premium-checkout="${escapeHtml(product.id)}">패키지 구매하기</button>
       </div>
     </div>
   `;
@@ -3308,8 +3435,9 @@ function startNoticeRotation() {
   if (!homeNoticeCarousel) return;
 
   window.clearInterval(noticeTimer);
+  if (document.visibilityState !== "visible") return;
   noticeTimer = window.setInterval(() => {
-    if (document.body.classList.contains("search-mode") || !previewModal.hidden) return;
+    if (document.visibilityState !== "visible" || document.body.classList.contains("search-mode") || !previewModal.hidden) return;
     activeNoticeIndex = (activeNoticeIndex + 1) % getHomeNotices().length;
     renderHomeNoticeCarousel();
   }, 5200);
@@ -3716,13 +3844,13 @@ function visualTemplate(resource, size = "thumb") {
 
 function visualMeta(resource) {
   const map = {
-    "심혈관": { key: "cardio", icon: "ECG", image: "./assets/thumb-cardio.png" },
-    "신경계": { key: "neuro", icon: "N", image: "./assets/thumb-neuro.png" },
-    "검사수치": { key: "lab", icon: "Lab", image: "./assets/thumb-lab.png" },
-    "호흡기": { key: "resp", icon: "XR", image: "./assets/thumb-resp.png" },
-    "응급간호": { key: "emergency", icon: "ER", image: "./assets/nurse-guide.png" },
-    "시뮬레이션": { key: "sim", icon: "SIM", image: "./assets/nurse-guide.png" },
-    "수술간호": { key: "surgery", icon: "+", image: "./assets/thumb-surgery.png" }
+    "심혈관": { key: "cardio", icon: "ECG", image: "./assets/thumb-cardio.jpg" },
+    "신경계": { key: "neuro", icon: "N", image: "./assets/thumb-neuro.jpg" },
+    "검사수치": { key: "lab", icon: "Lab", image: "./assets/thumb-lab.jpg" },
+    "호흡기": { key: "resp", icon: "XR", image: "./assets/thumb-resp.jpg" },
+    "응급간호": { key: "emergency", icon: "ER", image: "./assets/nurse-guide.jpg" },
+    "시뮬레이션": { key: "sim", icon: "SIM", image: "./assets/nurse-guide.jpg" },
+    "수술간호": { key: "surgery", icon: "+", image: "./assets/thumb-surgery.jpg" }
   };
 
   const fallback = map[resource.system] || { key: "default", icon: "PDF" };
@@ -4154,6 +4282,7 @@ function trackEvent(name, properties = {}) {
   const pageSearch = window.location.search || "";
   const enrichedProperties = {
     ...properties,
+    analyticsVersion: 2,
     pageSearch,
     ...parseUtmParams(pageSearch)
   };
@@ -4175,7 +4304,7 @@ function trackEvent(name, properties = {}) {
   const events = readAnalyticsEvents();
   events.push(event);
   safeStorageSet("pym.analyticsEvents", JSON.stringify(events.slice(-1000)));
-  sendRemoteAnalytics(event);
+  sendRemoteAnalytics();
 
   if (!analyticsAdmin.hidden && adminAuthenticated) {
     renderAnalyticsAdmin();
@@ -4274,39 +4403,39 @@ function readJsonArray(key) {
   }
 }
 
-function sendRemoteAnalytics(event) {
+function sendRemoteAnalytics() {
   if (!supabaseConfig.enabled) return;
-
-  postSupabaseEvents([event])
-    .then(() => {
-      markSupabaseSent([event.id]);
-      if (["trend_article_open", "resource_open", "drive_open"].includes(event.name)) {
-        loadContentStats();
-      }
-    })
-    .catch((error) => {
-      if (error.status === 409) {
-        markSupabaseSent([event.id]);
-        return;
-      }
-      scheduleAnalyticsFlush();
-    });
+  scheduleAnalyticsFlush(1200);
 }
 
-function scheduleAnalyticsFlush() {
+function scheduleAnalyticsFlush(delay = 3000) {
   if (analyticsFlushScheduled) return;
   analyticsFlushScheduled = true;
   window.setTimeout(() => {
     analyticsFlushScheduled = false;
-    flushRemoteAnalytics({ silent: true, limit: 40 });
-  }, 3000);
+    flushRemoteAnalytics({ silent: true, limit: 40 }).catch(() => {});
+  }, delay);
 }
 
 async function flushRemoteAnalytics(options = {}) {
   if (!supabaseConfig.enabled) return 0;
+  if (analyticsFlushInFlight) return analyticsFlushInFlight;
+
+  analyticsFlushInFlight = flushRemoteAnalyticsBatch(options)
+    .finally(() => {
+      analyticsFlushInFlight = null;
+      const sentIds = readSupabaseSentIds();
+      if (readAnalyticsEvents().some((event) => !sentIds.has(event.id))) scheduleAnalyticsFlush(3000);
+    });
+  return analyticsFlushInFlight;
+}
+
+async function flushRemoteAnalyticsBatch(options = {}) {
+  if (!supabaseConfig.enabled) return 0;
 
   const silent = Boolean(options.silent);
   const limit = Number(options.limit || 80);
+  const keepalive = Boolean(options.keepalive);
   const sentIds = readSupabaseSentIds();
   const pending = readAnalyticsEvents()
     .filter((event) => !sentIds.has(event.id))
@@ -4321,13 +4450,9 @@ async function flushRemoteAnalytics(options = {}) {
     let synced = 0;
     for (let index = 0; index < pending.length; index += 20) {
       const batch = pending.slice(index, index + 20);
-      try {
-        await postSupabaseEvents(batch);
-        markSupabaseSent(batch.map((event) => event.id));
-        synced += batch.length;
-      } catch {
-        synced += await flushRemoteAnalyticsOneByOne(batch);
-      }
+      await postSupabaseEvents(batch, { keepalive });
+      markSupabaseSent(batch.map((event) => event.id));
+      synced += batch.length;
     }
     if (!silent) showToast(`${synced}개 이벤트를 Supabase로 보냈어요`);
     return synced;
@@ -4336,32 +4461,14 @@ async function flushRemoteAnalytics(options = {}) {
   }
 }
 
-async function flushRemoteAnalyticsOneByOne(events) {
-  let synced = 0;
-
-  for (const event of events) {
-    try {
-      await postSupabaseEvents([event]);
-      markSupabaseSent([event.id]);
-      synced += 1;
-    } catch (error) {
-      if (error.status === 409) {
-        markSupabaseSent([event.id]);
-      }
-    }
-  }
-
-  return synced;
-}
-
-async function postSupabaseEvents(events) {
+async function postSupabaseEvents(events, options = {}) {
   const response = await fetch("/api/analytics", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({ events }),
-    keepalive: events.length === 1
+    keepalive: Boolean(options.keepalive)
   });
 
   if (!response.ok) {
@@ -4541,7 +4648,6 @@ function renderAdminFallback(error) {
       </div>
     </section>
     ${premiumOperatingSettingsAdminTemplate()}
-    ${premiumTestToolsAdminTemplate()}
     ${bankTransferOrdersAdminTemplate()}
   `;
 }
@@ -4847,8 +4953,8 @@ function adminPremiumSectionTemplate(ctx) {
       ]), "프리미엄 파일 열람 데이터가 아직 없어요")}
     </section>
     ${bankTransferOrdersAdminTemplate()}
+    ${premiumMaterialRequestsAdminTemplate()}
     ${premiumOperatingSettingsAdminTemplate()}
-    ${premiumTestToolsAdminTemplate()}
   `;
 }
 
@@ -5229,7 +5335,6 @@ function renderAnalyticsAdminLegacy() {
       </div>
     </section>
     ${premiumOperatingSettingsAdminTemplate()}
-    ${premiumTestToolsAdminTemplate()}
     ${bankTransferOrdersAdminTemplate()}
     <section class="admin-card admin-section-card wide">
       <div class="admin-card-head">
@@ -5246,33 +5351,10 @@ function renderAnalyticsAdminLegacy() {
   `;
 }
 
-function premiumTestToolsAdminTemplate() {
-  const productId = "neuro-series-6";
-  const purchased = isPremiumPurchased(productId);
-  const accessAt = safeStorageGet(`pym.premiumAccessAt.${productId}`) || "";
-  return `
-    <section class="admin-card premium-test-card">
-      <div class="admin-card-head">
-        <h2>프리미엄 테스트 도구</h2>
-        <span>${purchased ? "현재 브라우저 구매완료" : "현재 브라우저 미구매"}</span>
-      </div>
-      <p class="admin-note">이 도구는 이 브라우저에서만 작동합니다. 공개 판매 페이지에는 테스트 버튼이 보이지 않습니다.</p>
-      <div class="premium-test-state">
-        <article><strong>${purchased ? "OPEN" : "LOCKED"}</strong><span>열람 상태</span></article>
-        <article><strong>${accessAt ? escapeHtml(formatAdminDate(accessAt)) : "-"}</strong><span>열림 시각</span></article>
-      </div>
-      <div class="premium-test-actions">
-        <button type="button" data-premium-test-complete="${productId}">내 브라우저 구매완료로 열기</button>
-        <button type="button" data-premium-test-reset="${productId}">내 브라우저 구매상태 초기화</button>
-        <button type="button" data-premium-test-open>프리미엄 페이지에서 확인</button>
-      </div>
-    </section>
-  `;
-}
-
 function premiumOperatingSettingsAdminTemplate() {
-  const account = getBankTransferAccount();
-  const links = getPremiumFileLinks();
+  const account = getBankTransferAccount("neuro-series-6");
+  const pricing = getPremiumPricing("neuro-series-6");
+  const links = getPremiumFileLinks("neuro-series-6");
   return `
     <section class="admin-card premium-operating-card">
       <div class="admin-card-head">
@@ -5284,7 +5366,8 @@ function premiumOperatingSettingsAdminTemplate() {
           <label><span>은행</span><input name="bank" value="${escapeHtml(account.bank)}" placeholder="예: 카카오뱅크" /></label>
           <label><span>예금주</span><input name="holder" value="${escapeHtml(account.holder)}" placeholder="예: 박용민" /></label>
           <label><span>계좌번호</span><input name="number" value="${escapeHtml(account.number)}" placeholder="계좌번호" /></label>
-          <label><span>금액</span><input name="amount" value="${escapeHtml(account.amount)}" placeholder="9,900원" /></label>
+          <label><span>원래 표시 금액</span><input name="regularAmount" inputmode="numeric" value="${escapeHtml(pricing.regularAmount)}" placeholder="예: 9,900원" /></label>
+          <label><span>할인 판매 금액</span><input name="saleAmount" inputmode="numeric" value="${escapeHtml(pricing.saleAmount)}" placeholder="예: 3,300원" /></label>
         </div>
         <div class="premium-link-grid">
           ${premiumDownloadFiles.map((file) => `
@@ -5294,7 +5377,7 @@ function premiumOperatingSettingsAdminTemplate() {
             </label>
           `).join("")}
         </div>
-        <button type="submit">계좌/자료 링크 저장</button>
+        <button type="submit">가격/계좌/자료 링크 저장</button>
       </form>
       <p class="admin-note">계좌와 유료 자료 링크는 관리자 인증을 거친 서버에서만 저장·조회됩니다. 공개 화면에는 계좌 정보만 전달됩니다.</p>
     </section>
@@ -5307,8 +5390,10 @@ async function savePremiumOperatingSettings(form) {
     bank: String(formData.get("bank") || "").trim() || DEFAULT_BANK_TRANSFER_ACCOUNT.bank,
     holder: String(formData.get("holder") || "").trim() || DEFAULT_BANK_TRANSFER_ACCOUNT.holder,
     number: String(formData.get("number") || "").trim() || DEFAULT_BANK_TRANSFER_ACCOUNT.number,
-    amount: String(formData.get("amount") || "").trim() || DEFAULT_BANK_TRANSFER_ACCOUNT.amount
+    regularAmount: formatPremiumPrice(formData.get("regularAmount"), DEFAULT_BANK_TRANSFER_ACCOUNT.regularAmount),
+    saleAmount: formatPremiumPrice(formData.get("saleAmount"), DEFAULT_BANK_TRANSFER_ACCOUNT.saleAmount)
   };
+  account.amount = account.saleAmount;
   const fileLinks = {};
   premiumDownloadFiles.forEach((file) => {
     const link = String(formData.get(`file_${file.number}`) || "").trim();
@@ -5316,7 +5401,7 @@ async function savePremiumOperatingSettings(form) {
   });
 
   safeStorageSet("pym.bankTransferAccount", JSON.stringify(account));
-  safeStorageSet("pym.premiumFileLinks", JSON.stringify(fileLinks));
+  safeStorageSet("pym.premiumFileLinks.neuro-series-6", JSON.stringify(fileLinks));
   trackEvent("premium_operating_settings_update", { updatedAt: new Date().toISOString(), fileCount: Object.keys(fileLinks).length });
   const button = form.querySelector("button[type='submit']");
   if (button) {
@@ -5326,14 +5411,15 @@ async function savePremiumOperatingSettings(form) {
 
   try {
     await adminRequest("save-settings", { account, fileLinks });
-    showToast("계좌와 자료 링크를 안전하게 저장했어요");
+    applyPremiumOperatingSettings({ account, fileLinks });
+    showToast("가격과 운영 설정을 페이지에 저장했어요");
   } catch (error) {
     showToast(error.message || "운영 설정 저장에 실패했습니다.");
   }
 
   if (button) {
     button.disabled = false;
-    button.textContent = "계좌/자료 링크 저장";
+    button.textContent = "가격/계좌/자료 링크 저장";
   }
   renderAnalyticsAdmin();
   renderPremiumScreen();
@@ -5448,17 +5534,35 @@ function applyAdminPayload(payload = {}) {
   const trendComments = Array.isArray(payload.trendComments) ? payload.trendComments : [];
   const resourceComments = Array.isArray(payload.resourceComments) ? payload.resourceComments : [];
   const bankOrders = Array.isArray(payload.bankOrders) ? payload.bankOrders : [];
-  const mergedRawEvents = mergeAdminEvents(rawEvents, readAnalyticsEvents());
+  adminDashboardState.materialRequests = Array.isArray(payload.materialRequests) ? payload.materialRequests : [];
   const comments = [
     ...trendComments.map((row) => ({ ...row, comment_type: "trend" })),
     ...resourceComments.map((row) => ({ ...row, comment_type: "resource", article_id: row.resource_id }))
   ];
-  adminDashboardState.data = buildAdminDashboardDataFromEvents(mergedRawEvents, comments, bankOrders, {
+  adminDashboardState.data = buildAdminDashboardDataFromEvents(rawEvents, comments, bankOrders, {
     exactCounts: payload.exactCounts || {}
   });
   adminDashboardState.error = "";
   if (payload.settings?.account) safeStorageSet("pym.bankTransferAccount", JSON.stringify(payload.settings.account));
-  if (payload.settings?.fileLinks) safeStorageSet("pym.premiumFileLinks", JSON.stringify(payload.settings.fileLinks));
+  if (payload.settings?.fileLinks) safeStorageSet("pym.premiumFileLinks.neuro-series-6", JSON.stringify(payload.settings.fileLinks));
+}
+
+function premiumMaterialRequestsAdminTemplate() {
+  const requests = adminDashboardState.materialRequests || [];
+  return `
+    <section class="admin-card admin-section-card wide">
+      <div class="admin-card-head">
+        <h2>추가자료 요청</h2>
+        <span>${formatCount(requests.length)}건</span>
+      </div>
+      ${adminDataTable(["요청자", "주제", "요청 내용", "접수일"], requests.slice(0, 100).map((row) => [
+        `${row.name} · ${row.email}`,
+        row.topic,
+        row.details,
+        formatAdminDate(row.createdAt)
+      ]), "접수된 추가자료 요청이 없어요")}
+    </section>
+  `;
 }
 
 function mergeAdminEvents(...sources) {

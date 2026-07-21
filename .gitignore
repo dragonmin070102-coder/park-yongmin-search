@@ -8,3 +8,7 @@ park-yongmin-search-deploy.zip
 assets/premium/*.docx
 .vercel
 .env*
+analytics/data/*.json
+analytics/data/*.csv
+analytics/data/*.md
+!analytics/data/README.md

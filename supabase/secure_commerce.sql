@@ -1,6 +1,7 @@
 -- Secure commerce boundary for PYM Search.
 -- Public clients may submit analytics and call narrowly-scoped RPC functions.
 -- Orders, premium file links, and admin analytics are never directly readable by anon.
+-- Apply data_collection_v2.sql after this baseline when provisioning or rebuilding a project.
 
 create schema if not exists private;
 revoke all on schema private from public, anon, authenticated;
@@ -21,6 +22,24 @@ create table if not exists private.rate_limit_log (
 create index if not exists rate_limit_log_lookup_idx
   on private.rate_limit_log (client_hash, action, created_at desc);
 
+alter table private.app_config enable row level security;
+alter table private.rate_limit_log enable row level security;
+revoke all on table private.app_config, private.rate_limit_log from public, anon, authenticated;
+
+-- New public objects must be opt-in. Supabase projects created with legacy
+-- defaults otherwise grant broad table/function privileges automatically.
+alter default privileges for role postgres in schema public
+  revoke select, insert, update, delete, truncate, references, trigger on tables from anon, authenticated;
+alter default privileges for role postgres in schema public
+  revoke execute on functions from public, anon, authenticated;
+alter default privileges for role postgres in schema public
+  revoke usage, select on sequences from anon, authenticated;
+
+-- Comments remain public, but only the operations used by the UI are granted.
+revoke all on table public.trend_comments, public.resource_comments from anon, authenticated;
+grant select, insert on table public.trend_comments, public.resource_comments to anon;
+grant update (likes) on table public.trend_comments, public.resource_comments to anon;
+
 alter table public.bank_transfer_orders
   add column if not exists client_hash text;
 
@@ -32,6 +51,24 @@ create table if not exists public.premium_reviews (
   body text not null check (char_length(body) between 5 and 300),
   created_at timestamptz not null default now()
 );
+
+create table if not exists public.premium_material_requests (
+  id bigint generated always as identity primary key,
+  name text not null check (char_length(name) between 2 and 80),
+  email text not null check (char_length(email) between 5 and 160),
+  topic text not null check (char_length(topic) between 2 and 120),
+  details text not null check (char_length(details) between 5 and 1000),
+  status text not null default 'new' check (status in ('new', 'reviewing', 'completed')),
+  client_hash text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists premium_material_requests_created_at_idx
+  on public.premium_material_requests (created_at desc);
+
+alter table public.premium_material_requests enable row level security;
+revoke all on table public.premium_material_requests from anon, authenticated;
+grant select, insert, update, delete on table public.premium_material_requests to service_role;
 
 alter table public.premium_reviews enable row level security;
 revoke all on table public.premium_reviews from anon, authenticated;
@@ -117,6 +154,19 @@ end;
 $$;
 
 revoke all on function private.consume_rate_limit(text, text, integer, interval) from public, anon, authenticated;
+
+create or replace function public.consume_pym_agent_request(p_secret text, p_client_hash text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = private, pg_temp
+as $$
+begin
+  perform private.assert_admin(p_secret);
+  perform private.consume_rate_limit(p_client_hash, 'pym_agent', 20, interval '1 hour');
+  return jsonb_build_object('ok', true);
+end;
+$$;
 
 create or replace function public.submit_analytics_events(p_events jsonb, p_client_hash text)
 returns jsonb
@@ -320,6 +370,39 @@ begin
 end;
 $$;
 
+create or replace function public.submit_premium_material_request(
+  p_name text,
+  p_email text,
+  p_topic text,
+  p_details text,
+  p_client_hash text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, private, pg_temp
+as $$
+declare
+  inserted_id bigint;
+begin
+  perform private.consume_rate_limit(p_client_hash, 'material_request', 3, interval '1 hour');
+
+  if length(trim(p_name)) not between 2 and 80
+     or length(trim(p_email)) not between 5 and 160
+     or trim(p_email) !~* '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$'
+     or length(trim(p_topic)) not between 2 and 120
+     or length(trim(p_details)) not between 5 and 1000 then
+    raise exception '추가자료 요청 내용을 확인해 주세요.' using errcode = '22023';
+  end if;
+
+  insert into public.premium_material_requests (name, email, topic, details, client_hash)
+  values (trim(p_name), lower(trim(p_email)), trim(p_topic), trim(p_details), p_client_hash)
+  returning id into inserted_id;
+
+  return jsonb_build_object('ok', true, 'id', inserted_id);
+end;
+$$;
+
 create or replace function public.submit_premium_review(
   p_order_id text,
   p_email text,
@@ -451,6 +534,10 @@ begin
       'depositor', depositor, 'email', email, 'phoneLast4', phone_last4, 'memo', memo,
       'status', status, 'createdAt', created_at, 'approvedAt', approved_at, 'updatedAt', updated_at
     ) order by created_at desc) from (select * from public.bank_transfer_orders order by created_at desc limit 300) orders), '[]'::jsonb),
+    'materialRequests', coalesce((select jsonb_agg(jsonb_build_object(
+      'id', id, 'name', name, 'email', email, 'topic', topic, 'details', details,
+      'status', status, 'createdAt', created_at
+    ) order by created_at desc) from (select * from public.premium_material_requests order by created_at desc limit 300) requests), '[]'::jsonb),
     'settings', coalesce((select jsonb_build_object('account', account, 'fileLinks', file_links, 'updatedAt', updated_at)
       from public.premium_settings where setting_key = 'neuro-series-6'), '{}'::jsonb),
     'exactCounts', jsonb_build_object(
@@ -460,6 +547,111 @@ begin
       'bannerClicks', (select count(*) from public.analytics_events where event_name = 'home_premium_banner_click'),
       'fileOpens', (select count(*) from public.analytics_events where event_name = 'premium_secure_file_click')
     )
+  ) into payload;
+  return payload;
+end;
+$$;
+
+create or replace function public.admin_login_payload(p_secret text, p_client_hash text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, private, pg_temp
+as $$
+begin
+  perform private.assert_admin(p_secret);
+  perform private.consume_rate_limit(p_client_hash, 'admin_login', 30, interval '1 hour');
+  return public.admin_dashboard_payload(p_secret);
+end;
+$$;
+
+create or replace function public.admin_analytics_export(p_secret text, p_days integer default 90)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, private, pg_temp
+as $$
+declare
+  days integer := greatest(1, least(coalesce(p_days, 90), 365));
+  cutoff timestamptz;
+  payload jsonb;
+begin
+  perform private.assert_admin(p_secret);
+  cutoff := now() - make_interval(days => days);
+
+  select jsonb_build_object(
+    'metadata', jsonb_build_object(
+      'generatedAt', now(),
+      'periodDays', days,
+      'timezone', 'Asia/Seoul',
+      'containsPersonalData', false
+    ),
+    'summary', jsonb_build_object(
+      'events', (select count(*) from public.analytics_events where created_at >= cutoff),
+      'users', (select count(distinct anonymous_user_id) from public.analytics_events where created_at >= cutoff),
+      'sessions', (select count(distinct session_id) from public.analytics_events where created_at >= cutoff),
+      'orders', (select count(*) from public.bank_transfer_orders where created_at >= cutoff),
+      'approvedOrders', (select count(*) from public.bank_transfer_orders where created_at >= cutoff and status = 'approved'),
+      'materialRequests', (select count(*) from public.premium_material_requests where created_at >= cutoff),
+      'reviews', (select count(*) from public.premium_reviews where created_at >= cutoff)
+    ),
+    'daily', coalesce((select jsonb_agg(to_jsonb(x) order by x.day) from (
+      select (created_at at time zone 'Asia/Seoul')::date as day,
+        count(*) as events,
+        count(distinct anonymous_user_id) as users,
+        count(distinct session_id) as sessions,
+        count(*) filter (where event_name = 'page_view') as page_views,
+        count(*) filter (where event_name = 'search') as searches,
+        count(*) filter (where event_name = 'search_no_result') as no_result_searches,
+        count(*) filter (where event_name = 'resource_open') as resource_opens,
+        count(*) filter (where event_name = 'drive_open') as drive_opens,
+        count(*) filter (where event_name = 'premium_view') as premium_views,
+        count(*) filter (where event_name = 'premium_checkout_click') as checkout_clicks,
+        count(*) filter (where event_name = 'bank_transfer_order_submit') as order_submits
+      from public.analytics_events where created_at >= cutoff group by 1
+    ) x), '[]'::jsonb),
+    'eventMix', coalesce((select jsonb_agg(to_jsonb(x) order by x.events desc) from (
+      select event_name, count(*) as events, count(distinct anonymous_user_id) as users,
+        count(distinct session_id) as sessions, min(created_at) as first_seen, max(created_at) as last_seen
+      from public.analytics_events where created_at >= cutoff group by event_name
+    ) x), '[]'::jsonb),
+    'searchTerms', coalesce((select jsonb_agg(to_jsonb(x) order by x.searches desc, x.query) from (
+      select lower(trim(properties->>'query')) as query,
+        count(*) filter (where event_name = 'search') as searches,
+        count(*) filter (where event_name = 'search_no_result') as no_result_searches,
+        count(distinct anonymous_user_id) as users
+      from public.analytics_events
+      where created_at >= cutoff and event_name in ('search', 'search_no_result')
+        and length(trim(coalesce(properties->>'query', ''))) > 0
+      group by 1 order by searches desc limit 200
+    ) x), '[]'::jsonb),
+    'resources', coalesce((select jsonb_agg(to_jsonb(x) order by x.opens desc, x.resource_id) from (
+      select coalesce(nullif(properties->>'resourceId', ''), 'unknown') as resource_id,
+        count(*) filter (where event_name in ('resource_open', 'drive_open')) as opens,
+        count(*) filter (where event_name = 'resource_like') as likes,
+        count(distinct anonymous_user_id) as users
+      from public.analytics_events
+      where created_at >= cutoff and event_name in ('resource_open', 'drive_open', 'resource_like')
+      group by 1
+    ) x), '[]'::jsonb),
+    'funnel', (select to_jsonb(x) from (
+      select
+        count(distinct anonymous_user_id) filter (where event_name = 'page_view') as visitors,
+        count(distinct anonymous_user_id) filter (where event_name = 'premium_view') as premium_visitors,
+        count(distinct anonymous_user_id) filter (where event_name = 'home_premium_banner_click') as banner_clickers,
+        count(distinct anonymous_user_id) filter (where event_name = 'premium_checkout_click') as checkout_clickers,
+        count(distinct anonymous_user_id) filter (where event_name = 'bank_transfer_order_submit') as order_submitters,
+        count(distinct anonymous_user_id) filter (where event_name = 'premium_secure_file_click') as file_openers
+      from public.analytics_events where created_at >= cutoff
+    ) x),
+    'quality', (select to_jsonb(x) from (
+      select count(*) as rows,
+        count(*) - count(distinct event_id) as duplicate_event_ids,
+        count(*) filter (where event_id is null or event_name is null or anonymous_user_id is null or session_id is null) as missing_required,
+        count(*) filter (where created_at > now() + interval '5 minutes') as future_rows,
+        count(distinct event_name) as event_types
+      from public.analytics_events where created_at >= cutoff
+    ) x)
   ) into payload;
   return payload;
 end;
@@ -514,28 +706,48 @@ revoke all on function public.submit_analytics_events(jsonb, text) from public;
 revoke all on function public.get_public_premium_social_proof() from public;
 revoke all on function public.get_public_content_stats() from public;
 revoke all on function public.submit_bank_order(text, text, text, text, text, text) from public;
+revoke all on function public.submit_premium_material_request(text, text, text, text, text) from public;
 revoke all on function public.lookup_bank_order(text, text, text, text) from public;
 revoke all on function public.find_bank_order(text, text, text, text) from public;
 revoke all on function public.submit_premium_review(text, text, text, text, text) from public;
 revoke all on function public.admin_dashboard_payload(text) from public;
+revoke all on function public.admin_login_payload(text, text) from public;
+revoke all on function public.admin_analytics_export(text, integer) from public;
+revoke all on function public.consume_pym_agent_request(text, text) from public;
 revoke all on function public.admin_update_bank_order(text, text, text) from public;
 revoke all on function public.admin_save_premium_settings(text, jsonb, jsonb) from public;
 
-grant execute on function public.get_public_premium_settings() to anon, authenticated;
-grant execute on function public.submit_analytics_events(jsonb, text) to anon, authenticated;
-grant execute on function public.get_public_premium_social_proof() to anon, authenticated;
-grant execute on function public.get_public_content_stats() to anon, authenticated;
-grant execute on function public.submit_bank_order(text, text, text, text, text, text) to anon, authenticated;
-grant execute on function public.lookup_bank_order(text, text, text, text) to anon, authenticated;
-grant execute on function public.find_bank_order(text, text, text, text) to anon, authenticated;
-grant execute on function public.submit_premium_review(text, text, text, text, text) to anon, authenticated;
+grant execute on function public.get_public_premium_settings() to anon;
+grant execute on function public.submit_analytics_events(jsonb, text) to anon;
+grant execute on function public.get_public_premium_social_proof() to anon;
+grant execute on function public.get_public_content_stats() to anon;
+grant execute on function public.submit_bank_order(text, text, text, text, text, text) to anon;
+grant execute on function public.submit_premium_material_request(text, text, text, text, text) to anon;
+grant execute on function public.lookup_bank_order(text, text, text, text) to anon;
+grant execute on function public.find_bank_order(text, text, text, text) to anon;
+grant execute on function public.submit_premium_review(text, text, text, text, text) to anon;
 grant execute on function public.admin_dashboard_payload(text) to anon;
+grant execute on function public.admin_login_payload(text, text) to anon;
+grant execute on function public.admin_analytics_export(text, integer) to anon;
+grant execute on function public.consume_pym_agent_request(text, text) to anon;
 grant execute on function public.admin_update_bank_order(text, text, text) to anon;
 grant execute on function public.admin_save_premium_settings(text, jsonb, jsonb) to anon;
 
 revoke execute on function public.admin_dashboard_payload(text) from authenticated;
+revoke execute on function public.admin_login_payload(text, text) from authenticated;
+revoke execute on function public.admin_analytics_export(text, integer) from authenticated;
+revoke execute on function public.consume_pym_agent_request(text, text) from authenticated;
 revoke execute on function public.admin_update_bank_order(text, text, text) from authenticated;
 revoke execute on function public.admin_save_premium_settings(text, jsonb, jsonb) from authenticated;
+revoke execute on function public.get_public_premium_settings() from authenticated;
+revoke execute on function public.submit_analytics_events(jsonb, text) from authenticated;
+revoke execute on function public.get_public_premium_social_proof() from authenticated;
+revoke execute on function public.get_public_content_stats() from authenticated;
+revoke execute on function public.submit_bank_order(text, text, text, text, text, text) from authenticated;
+revoke execute on function public.submit_premium_material_request(text, text, text, text, text) from authenticated;
+revoke execute on function public.lookup_bank_order(text, text, text, text) from authenticated;
+revoke execute on function public.find_bank_order(text, text, text, text) from authenticated;
+revoke execute on function public.submit_premium_review(text, text, text, text, text) from authenticated;
 
 alter view if exists public.analytics_search_terms set (security_invoker = true);
 alter view if exists public.analytics_popular_resources set (security_invoker = true);

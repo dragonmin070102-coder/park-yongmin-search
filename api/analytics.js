@@ -9,6 +9,13 @@ function hashClient(req) {
 }
 
 function cleanEvent(event = {}) {
+  const now = Date.now();
+  const candidateTime = new Date(event.createdAt || event.created_at || now).getTime();
+  const minTime = now - 90 * 24 * 60 * 60 * 1000;
+  const maxTime = now + 5 * 60 * 1000;
+  const createdAt = Number.isFinite(candidateTime) && candidateTime >= minTime && candidateTime <= maxTime
+    ? new Date(candidateTime).toISOString()
+    : new Date(now).toISOString();
   const properties = event.properties && typeof event.properties === "object" && !Array.isArray(event.properties)
     ? Object.fromEntries(Object.entries(event.properties).slice(0, 40).map(([key, value]) => [cleanText(key, 60), typeof value === "string" ? cleanText(value, 500) : value]))
     : {};
@@ -23,7 +30,7 @@ function cleanEvent(event = {}) {
     user_agent: cleanText(event.userAgent || event.user_agent, 500),
     viewport: cleanText(event.viewport, 40),
     properties,
-    created_at: cleanText(event.createdAt || event.created_at, 40)
+    created_at: createdAt
   };
 }
 
@@ -32,12 +39,20 @@ export default async function handler(req, res) {
   res.setHeader("X-Content-Type-Options", "nosniff");
   if (req.method !== "POST") return json(res, 405, { error: "POST only" });
   try {
+    const startedAt = Date.now();
     const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
     const source = Array.isArray(body.events) ? body.events : [];
     if (!source.length || source.length > 20) return json(res, 400, { error: "이벤트는 한 번에 1~20개만 전송할 수 있습니다." });
     const events = source.map(cleanEvent).filter((event) => event.event_id && event.event_name && event.anonymous_user_id && event.session_id);
     if (!events.length) return json(res, 400, { error: "유효한 이벤트가 없습니다." });
     const result = await rpc("submit_analytics_events", { p_events: events, p_client_hash: hashClient(req) });
+    console.log(JSON.stringify({
+      type: "analytics_ingestion",
+      received: source.length,
+      validated: events.length,
+      accepted: Number(result?.accepted || 0),
+      durationMs: Date.now() - startedAt
+    }));
     return json(res, 202, result || { accepted: events.length });
   } catch (error) {
     return apiError(res, error, "분석 이벤트를 전송하지 못했습니다.");
