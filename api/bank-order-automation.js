@@ -104,8 +104,12 @@ async function postSlack(order, status) {
 }
 
 async function sendApprovalEmail(order) {
+  const gmailWebhookUrl = env("GMAIL_WEBHOOK_URL");
+  const gmailWebhookSecret = env("GMAIL_WEBHOOK_SECRET");
   const resendApiKey = env("RESEND_API_KEY");
-  if (!resendApiKey) return { skipped: true, reason: "RESEND_API_KEY missing" };
+  if ((!gmailWebhookUrl || !gmailWebhookSecret) && !resendApiKey) {
+    return { skipped: true, reason: "Gmail webhook and RESEND_API_KEY are both missing" };
+  }
   if (!order.email) return { skipped: true, reason: "order email missing" };
 
   const siteUrl = env("SITE_URL", DEFAULT_SITE_URL);
@@ -147,6 +151,25 @@ async function sendApprovalEmail(order) {
     </div>
   `;
 
+  if (gmailWebhookUrl && gmailWebhookSecret) {
+    const response = await fetch(gmailWebhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        secret: gmailWebhookSecret,
+        to: order.email,
+        subject,
+        text,
+        html
+      })
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.ok) {
+      throw new Error(`Gmail webhook ${response.status}: ${payload?.error || "delivery failed"}`);
+    }
+    return { ok: true, provider: "gmail" };
+  }
+
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -167,7 +190,7 @@ async function sendApprovalEmail(order) {
   if (!response.ok) {
     throw new Error(`Resend ${response.status}: ${await response.text().catch(() => "")}`);
   }
-  return { ok: true };
+  return { ok: true, provider: "resend" };
 }
 
 export async function notifyApprovedOrder(order) {
@@ -222,6 +245,7 @@ async function processOrder(order) {
 }
 
 export default async function handler(req, res) {
+  const startedAt = Date.now();
   if (!["GET", "POST"].includes(req.method)) {
     json(res, 405, { error: "GET or POST only" });
     return;
@@ -246,13 +270,28 @@ export default async function handler(req, res) {
       }
     }
 
-    json(res, 200, {
+    const payload = {
       ok: true,
       processed: results.length,
       autoApprove: AUTO_APPROVE,
       results
-    });
+    };
+    console.log(JSON.stringify({
+      level: "info",
+      message: "bank order automation completed",
+      processed: results.length,
+      autoApprove: AUTO_APPROVE,
+      results,
+      durationMs: Date.now() - startedAt
+    }));
+    json(res, 200, payload);
   } catch (error) {
+    console.error(JSON.stringify({
+      level: "error",
+      message: "bank order automation failed",
+      error: error.message || "Unknown error",
+      durationMs: Date.now() - startedAt
+    }));
     json(res, 500, { error: error.message || "Bank order automation failed" });
   }
 }
