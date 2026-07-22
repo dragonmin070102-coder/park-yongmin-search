@@ -5162,6 +5162,71 @@ body.search-mode .premium-screen {
   line-height: 1.58;
 }
 
+.premium-material-request {
+  background: linear-gradient(145deg, #f4f8ff, #ffffff);
+  border-color: #d7e8ff;
+}
+
+.premium-request-intro {
+  margin: -4px 0 16px;
+  color: #4e5968;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.premium-material-request form,
+.premium-material-request label {
+  display: grid;
+  gap: 8px;
+}
+
+.premium-material-request form {
+  gap: 12px;
+}
+
+.premium-request-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.premium-material-request label span {
+  color: #4e5968;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.premium-material-request input,
+.premium-material-request textarea {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #d7dce2;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #191f28;
+  font: inherit;
+}
+
+.premium-material-request textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.premium-material-request button {
+  min-height: 46px;
+  border: 0;
+  border-radius: 9px;
+  background: #3182f6;
+  color: #ffffff;
+  font-weight: 950;
+}
+
+@media (max-width: 520px) {
+  .premium-request-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 380px) {
   .premium-cover-card {
     min-height: 318px;
@@ -7966,6 +8031,22 @@ body.admin-mode .marketing-spend-form button {
   color: #4e5968;
   font-size: 13px;
   font-weight: 850;
+}
+
+.admin-login-card .admin-remember {
+  display: flex;
+  grid-template-columns: none;
+  align-items: center;
+  gap: 9px;
+  min-height: 34px;
+  cursor: pointer;
+}
+
+.admin-login-card .admin-remember input {
+  width: 18px;
+  min-height: 18px;
+  margin: 0;
+  accent-color: #3182f6;
 }
 
 .admin-login-card input,

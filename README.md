@@ -10,9 +10,11 @@ python3 -m http.server 5279
 
 Open `http://127.0.0.1:5279`.
 
+정적 화면만 확인하는 방법입니다. Vercel Functions까지 로컬에서 실행하려면 Vercel 개발 서버가 필요합니다.
+
 ## Deploy
 
-이 프로젝트는 빌드 과정이 없는 정적 사이트입니다. 아래 파일만 저장소 루트에 올리면 GitHub Pages, Netlify, Vercel에서 바로 배포할 수 있습니다.
+프론트엔드는 빌드 과정이 없는 정적 사이트지만, 주문·분석·관리자·AI 기능은 Vercel Functions와 Supabase RPC가 필요합니다. 전체 기능 배포 대상은 Vercel입니다.
 
 - `index.html`
 - `styles.css`
@@ -26,6 +28,26 @@ GitHub Pages 기준:
 3. Repository `Settings` -> `Pages` -> `Build and deployment`에서 `Deploy from a branch`를 선택한다.
 4. Branch는 `main`, folder는 `/root`로 설정한다.
 5. 잠시 뒤 `https://사용자명.github.io/저장소명/` 주소로 접속한다.
+
+GitHub Pages에서는 서버 API 기능이 동작하지 않습니다.
+
+## Analytics export
+
+개인정보를 제외한 운영 집계를 로컬로 가져오려면 다음을 실행합니다.
+
+```sh
+npm run analytics:export
+```
+
+결과와 지표 정의는 `analytics/` 폴더에 저장됩니다.
+
+### Data collection v2
+
+- 브라우저 이벤트는 최대 20개씩 묶어 `/api/analytics`로 전송합니다.
+- 공지 노출은 실제 보이는 탭에서 공지별 세션당 한 번만 기록합니다.
+- `analytics_events.received_at`과 `private.analytics_ingestion_batches`로 수집 지연, 배치 크기, 수락률을 확인합니다.
+- 관리자 주문 목록과 승인/삭제는 `bank_transfer_orders`만 원장으로 사용합니다. 분석 이벤트로 주문 행을 복원하지 않습니다.
+- 운영 DB 변경 파일은 `supabase/data_collection_v2.sql`입니다.
 
 ## Prototype Focus
 

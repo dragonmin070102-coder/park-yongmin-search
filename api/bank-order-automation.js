@@ -1,6 +1,7 @@
 import { env, rpc } from "./_lib/supabase.js";
 
 const DEFAULT_SITE_URL = "https://park-yongmin-search.vercel.app";
+const AUTO_APPROVE = env("BANK_ORDER_AUTO_APPROVE", "false") === "true";
 
 export const config = {
   maxDuration: 30
@@ -103,28 +104,31 @@ async function postSlack(order, status) {
 }
 
 async function sendApprovalEmail(order) {
+  const gmailWebhookUrl = env("GMAIL_WEBHOOK_URL");
+  const gmailWebhookSecret = env("GMAIL_WEBHOOK_SECRET");
   const resendApiKey = env("RESEND_API_KEY");
-  if (!resendApiKey) return { skipped: true, reason: "RESEND_API_KEY missing" };
+  if ((!gmailWebhookUrl || !gmailWebhookSecret) && !resendApiKey) {
+    return { skipped: true, reason: "Gmail webhook and RESEND_API_KEY are both missing" };
+  }
   if (!order.email) return { skipped: true, reason: "order email missing" };
 
   const siteUrl = env("SITE_URL", DEFAULT_SITE_URL);
   const from = env("MAIL_FROM", "PYM Search <onboarding@resend.dev>");
   const replyTo = env("MAIL_REPLY_TO");
   const premiumUrl = `${siteUrl}/#premium`;
-  const subject = `[PYM] ${order.productTitle} 구매 승인 완료`;
+  const buyerName = order.depositor || "구매자";
+  const subject = `[PYM] ${order.productTitle} 구매 감사드립니다`;
   const text = [
-    `${order.depositor || "구매자"}님, 안녕하세요. PYM Search입니다.`,
+    `${buyerName}님! 자료 구매 감사드립니다!!`,
     "",
-    "입금 확인이 완료되어 프리미엄 자료 열람이 승인되었습니다.",
+    "지금부터 사이트에서 열람 및 다운로드가 가능하십니다!",
+    "행복한 하루 되세요 :)",
     "",
     `주문번호: ${order.id}`,
     `상품: ${order.productTitle}`,
     `금액: ${order.amount}`,
     "",
-    "자료 확인 방법",
-    `1. ${premiumUrl} 에 접속합니다.`,
-    "2. 구매 신청 상태/주문번호 입력 영역에서 주문번호를 입력합니다.",
-    "3. 승인 확인 후 자료 열기 버튼으로 확인합니다.",
+    `자료 열람 및 다운로드: ${premiumUrl}`,
     "",
     "주문번호를 잊었다면 구매 신청 때 입력한 입금자명, 이메일, 휴대폰 뒤 4자리로 조회할 수 있습니다.",
     "",
@@ -134,8 +138,9 @@ async function sendApprovalEmail(order) {
 
   const html = `
     <div style=\"font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.65;color:#111827\">
-      <h2 style=\"margin:0 0 12px\">PYM 프리미엄 자료 승인 완료</h2>
-      <p>${escapeHtml(order.depositor || "구매자")}님, 입금 확인이 완료되어 자료 열람이 승인되었습니다.</p>
+      <h2 style=\"margin:0 0 12px\">자료 구매 감사드립니다!</h2>
+      <p><strong>${escapeHtml(buyerName)}님!</strong> 자료 구매 감사드립니다!!</p>
+      <p>지금부터 사이트에서 열람 및 다운로드가 가능하십니다!<br>행복한 하루 되세요 :)</p>
       <div style=\"background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin:16px 0\">
         <p><strong>주문번호</strong><br>${escapeHtml(order.id)}</p>
         <p><strong>상품</strong><br>${escapeHtml(order.productTitle)}</p>
@@ -146,11 +151,31 @@ async function sendApprovalEmail(order) {
     </div>
   `;
 
+  if (gmailWebhookUrl && gmailWebhookSecret) {
+    const response = await fetch(gmailWebhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        secret: gmailWebhookSecret,
+        to: order.email,
+        subject,
+        text,
+        html
+      })
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.ok) {
+      throw new Error(`Gmail webhook ${response.status}: ${payload?.error || "delivery failed"}`);
+    }
+    return { ok: true, provider: "gmail" };
+  }
+
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${resendApiKey}`,
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      "Idempotency-Key": `premium-purchase-${order.id}`
     },
     body: JSON.stringify({
       from,
@@ -165,7 +190,22 @@ async function sendApprovalEmail(order) {
   if (!response.ok) {
     throw new Error(`Resend ${response.status}: ${await response.text().catch(() => "")}`);
   }
-  return { ok: true };
+  return { ok: true, provider: "resend" };
+}
+
+export async function notifyApprovedOrder(order) {
+  const delivery = { slack: null, email: null };
+  try {
+    delivery.slack = await postSlack(order, "approved");
+  } catch (error) {
+    delivery.slack = { error: error.message || "Slack notification failed" };
+  }
+  try {
+    delivery.email = await sendApprovalEmail(order);
+  } catch (error) {
+    delivery.email = { error: error.message || "Email delivery failed" };
+  }
+  return delivery;
 }
 
 function escapeHtml(value) {
@@ -181,24 +221,31 @@ async function processOrder(order) {
   if (!order?.id) return { skipped: true, reason: "missing order id" };
   if (order.status === "approved") return { orderId: order.id, skipped: true, reason: "already approved" };
 
-  const shouldApprove = env("AUTO_APPROVE_BANK_ORDERS", "false").toLowerCase() === "true";
   let finalOrder = order;
   const result = { orderId: order.id, startedStatus: order.status, approved: false, slack: null, email: null };
 
-  if (shouldApprove) {
+  if (AUTO_APPROVE) {
     finalOrder = await approveOrder(order);
     result.approved = true;
+    const delivery = await notifyApprovedOrder(finalOrder);
+    result.slack = delivery.slack;
+    result.email = delivery.email;
+    return result;
   }
 
-  result.slack = await postSlack(finalOrder, finalOrder.status);
-  if (finalOrder.status === "approved") {
-    result.email = await sendApprovalEmail(finalOrder);
+  // Slack 장애가 구매자 메일 발송을 막지 않도록 두 작업을 독립적으로 처리한다.
+  try {
+    result.slack = await postSlack(finalOrder, finalOrder.status);
+  } catch (error) {
+    result.slack = { error: error.message || "Slack notification failed" };
   }
+  result.email = { skipped: true, reason: "awaiting payment approval" };
 
   return result;
 }
 
 export default async function handler(req, res) {
+  const startedAt = Date.now();
   if (!["GET", "POST"].includes(req.method)) {
     json(res, 405, { error: "GET or POST only" });
     return;
@@ -223,13 +270,28 @@ export default async function handler(req, res) {
       }
     }
 
-    json(res, 200, {
+    const payload = {
       ok: true,
       processed: results.length,
-      autoApprove: env("AUTO_APPROVE_BANK_ORDERS", "false").toLowerCase() === "true",
+      autoApprove: AUTO_APPROVE,
       results
-    });
+    };
+    console.log(JSON.stringify({
+      level: "info",
+      message: "bank order automation completed",
+      processed: results.length,
+      autoApprove: AUTO_APPROVE,
+      results,
+      durationMs: Date.now() - startedAt
+    }));
+    json(res, 200, payload);
   } catch (error) {
+    console.error(JSON.stringify({
+      level: "error",
+      message: "bank order automation failed",
+      error: error.message || "Unknown error",
+      durationMs: Date.now() - startedAt
+    }));
     json(res, 500, { error: error.message || "Bank order automation failed" });
   }
 }

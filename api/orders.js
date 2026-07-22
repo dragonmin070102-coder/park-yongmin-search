@@ -33,7 +33,7 @@ export default async function handler(req, res) {
       const action = cleanText(req.query?.action, 30);
       if (action === "settings") {
         const result = await rpc("get_public_premium_settings");
-        return json(res, 200, result || {}, { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" });
+        return json(res, 200, result || {}, { "Cache-Control": "no-store" });
       }
       if (action === "social") {
         const result = await rpc("get_public_premium_social_proof");
@@ -52,7 +52,7 @@ export default async function handler(req, res) {
 
     if (action === "create") {
       validateIdentity(input, { depositor: true });
-      if (input.productId !== "neuro-series-6") return json(res, 400, { error: "판매 중인 상품이 아닙니다." });
+      if (!["neuro-series-6", "lab-series-6"].includes(input.productId)) return json(res, 400, { error: "판매 중인 상품이 아닙니다." });
       const result = await rpc("submit_bank_order", {
         p_product_id: input.productId,
         p_depositor: input.depositor,
@@ -62,6 +62,24 @@ export default async function handler(req, res) {
         p_client_hash: hashClient(req)
       });
       return json(res, 201, result || {});
+    }
+
+    if (action === "material-request") {
+      const name = cleanText(body.name, 80);
+      const email = cleanText(body.email, 160).toLowerCase();
+      const topic = cleanText(body.topic, 120);
+      const details = cleanText(body.details, 1000);
+      if (name.length < 2) return json(res, 400, { error: "성함을 확인해 주세요." });
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json(res, 400, { error: "이메일 주소를 확인해 주세요." });
+      if (topic.length < 2 || details.length < 5) return json(res, 400, { error: "요청 주제와 필요한 내용을 확인해 주세요." });
+      const result = await rpc("submit_premium_material_request", {
+        p_name: name,
+        p_email: email,
+        p_topic: topic,
+        p_details: details,
+        p_client_hash: hashClient(req)
+      });
+      return json(res, 201, result || { ok: true });
     }
 
     validateIdentity(input, { depositor: action === "lookup" });
